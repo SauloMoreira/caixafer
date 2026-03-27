@@ -30,7 +30,12 @@ function getGreeting(name: string) {
 }
 
 export default function DashboardPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isVolunteer } = useAuth();
+
+  // Redirect volunteers to Meu SPR
+  if (isVolunteer) {
+    return <Navigate to="/meu-spr" replace />;
+  }
   const [stats, setStats] = useState<DayStats>({
     salesToday: 0, incomeToday: 0, expenseToday: 0,
     balanceToday: 0, fiadoOpen: 0, fiadoReceived: 0,
