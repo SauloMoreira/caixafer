@@ -21,6 +21,7 @@ import UsuariosPage from "@/pages/UsuariosPage";
 import MeuSPRPage from "@/pages/MeuSPRPage";
 import NotificacoesPage from "@/pages/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
+import SegurancaPage from "@/pages/SegurancaPage";
 
 const queryClient = new QueryClient();
 
