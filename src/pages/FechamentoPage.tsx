@@ -156,9 +156,13 @@ export default function FechamentoPage() {
     } else {
       toast.success('Caixa reaberto com sucesso! O histórico foi preservado.');
       setShowReopenDialog(false);
+      const wasCorrection = reopenReason === 'correcao_lancamento';
       setReopenReason('');
       setReopenCustomReason('');
-      fetchData();
+      await fetchData();
+      if (wasCorrection) {
+        setShowCorrectionReview(true);
+      }
     }
   };
 
