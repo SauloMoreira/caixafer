@@ -358,29 +358,7 @@ export default function SegurancaPage() {
         <TabsContent value="settings" className="space-y-4 mt-4">
           <MfaSettingsSection profiles={profiles} auditLogs={auditLogs} />
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold">Configurações de Sessão</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-center justify-between py-2 border-b">
-                <span className="text-muted-foreground">Revalidação de sessão</span>
-                <Badge variant="default">Ativa (5 min)</Badge>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b">
-                <span className="text-muted-foreground">Logout seguro</span>
-                <Badge variant="default">Ativo</Badge>
-              </div>
-              <div className="flex items-center justify-between py-2 border-b">
-                <span className="text-muted-foreground">Bloqueio por inatividade</span>
-                <Badge variant="outline">Em breve</Badge>
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <span className="text-muted-foreground">Sessão única por usuário</span>
-                <Badge variant="outline">Em breve</Badge>
-              </div>
-            </CardContent>
-          </Card>
+          <SessionSettingsSection profiles={profiles} auditLogs={auditLogs} />
 
           <Card>
             <CardHeader className="pb-2">
