@@ -69,7 +69,7 @@ export default function SPRPage() {
 
   const openNewVolunteer = () => {
     setEditingVol(null);
-    setVolName(''); setVolDoc(''); setVolPhone(''); setVolNotes(''); setVolActive(true);
+    setVolName(''); setVolPhone(''); setVolActive(true);
     setVolAvatarFile(null); setVolPreviewUrl(null);
     setVolDialogOpen(true);
   };
