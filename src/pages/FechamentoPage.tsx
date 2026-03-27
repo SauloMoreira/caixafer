@@ -197,6 +197,10 @@ export default function FechamentoPage() {
       toast.error(`Feche o caixa do dia ${formatDate(pendingDate)} antes de abrir um novo.`);
       return;
     }
+    if (existingOpenByOther) {
+      toast.error(`Caixa já foi aberto por ${existingOpenByOther.responsibleName}.`);
+      return;
+    }
     const { error } = await supabase.from('cash_closings').insert({
       business_date: date,
       user_id: profile.id,
@@ -204,8 +208,27 @@ export default function FechamentoPage() {
       notes: notes || null,
       status: 'open' as const,
     });
-    if (error) toast.error('Erro: ' + error.message);
-    else { toast.success('Caixa aberto!'); fetchData(); }
+    if (error) {
+      if (error.message.includes('idx_one_open_cash_per_day') || error.message.includes('unique') || error.message.includes('duplicate')) {
+        toast.error('Já existe um caixa aberto para este dia.');
+        // Log blocked attempt
+        const { logSecurityEvent } = await import('@/lib/security');
+        logSecurityEvent({
+          event_type: 'cash_open_blocked_existing_open_session',
+          entity_type: 'cash_closings',
+          action: 'INSERT_BLOCKED',
+          business_date: date,
+          severity: 'medium',
+          notes: `Tentativa de abertura bloqueada. Já existe caixa aberto no dia ${date}.`,
+        });
+        fetchData();
+      } else {
+        toast.error('Erro: ' + error.message);
+      }
+    } else {
+      toast.success('Caixa aberto!');
+      fetchData();
+    }
   };
 
   const saveClosing = async (close = false) => {
