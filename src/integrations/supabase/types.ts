@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           business_date: string
           closed_at: string | null
+          closing_version: number
           counted_balance: number | null
           created_at: string
           difference_amount: number | null
@@ -25,8 +26,13 @@ export type Database = {
           expense_total: number
           id: string
           income_total: number
+          is_latest_version: boolean
           notes: string | null
           opening_balance: number
+          previous_closing_snapshot: Json | null
+          reopen_reason: string | null
+          reopened_at: string | null
+          reopened_by: string | null
           sales_total: number
           status: Database["public"]["Enums"]["closing_status"]
           user_id: string
@@ -34,6 +40,7 @@ export type Database = {
         Insert: {
           business_date: string
           closed_at?: string | null
+          closing_version?: number
           counted_balance?: number | null
           created_at?: string
           difference_amount?: number | null
@@ -41,8 +48,13 @@ export type Database = {
           expense_total?: number
           id?: string
           income_total?: number
+          is_latest_version?: boolean
           notes?: string | null
           opening_balance?: number
+          previous_closing_snapshot?: Json | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
           sales_total?: number
           status?: Database["public"]["Enums"]["closing_status"]
           user_id: string
@@ -50,6 +62,7 @@ export type Database = {
         Update: {
           business_date?: string
           closed_at?: string | null
+          closing_version?: number
           counted_balance?: number | null
           created_at?: string
           difference_amount?: number | null
@@ -57,13 +70,25 @@ export type Database = {
           expense_total?: number
           id?: string
           income_total?: number
+          is_latest_version?: boolean
           notes?: string | null
           opening_balance?: number
+          previous_closing_snapshot?: Json | null
+          reopen_reason?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
           sales_total?: number
           status?: Database["public"]["Enums"]["closing_status"]
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cash_closings_reopened_by_fkey"
+            columns: ["reopened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cash_closings_user_id_fkey"
             columns: ["user_id"]
