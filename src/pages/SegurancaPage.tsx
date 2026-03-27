@@ -534,3 +534,102 @@ function MfaSettingsSection({ profiles, auditLogs }: { profiles: any[]; auditLog
     </>
   );
 }
+
+function SessionSettingsSection({ profiles, auditLogs }: { profiles: any[]; auditLogs: any[] }) {
+  const activeProfiles = profiles.filter(p => p.is_active && p.approval_status === 'approved');
+  
+  const sessionEvents = useMemo(() =>
+    auditLogs.filter(l =>
+      l.event_type === 'session_invalidated_by_new_login' ||
+      l.event_type === 'single_session_policy_applied' ||
+      l.event_type === 'forced_reauthentication'
+    ).slice(0, 10),
+    [auditLogs]
+  );
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            Configurações de Sessão
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>Sessão única por usuário.</strong> Cada usuário pode ter apenas uma sessão ativa
+              por vez. Ao fazer login em outro dispositivo, a sessão anterior é encerrada automaticamente.
+            </p>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Sessão única por usuário</span>
+              <Badge variant="default" className="bg-primary">Ativa</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Revalidação de sessão</span>
+              <Badge variant="default">Ativa (2 min)</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">Logout seguro</span>
+              <Badge variant="default">Ativo</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">Validação ao retornar</span>
+              <Badge variant="default">Ativa</Badge>
+            </div>
+          </div>
+
+          {/* Last login per user */}
+          {activeProfiles.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-semibold text-muted-foreground">Último Login</p>
+              {activeProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <div className="min-w-0">
+                    <span className="text-sm truncate block">{p.full_name}</span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {p.role === 'admin' ? 'Admin' : p.role === 'cashier' ? 'Caixa' : 'Voluntário'}
+                    </span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    {p.last_login_at ? (
+                      <span className="text-xs text-muted-foreground">{fmt(p.last_login_at)}</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Session Audit Events */}
+      {sessionEvents.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Eventos de Sessão Recentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {sessionEvents.map(l => (
+              <div key={l.id} className="flex items-center justify-between gap-2 py-1.5 border-b last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {EVENT_LABELS[l.event_type] || l.event_type}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{fmt(l.created_at)}</p>
+                </div>
+                <Badge className={SEVERITY_COLORS[l.severity] || ''}>{l.severity}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </>
+  );
+}
