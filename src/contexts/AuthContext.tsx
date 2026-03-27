@@ -18,6 +18,8 @@ interface Profile {
   volunteer_id: string | null;
   created_at: string;
   updated_at: string;
+  is_primary_admin: boolean;
+  has_operational_override: boolean;
 }
 
 interface AuthContextType {
