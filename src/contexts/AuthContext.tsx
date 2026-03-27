@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearInterval(sessionCheckRef.current);
       sessionCheckRef.current = undefined;
     }
-    currentSessionIdRef.current = null;
+    
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
