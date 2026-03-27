@@ -1,0 +1,227 @@
+import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrency, PAYMENT_METHODS, todayISO } from '@/lib/constants';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type Product = Database['public']['Tables']['products']['Row'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export default function PDVPage() {
+  const { profile } = useAuth();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [discount, setDiscount] = useState(0);
+  const [notes, setNotes] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showCart, setShowCart] = useState(false);
+
+  useEffect(() => {
+    supabase.from('products').select('*').eq('is_active', true).order('name')
+      .then(({ data }) => { if (data) setProducts(data); });
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    if (!search) return products;
+    const s = search.toLowerCase();
+    return products.filter(p => p.name.toLowerCase().includes(s) || p.category.toLowerCase().includes(s) || p.internal_code?.toLowerCase().includes(s));
+  }, [products, search]);
+
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(i => i.product.id === product.id);
+      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { product, quantity: 1 }];
+    });
+  };
+
+  const updateQuantity = (productId: string, delta: number) => {
+    setCart(prev => prev.map(i => {
+      if (i.product.id !== productId) return i;
+      const newQty = i.quantity + delta;
+      return newQty > 0 ? { ...i, quantity: newQty } : i;
+    }).filter(i => i.quantity > 0));
+  };
+
+  const removeItem = (productId: string) => {
+    setCart(prev => prev.filter(i => i.product.id !== productId));
+  };
+
+  const subtotal = cart.reduce((sum, i) => sum + Number(i.product.unit_price) * i.quantity, 0);
+  const total = Math.max(0, subtotal - discount);
+
+  const finalizeSale = async () => {
+    if (!profile || cart.length === 0) return;
+    setLoading(true);
+    try {
+      const { data: sale, error: saleError } = await supabase.from('sales').insert({
+        business_date: todayISO(),
+        created_by: profile.id,
+        subtotal,
+        discount_amount: discount,
+        total_amount: total,
+        payment_method: paymentMethod,
+        notes: notes || null,
+      }).select().single();
+
+      if (saleError) throw saleError;
+
+      const items = cart.map(i => ({
+        sale_id: sale.id,
+        product_id: i.product.id,
+        quantity: i.quantity,
+        unit_price: Number(i.product.unit_price),
+        line_total: Number(i.product.unit_price) * i.quantity,
+      }));
+
+      const { error: itemsError } = await supabase.from('sale_items').insert(items);
+      if (itemsError) throw itemsError;
+
+      toast.success(`Venda #${sale.sale_number} registrada!`);
+      setCart([]);
+      setDiscount(0);
+      setNotes('');
+      setShowCart(false);
+    } catch (err: any) {
+      toast.error('Erro ao registrar venda: ' + err.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="page-title">PDV</h1>
+        {cart.length > 0 && (
+          <Button onClick={() => setShowCart(true)} className="md:hidden relative">
+            <ShoppingCart className="h-5 w-5" />
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
+              {cart.length}
+            </span>
+          </Button>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-4 md:flex-row">
+        {/* Products */}
+        <div className="flex-1 space-y-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar produto..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="h-12 pl-10"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {filteredProducts.map(product => (
+              <button
+                key={product.id}
+                onClick={() => addToCart(product)}
+                className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30"
+              >
+                <p className="text-sm font-medium leading-tight">{product.name}</p>
+                <p className="text-xs text-muted-foreground">{product.category}</p>
+                <p className="mt-1 financial-value text-base text-primary">{formatCurrency(Number(product.unit_price))}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Cart - Desktop always visible, Mobile overlay */}
+        <div className={`${showCart ? 'fixed inset-0 z-50 flex items-end md:relative md:inset-auto md:z-auto' : 'hidden md:block'} md:w-80`}>
+          {showCart && <div className="absolute inset-0 bg-foreground/20 md:hidden" onClick={() => setShowCart(false)} />}
+          <Card className={`${showCart ? 'relative w-full rounded-t-2xl md:rounded-xl' : ''} md:sticky md:top-4`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="font-heading text-base font-bold flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4" />
+                  Carrinho ({cart.length})
+                </h2>
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowCart(false)}>
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              {cart.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-8">Carrinho vazio</p>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {cart.map(item => (
+                    <div key={item.product.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{item.product.name}</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(Number(item.product.unit_price))}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, -1)}>
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, 1)}>
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-expense" onClick={() => removeItem(item.product.id)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {cart.length > 0 && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="font-medium">{formatCurrency(subtotal)}</span>
+                  </div>
+                  <Input
+                    type="number"
+                    placeholder="Desconto (R$)"
+                    value={discount || ''}
+                    onChange={e => setDiscount(Number(e.target.value))}
+                    className="h-10"
+                  />
+                  <div className="flex justify-between text-base font-bold">
+                    <span>Total</span>
+                    <span className="financial-value text-primary">{formatCurrency(total)}</span>
+                  </div>
+                  <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_METHODS.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input placeholder="Observações (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
+                  <Button className="h-12 w-full text-base" onClick={finalizeSale} disabled={loading}>
+                    {loading ? 'Finalizando...' : `Finalizar ${formatCurrency(total)}`}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
