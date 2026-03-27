@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit } from 'lucide-react';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
+import DailyOperationInsights from '@/components/DailyOperationInsights';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -403,7 +404,17 @@ export default function FechamentoPage() {
                 </div>
               )}
               <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
+            </CardContent>
+          </Card>
 
+          {/* Daily Operation Insights */}
+          <DailyOperationInsights
+            businessDate={date}
+            disabled={closing.status === 'closed' && !isAdmin}
+          />
+
+          <Card>
+            <CardContent className="space-y-4 pt-6">
               {/* Action buttons */}
               {closing.status !== 'closed' && (
                 <div className="space-y-2">
