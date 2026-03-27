@@ -278,7 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mfaEnrolled,
       mfaVerified,
       mfaLoading,
-      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus,
+      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus, updateProfile,
     }}>
       {children}
     </AuthContext.Provider>
