@@ -38,6 +38,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshMfaStatus: () => Promise<void>;
+  updateProfile: (partial: Partial<Profile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
