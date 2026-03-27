@@ -238,20 +238,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error('Sua conta foi recusada. Entre em contato com o administrador.') };
       }
 
-      // Register single session — generate unique ID for this login
+      // Update last login
       const sessionId = crypto.randomUUID();
       await registerSession(data.user.id, sessionId);
-
-      // Log single session policy applied
-      supabase.from('security_audit_logs').insert({
-        event_type: 'single_session_policy_applied',
-        entity_type: 'session',
-        action: 'LOGIN',
-        severity: 'info',
-        user_id: data.user.id,
-        user_role: p?.role || 'unknown',
-        notes: 'Nova sessão registrada. Sessões anteriores serão invalidadas.',
-      } as any).then(() => {});
 
       await checkMfaStatus();
     }
