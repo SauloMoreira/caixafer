@@ -38,7 +38,7 @@ const getCartItemName = (item: CartItem) => item.itemType === 'product' ? item.p
 const getCartItemPrice = (item: CartItem) => item.itemType === 'product' ? Number(item.product!.unit_price) : item.manualItem!.unitPrice;
 
 export default function PDVPage() {
-  const { profile } = useAuth();
+  const { profile, hasOperationalOverride } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
