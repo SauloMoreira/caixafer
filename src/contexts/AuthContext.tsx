@@ -122,24 +122,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Register this session as the active one in the DB
-  const registerSession = useCallback(async (userId: string, sessionId: string) => {
-    currentSessionIdRef.current = sessionId;
+  // Update last login timestamp
+  const registerSession = useCallback(async (userId: string, _sessionId: string) => {
     await supabase
       .from('profiles')
       .update({
-        active_session_id: sessionId,
         last_login_at: new Date().toISOString(),
       } as any)
       .eq('id', userId);
   }, []);
 
-  // Check if current session is still the active one
-  const validateSingleSession = useCallback(async (userId: string) => {
-    if (!currentSessionIdRef.current) return true;
+  // Periodic check: deactivation, role changes
+  const validateSession = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('active_session_id, is_active, approval_status, role')
+      .select('is_active, approval_status, role')
       .eq('id', userId)
       .single();
     
@@ -154,22 +151,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Update role if changed
     setProfile(prev => prev ? { ...prev, role: data.role as any, is_active: data.is_active, approval_status: data.approval_status } : prev);
 
-    // Single session check
-    if (data.active_session_id && data.active_session_id !== currentSessionIdRef.current) {
-      await secureSignOut('Sua sessão foi encerrada porque sua conta foi acessada em outro dispositivo.');
-      
-      // Log the event (fire and forget)
-      supabase.from('security_audit_logs').insert({
-        event_type: 'session_invalidated_by_new_login',
-        entity_type: 'session',
-        action: 'SESSION_INVALIDATED',
-        severity: 'medium',
-        user_id: userId,
-        notes: 'Sessão encerrada por novo login em outro dispositivo',
-      } as any).then(() => {});
-      
-      return false;
-    }
     return true;
   }, [secureSignOut]);
 
