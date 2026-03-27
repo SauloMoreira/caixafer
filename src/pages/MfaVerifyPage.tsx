@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaVerifyPage() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,8 +19,12 @@ export default function MfaVerifyPage() {
   const [loadingFactors, setLoadingFactors] = useState(true);
 
   useEffect(() => {
-    loadFactors();
-  }, []);
+    if (!authLoading && !session) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (session) loadFactors();
+  }, [session, authLoading]);
 
   const loadFactors = async () => {
     setLoadingFactors(true);

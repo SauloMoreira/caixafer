@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaSetupPage() {
-  const { profile, session } = useAuth();
+  const { profile, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [qrUrl, setQrUrl] = useState('');
   const [secret, setSecret] = useState('');
@@ -22,8 +22,12 @@ export default function MfaSetupPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    enrollFactor();
-  }, []);
+    if (!authLoading && !session) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (session) enrollFactor();
+  }, [session, authLoading]);
 
   const enrollFactor = async () => {
     setEnrolling(true);
