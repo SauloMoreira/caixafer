@@ -17,6 +17,7 @@ const allNavItems = [
   { to: '/produtos', icon: Package, label: 'Produtos', roles: ['admin'] },
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios', roles: ['admin', 'cashier'] },
   { to: '/spr', icon: Heart, label: 'SPR Ramatis', roles: ['admin', 'cashier'] },
+  { to: '/notificacoes', icon: Users, label: 'Acompanhamento SPR', roles: ['admin'] },
   { to: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
   // Volunteer-only
   { to: '/', icon: LayoutDashboard, label: 'Início', roles: ['volunteer'] },
