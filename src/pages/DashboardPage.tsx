@@ -18,8 +18,6 @@ interface DayStats {
   fiadoReceived: number;
 }
 
-type ChartPeriod = 'day' | 'week' | 'month' | 'year';
-
 function getGreeting(name: string) {
   const hour = new Date().getHours();
   if (hour < 12) return `Bom dia, ${name}! ☀️`;
