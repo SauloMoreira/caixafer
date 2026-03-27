@@ -345,6 +345,90 @@ export default function SegurancaPage() {
             ))}
           </div>
         </TabsContent>
+
+        {/* ═══ CONFIGURAÇÕES ═══ */}
+        <TabsContent value="settings" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Lock className="h-4 w-4" />
+                Autenticação Multifator (MFA)
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="rounded-lg border border-dashed p-4 text-center space-y-2">
+                <Shield className="h-8 w-8 text-muted-foreground mx-auto" />
+                <p className="text-sm font-medium">MFA disponível em breve</p>
+                <p className="text-xs text-muted-foreground">
+                  A autenticação multifator adicionará uma camada extra de segurança para contas administrativas.
+                  Esta funcionalidade está sendo preparada.
+                </p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-muted-foreground">MFA para Admins</span>
+                  <Badge variant="outline">Em breve</Badge>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b">
+                  <span className="text-muted-foreground">MFA para Caixas</span>
+                  <Badge variant="outline">Opcional (futuro)</Badge>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-muted-foreground">MFA para Voluntários</span>
+                  <Badge variant="outline">Não aplicável</Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Configurações de Sessão</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Revalidação de sessão</span>
+                <Badge variant="default">Ativa (5 min)</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Logout seguro</span>
+                <Badge variant="default">Ativo</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Bloqueio por inatividade</span>
+                <Badge variant="outline">Em breve</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-muted-foreground">Sessão única por usuário</span>
+                <Badge variant="outline">Em breve</Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Auditoria</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Trilha de auditoria</span>
+                <Badge variant="default">Ativa</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Triggers de banco</span>
+                <Badge variant="default">6 tabelas</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b">
+                <span className="text-muted-foreground">Registro de incidentes</span>
+                <Badge variant="default">Ativo</Badge>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <span className="text-muted-foreground">Proteção contra senhas vazadas</span>
+                <Badge variant="outline">Configurar no Cloud</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Audit Detail Dialog */}
