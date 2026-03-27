@@ -32,7 +32,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { profile: currentProfile, user, refreshProfile, isProfileComplete, isAdmin } = useAuth();
+  const { profile: currentProfile, user, refreshProfile, updateProfile, isProfileComplete, isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const editUserId = searchParams.get('user');
