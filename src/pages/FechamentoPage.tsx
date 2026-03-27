@@ -54,6 +54,7 @@ export default function FechamentoPage() {
   const fetchData = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
+    setExistingOpenByOther(null);
 
     // Get closing for selected date (latest version)
     let closingQuery = supabase.from('cash_closings').select('*').eq('business_date', date);
@@ -69,6 +70,21 @@ export default function FechamentoPage() {
       setOpeningBalance('0');
       setCountedBalance('');
       setNotes('');
+
+      // Check if another user already has an open cash session for this date
+      if (!isAdmin) {
+        const { data: openSessions } = await supabase
+          .from('cash_closings')
+          .select('current_responsible_id')
+          .eq('business_date', date)
+          .eq('status', 'open')
+          .eq('is_latest_version', true)
+          .limit(1);
+        if (openSessions && openSessions.length > 0) {
+          const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSessions[0].current_responsible_id] });
+          setExistingOpenByOther({ responsibleName: names?.[0]?.full_name || 'outro operador' });
+        }
+      }
     }
 
     // Check for pending previous days
