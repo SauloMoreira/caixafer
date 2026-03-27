@@ -60,6 +60,7 @@ const cashierSections: NavSection[] = [
     title: 'Início',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Início' },
+      { to: '/spr', icon: Heart, label: 'SPR' },
     ],
   },
   {
@@ -68,12 +69,6 @@ const cashierSections: NavSection[] = [
       { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
       { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
       { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-    ],
-  },
-  {
-    title: 'SPR',
-    items: [
-      { to: '/spr', icon: Heart, label: 'SPR' },
     ],
   },
 ];
