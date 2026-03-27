@@ -430,6 +430,9 @@ export default function PDVPage() {
 
       {/* Quick Income Dialog */}
       <QuickIncomeDialog open={quickIncomeOpen} onOpenChange={setQuickIncomeOpen} category={quickIncomeCategory} />
+
+      {/* Manual Item Dialog */}
+      <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
     </div>
   );
 }
