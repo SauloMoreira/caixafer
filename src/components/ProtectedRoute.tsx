@@ -1,7 +1,13 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 
-export function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+  allowedRoles?: Array<'admin' | 'cashier' | 'volunteer'>;
+}
+
+export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: ProtectedRouteProps) {
   const { session, loading, isAdmin, isApproved, isProfileComplete, profile } = useAuth();
 
   if (loading) {
@@ -29,7 +35,16 @@ export function ProtectedRoute({ children, adminOnly = false }: { children: Reac
     return <Navigate to="/perfil" replace />;
   }
 
+  // Volunteer: redirect to meu-spr if trying to access non-allowed routes
+  if (profile?.role === 'volunteer' && allowedRoles && !allowedRoles.includes('volunteer')) {
+    return <Navigate to="/meu-spr" replace />;
+  }
+
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
+
+  if (allowedRoles && profile && !allowedRoles.includes(profile.role)) {
+    return <Navigate to="/" replace />;
+  }
 
   return <>{children}</>;
 }
