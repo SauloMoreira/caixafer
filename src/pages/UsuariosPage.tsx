@@ -117,8 +117,12 @@ export default function UsuariosPage() {
   };
 
   const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'volunteer') => {
+    const u = users.find(u => u.id === userId);
+    setCriticalAction({ type: 'role_change', userId, userName: u?.full_name || '', newRole: role });
+  };
+
+  const doChangeRole = async (userId: string, role: string) => {
     const updateData: any = { role, updated_at: new Date().toISOString() };
-    // Clear volunteer_id if changing away from volunteer
     if (role !== 'volunteer') {
       updateData.volunteer_id = null;
     }
@@ -127,9 +131,8 @@ export default function UsuariosPage() {
     else {
       toast.success('Perfil atualizado!');
       fetchUsers();
-      // Update selectedUser in dialog
       if (selectedUser?.id === userId) {
-        setSelectedUser(prev => prev ? { ...prev, role, volunteer_id: role !== 'volunteer' ? null : prev.volunteer_id } : null);
+        setSelectedUser(prev => prev ? { ...prev, role: role as any, volunteer_id: role !== 'volunteer' ? null : prev.volunteer_id } : null);
       }
     }
   };
