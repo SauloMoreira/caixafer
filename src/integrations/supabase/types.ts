@@ -648,52 +648,76 @@ export type Database = {
       security_audit_logs: {
         Row: {
           action: string
+          action_summary: string | null
           business_date: string | null
           created_at: string
           entity_id: string | null
           entity_type: string
           event_type: string
           id: string
+          ip_address: string | null
           new_data: Json | null
           notes: string | null
           old_data: Json | null
+          reason: string | null
+          requires_admin_review: boolean | null
           route: string | null
+          session_id: string | null
           severity: string
+          status: string | null
+          target_role: string | null
           target_user_id: string | null
+          user_agent: string | null
           user_id: string | null
           user_role: string | null
         }
         Insert: {
           action: string
+          action_summary?: string | null
           business_date?: string | null
           created_at?: string
           entity_id?: string | null
           entity_type: string
           event_type: string
           id?: string
+          ip_address?: string | null
           new_data?: Json | null
           notes?: string | null
           old_data?: Json | null
+          reason?: string | null
+          requires_admin_review?: boolean | null
           route?: string | null
+          session_id?: string | null
           severity?: string
+          status?: string | null
+          target_role?: string | null
           target_user_id?: string | null
+          user_agent?: string | null
           user_id?: string | null
           user_role?: string | null
         }
         Update: {
           action?: string
+          action_summary?: string | null
           business_date?: string | null
           created_at?: string
           entity_id?: string | null
           entity_type?: string
           event_type?: string
           id?: string
+          ip_address?: string | null
           new_data?: Json | null
           notes?: string | null
           old_data?: Json | null
+          reason?: string | null
+          requires_admin_review?: boolean | null
           route?: string | null
+          session_id?: string | null
           severity?: string
+          status?: string | null
+          target_role?: string | null
           target_user_id?: string | null
+          user_agent?: string | null
           user_id?: string | null
           user_role?: string | null
         }
