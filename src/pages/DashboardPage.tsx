@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO, PAYMENT_METHODS } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
 import BalanceEvolutionChart from '@/components/BalanceEvolutionChart';
