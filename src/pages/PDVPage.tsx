@@ -28,7 +28,7 @@ export default function PDVPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('dinheiro');
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
