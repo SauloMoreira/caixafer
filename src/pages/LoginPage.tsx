@@ -22,7 +22,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (authLoading) return null;
+  if (authLoading || mfaLoading) return null;
+
+  // If admin session exists, check MFA
+  if (session && profile?.role === 'admin') {
+    if (!mfaEnrolled) return <Navigate to="/mfa-setup" replace />;
+    if (!mfaVerified) return <Navigate to="/mfa-verify" replace />;
+    return <Navigate to="/" replace />;
+  }
   if (session) return <Navigate to="/" replace />;
 
   const resetFields = () => {

@@ -41,6 +41,12 @@ const EVENT_LABELS: Record<string, string> = {
   profile_updated: 'Perfil atualizado',
   unauthorized_route_access: 'Acesso negado',
   unauthorized_data_access_attempt: 'Tentativa acesso dado',
+  mfa_enrollment_started: 'MFA: início config.',
+  mfa_enrollment_verified: 'MFA: ativado',
+  mfa_enrollment_failed: 'MFA: falha ativação',
+  mfa_login_verified: 'MFA: login verificado',
+  mfa_login_failed: 'MFA: falha login',
+  admin_access_blocked_missing_mfa: 'Acesso bloqueado (sem MFA)',
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
