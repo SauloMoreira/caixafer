@@ -20,6 +20,7 @@ export function useNotifications() {
   const { profile } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasCriticalAlert, setHasCriticalAlert] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchNotifications = useCallback(async () => {
@@ -38,6 +39,12 @@ export function useNotifications() {
     if (data) {
       setNotifications(data as unknown as Notification[]);
       setUnreadCount(data.filter(n => !n.is_read).length);
+      
+      // Check for unread critical/high security alerts
+      const hasUnreadCritical = data.some(
+        (n: any) => !n.is_read && n.reference_type === 'security_alert'
+      );
+      setHasCriticalAlert(hasUnreadCritical);
     }
     setLoading(false);
   }, [profile]);
@@ -54,10 +61,11 @@ export function useNotifications() {
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() } as any)
       .eq('id', notificationId);
-    setNotifications(prev =>
-      prev.map(n => n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n)
-    );
+    const updated = notifications.map(n => n.id === notificationId ? { ...n, is_read: true, read_at: new Date().toISOString() } : n);
+    setNotifications(updated);
     setUnreadCount(prev => Math.max(0, prev - 1));
+    // Recalculate critical status
+    setHasCriticalAlert(updated.some((n: any) => !n.is_read && n.reference_type === 'security_alert'));
   };
 
   const markAllAsRead = async () => {
@@ -68,7 +76,8 @@ export function useNotifications() {
       .eq('is_read', false);
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() })));
     setUnreadCount(0);
+    setHasCriticalAlert(false);
   };
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, refresh: fetchNotifications };
+  return { notifications, unreadCount, hasCriticalAlert, loading, markAsRead, markAllAsRead, refresh: fetchNotifications };
 }

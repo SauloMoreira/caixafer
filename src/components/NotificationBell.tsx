@@ -16,7 +16,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, hasCriticalAlert, markAsRead, markAllAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -35,12 +35,22 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className={cn(
+          'relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors',
+          hasCriticalAlert
+            ? 'text-red-500 hover:bg-red-50 hover:text-red-600 animate-pulse'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        )}
         aria-label="Notificações"
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+          <span className={cn(
+            'absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold',
+            hasCriticalAlert
+              ? 'bg-red-500 text-white'
+              : 'bg-primary text-primary-foreground'
+          )}>
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
