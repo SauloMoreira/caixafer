@@ -62,12 +62,10 @@ export default function PendingTransferBanner({ onTransferAccepted, onTransferSt
 
     let nameMap: Record<string, string> = {};
     if (userIds.size > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', Array.from(userIds));
-      if (profiles) {
-        nameMap = Object.fromEntries(profiles.map(p => [p.id, p.full_name]));
+      const { data: names } = await supabase
+        .rpc('get_user_names', { _user_ids: Array.from(userIds) });
+      if (names) {
+        nameMap = Object.fromEntries((names as { id: string; full_name: string }[]).map(p => [p.id, p.full_name]));
       }
     }
 

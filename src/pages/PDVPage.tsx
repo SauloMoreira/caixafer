@@ -249,6 +249,10 @@ export default function PDVPage() {
     return (
       <div className="space-y-4">
         <h1 className="page-title">PDV</h1>
+        <PendingTransferBanner
+          onTransferAccepted={checkCashRegister}
+          onTransferStatusChanged={checkCashRegister}
+        />
         <Card className="max-w-md mx-auto">
           <CardContent className="flex flex-col items-center gap-4 py-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
