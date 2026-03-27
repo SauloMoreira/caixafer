@@ -255,6 +255,8 @@ export default function SegurancaPage() {
   const unreadAlerts = alerts.filter((a: any) => !a.is_read).length;
   const pendingReview = alerts.filter((a: any) => a.requires_admin_review && !a.reviewed_by).length;
   const criticalAlerts = alerts.filter((a: any) => a.severity === 'critical' && !a.is_read).length;
+  const blockedToday = todayLogs.filter(l => BLOCKED_EVENTS.includes(l.event_type)).length;
+  const overridesToday = todayLogs.filter(l => OVERRIDE_EVENTS.includes(l.event_type)).length;
 
   // ─── Filtering ───
   const getTabLogs = (tabName: string) => {
@@ -262,6 +264,8 @@ export default function SegurancaPage() {
     if (tabName === 'transfers') base = auditLogs.filter(l => TRANSFER_EVENTS.includes(l.event_type));
     if (tabName === 'changes') base = auditLogs.filter(l => CASH_CHANGE_EVENTS.includes(l.event_type));
     if (tabName === 'incidents') base = auditLogs.filter(l => INCIDENT_EVENTS.includes(l.event_type));
+    if (tabName === 'blocked') base = auditLogs.filter(l => BLOCKED_EVENTS.includes(l.event_type));
+    if (tabName === 'overrides') base = auditLogs.filter(l => OVERRIDE_EVENTS.includes(l.event_type));
     return applyFilters(base);
   };
 
