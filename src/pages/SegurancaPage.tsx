@@ -388,35 +388,51 @@ export default function SegurancaPage() {
 
       {/* Audit Detail Dialog */}
       <Dialog open={!!detailLog} onOpenChange={open => !open && setDetailLog(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-md sm:max-w-lg max-h-[85vh] p-0">
+          <DialogHeader className="px-4 pt-4 pb-2">
             <DialogTitle className="text-base">Detalhes do Evento</DialogTitle>
           </DialogHeader>
           {detailLog && (
-            <ScrollArea className="max-h-[60vh]">
-              <div className="space-y-3 text-sm">
-                <InfoRow label="Evento" value={EVENT_LABELS[detailLog.event_type] || detailLog.event_type} />
-                <InfoRow label="Entidade" value={detailLog.entity_type} />
-                <InfoRow label="Ação" value={detailLog.action} />
-                <InfoRow label="Severidade" value={detailLog.severity} />
-                <InfoRow label="Papel" value={detailLog.user_role || '—'} />
-                <InfoRow label="Data" value={fmt(detailLog.created_at)} />
-                {detailLog.business_date && <InfoRow label="Data Operacional" value={format(new Date(detailLog.business_date), 'dd/MM/yyyy')} />}
-                {detailLog.notes && <InfoRow label="Notas" value={detailLog.notes} />}
+            <ScrollArea className="max-h-[70vh] px-4 pb-4">
+              <div className="space-y-4 text-sm">
+                {/* Main info as a structured card */}
+                <div className="rounded-lg border bg-muted/30 divide-y">
+                  <DetailRow label="Evento" value={EVENT_LABELS[detailLog.event_type] || detailLog.event_type} />
+                  <DetailRow label="Entidade" value={detailLog.entity_type} />
+                  <DetailRow label="Ação" value={detailLog.action} />
+                  <DetailRow label="Severidade">
+                    <Badge className={`${SEVERITY_COLORS[detailLog.severity] || ''} text-[11px]`}>{detailLog.severity}</Badge>
+                  </DetailRow>
+                  <DetailRow label="Papel" value={detailLog.user_role || '—'} />
+                  <DetailRow label="Data" value={fmt(detailLog.created_at)} />
+                  {detailLog.business_date && (
+                    <DetailRow label="Data Operacional" value={format(new Date(detailLog.business_date), 'dd/MM/yyyy')} />
+                  )}
+                  {detailLog.route && <DetailRow label="Rota" value={detailLog.route} />}
+                  {detailLog.notes && <DetailRow label="Notas" value={detailLog.notes} />}
+                </div>
+
+                {/* Structured data display for old_data */}
                 {detailLog.old_data && (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-1">Dados Anteriores</p>
-                    <pre className="bg-muted rounded-lg p-2 text-xs overflow-x-auto whitespace-pre-wrap">
-                      {JSON.stringify(detailLog.old_data, null, 2)}
-                    </pre>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Dados Anteriores</p>
+                    <DataTable data={detailLog.old_data} />
                   </div>
                 )}
+
+                {/* Structured data display for new_data */}
                 {detailLog.new_data && (
                   <div>
-                    <p className="text-xs font-semibold text-muted-foreground mb-1">Dados Novos</p>
-                    <pre className="bg-muted rounded-lg p-2 text-xs overflow-x-auto whitespace-pre-wrap">
-                      {JSON.stringify(detailLog.new_data, null, 2)}
-                    </pre>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Dados Novos</p>
+                    <DataTable data={detailLog.new_data} />
+                  </div>
+                )}
+
+                {/* Comparison view when both exist */}
+                {detailLog.old_data && detailLog.new_data && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Alterações</p>
+                    <DiffView oldData={detailLog.old_data} newData={detailLog.new_data} />
                   </div>
                 )}
               </div>
