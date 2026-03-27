@@ -47,6 +47,9 @@ const EVENT_LABELS: Record<string, string> = {
   mfa_login_verified: 'MFA: login verificado',
   mfa_login_failed: 'MFA: falha login',
   admin_access_blocked_missing_mfa: 'Acesso bloqueado (sem MFA)',
+  session_invalidated_by_new_login: 'Sessão invalidada (novo login)',
+  single_session_policy_applied: 'Sessão única aplicada',
+  forced_reauthentication: 'Reautenticação forçada',
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
