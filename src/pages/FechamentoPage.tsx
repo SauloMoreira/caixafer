@@ -9,8 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit } from 'lucide-react';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
+import CashCorrectionReview from '@/components/CashCorrectionReview';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -39,6 +40,7 @@ export default function FechamentoPage() {
   const [reopenCustomReason, setReopenCustomReason] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [closingHistory, setClosingHistory] = useState<any[]>([]);
+  const [showCorrectionReview, setShowCorrectionReview] = useState(false);
 
   useEffect(() => { fetchData(); }, [date, profile]);
 
@@ -74,23 +76,25 @@ export default function FechamentoPage() {
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
     // Get stats
-    let salesQuery = supabase.from('sales').select('total_amount, payment_method').eq('business_date', date);
+    let salesQuery = supabase.from('sales').select('total_amount, payment_method, is_deleted').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
-    const sales = salesData?.reduce((s, r) => s + Number(r.total_amount), 0) || 0;
+    const activeSales = salesData?.filter((s: any) => !s.is_deleted) || [];
+    const sales = activeSales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
 
     const methodTotals: Record<string, number> = {};
-    salesData?.forEach(s => {
+    activeSales.forEach((s: any) => {
       const key = s.payment_method as string;
       methodTotals[key] = (methodTotals[key] || 0) + Number(s.total_amount);
     });
     setSalesByMethod(methodTotals);
 
-    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount').eq('business_date', date);
+    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount, is_deleted').eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
     const { data: entriesData } = await entriesQuery;
-    const income = entriesData?.filter(e => e.entry_type === 'income').reduce((s, e) => s + Number(e.amount), 0) || 0;
-    const expense = entriesData?.filter(e => e.entry_type === 'expense').reduce((s, e) => s + Number(e.amount), 0) || 0;
+    const activeEntries = entriesData?.filter((e: any) => !e.is_deleted) || [];
+    const income = activeEntries.filter((e: any) => e.entry_type === 'income').reduce((s: number, e: any) => s + Number(e.amount), 0);
+    const expense = activeEntries.filter((e: any) => e.entry_type === 'expense').reduce((s: number, e: any) => s + Number(e.amount), 0);
 
     setStats({ sales, income, expense });
     setLoading(false);
@@ -154,9 +158,13 @@ export default function FechamentoPage() {
     } else {
       toast.success('Caixa reaberto com sucesso! O histórico foi preservado.');
       setShowReopenDialog(false);
+      const wasCorrection = reopenReason === 'correcao_lancamento';
       setReopenReason('');
       setReopenCustomReason('');
-      fetchData();
+      await fetchData();
+      if (wasCorrection) {
+        setShowCorrectionReview(true);
+      }
     }
   };
 
@@ -258,6 +266,19 @@ export default function FechamentoPage() {
   };
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
+
+  if (showCorrectionReview && closing) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <CashCorrectionReview
+          businessDate={date}
+          closingId={closing.id}
+          onClose={() => setShowCorrectionReview(false)}
+          onDataChanged={fetchData}
+        />
+      </div>
+    );
+  }
 
   const wasReopened = closing?.reopened_at != null;
   const closingVersion = closing?.closing_version || 1;
@@ -385,9 +406,21 @@ export default function FechamentoPage() {
 
               {/* Action buttons */}
               {closing.status !== 'closed' && (
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
-                  <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
+                    <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                  </div>
+                  {wasReopened && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 border-primary/30 text-primary hover:bg-primary/5"
+                      onClick={() => setShowCorrectionReview(true)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Revisar Lançamentos
+                    </Button>
+                  )}
                 </div>
               )}
 
