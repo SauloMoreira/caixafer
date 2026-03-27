@@ -18,6 +18,7 @@ import ProdutosPage from "@/pages/ProdutosPage";
 import RelatoriosPage from "@/pages/RelatoriosPage";
 import SPRPage from "@/pages/SPRPage";
 import UsuariosPage from "@/pages/UsuariosPage";
+import MeuSPRPage from "@/pages/MeuSPRPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,14 +39,15 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
-            <Route path="/" element={<ProtectedRoute><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/pdv" element={<ProtectedRoute><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/movimentos" element={<ProtectedRoute><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/fechamento" element={<ProtectedRoute><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'volunteer']}><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/pdv" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/movimentos" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/fechamento" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/produtos" element={<ProtectedRoute adminOnly><LayoutWrapper><ProdutosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/relatorios" element={<ProtectedRoute><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/spr" element={<ProtectedRoute><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/meu-spr" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

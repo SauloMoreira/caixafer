@@ -180,6 +180,7 @@ export type Database = {
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
           updated_at: string
+          volunteer_id: string | null
         }
         Insert: {
           address?: string | null
@@ -195,6 +196,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          volunteer_id?: string | null
         }
         Update: {
           address?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
           updated_at?: string
+          volunteer_id?: string | null
         }
         Relationships: [
           {
@@ -217,6 +220,13 @@ export type Database = {
             columns: ["approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "spr_volunteers"
             referencedColumns: ["id"]
           },
         ]
@@ -514,7 +524,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "cashier"
+      app_role: "admin" | "cashier" | "volunteer"
       closing_status: "open" | "closed"
       document_type:
         | "recibo"
@@ -656,7 +666,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "cashier"],
+      app_role: ["admin", "cashier", "volunteer"],
       closing_status: ["open", "closed"],
       document_type: [
         "recibo",

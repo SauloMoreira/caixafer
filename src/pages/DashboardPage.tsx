@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO, PAYMENT_METHODS } from '@/lib/constants';
@@ -29,7 +30,7 @@ function getGreeting(name: string) {
 }
 
 export default function DashboardPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, isVolunteer } = useAuth();
   const [stats, setStats] = useState<DayStats>({
     salesToday: 0, incomeToday: 0, expenseToday: 0,
     balanceToday: 0, fiadoOpen: 0, fiadoReceived: 0,
@@ -37,7 +38,12 @@ export default function DashboardPage() {
   const [salesByMethod, setSalesByMethod] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchStats(); }, [profile]);
+  useEffect(() => { if (!isVolunteer) fetchStats(); }, [profile, isVolunteer]);
+
+  // Redirect volunteers to Meu SPR
+  if (isVolunteer) {
+    return <Navigate to="/meu-spr" replace />;
+  }
 
   const fetchStats = async () => {
     if (!profile) return;
@@ -118,7 +124,7 @@ export default function DashboardPage() {
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {profile?.role === 'admin' ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+            {profile?.role === 'admin' ? 'Administrador' : profile?.role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'} • Resumo do dia
           </p>
         </div>
       </div>

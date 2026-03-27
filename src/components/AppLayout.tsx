@@ -2,38 +2,50 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, BarChart3, Users, Heart, LogOut, Menu, X
+  Package, BarChart3, Users, Heart, LogOut, Menu, X, User
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
-  { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
-  { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-  { to: '/produtos', icon: Package, label: 'Produtos', adminOnly: true },
-  { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
-  { to: '/spr', icon: Heart, label: 'SPR Ramatis' },
-  { to: '/usuarios', icon: Users, label: 'Usuários', adminOnly: true },
-];
-
-const bottomNavItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Início' },
-  { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
-  { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
-  { to: '/fechamento', icon: Lock, label: 'Fechar' },
-  { to: '/more', icon: Menu, label: 'Mais' },
+const allNavItems = [
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier'] },
+  { to: '/pdv', icon: ShoppingCart, label: 'PDV', roles: ['admin', 'cashier'] },
+  { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos', roles: ['admin', 'cashier'] },
+  { to: '/fechamento', icon: Lock, label: 'Fechamento', roles: ['admin', 'cashier'] },
+  { to: '/produtos', icon: Package, label: 'Produtos', roles: ['admin'] },
+  { to: '/relatorios', icon: BarChart3, label: 'Relatórios', roles: ['admin', 'cashier'] },
+  { to: '/spr', icon: Heart, label: 'SPR Ramatis', roles: ['admin', 'cashier'] },
+  { to: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
+  // Volunteer-only
+  { to: '/', icon: LayoutDashboard, label: 'Início', roles: ['volunteer'] },
+  { to: '/meu-spr', icon: Heart, label: 'Meu SPR', roles: ['volunteer'] },
+  { to: '/perfil', icon: User, label: 'Meu Perfil', roles: ['volunteer'] },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile, signOut, isAdmin } = useAuth();
+  const { profile, signOut, isAdmin, isVolunteer } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const location = useLocation();
 
-  const filteredNav = navItems.filter(item => !item.adminOnly || isAdmin);
+  const role = profile?.role || 'cashier';
+  const filteredNav = allNavItems.filter(item => item.roles.includes(role));
+
+  // Bottom nav for mobile
+  const bottomNavItems = isVolunteer
+    ? [
+        { to: '/', icon: LayoutDashboard, label: 'Início' },
+        { to: '/meu-spr', icon: Heart, label: 'Meu SPR' },
+        { to: '/perfil', icon: User, label: 'Perfil' },
+      ]
+    : [
+        { to: '/', icon: LayoutDashboard, label: 'Início' },
+        { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
+        { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
+        { to: '/fechamento', icon: Lock, label: 'Fechar' },
+        { to: '/more', icon: Menu, label: 'Mais' },
+      ];
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -55,7 +67,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <nav className="flex-1 space-y-1 p-3">
           {filteredNav.map(item => (
             <NavLink
-              key={item.to}
+              key={item.to + item.label}
               to={item.to}
               end={item.to === '/'}
               className={({ isActive }) => cn(
@@ -98,11 +110,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
             <div className="p-3">
-              <p className="mb-3 px-3 text-xs font-medium text-muted-foreground">{profile?.full_name} • {profile?.role === 'admin' ? 'Admin' : 'Caixa'}</p>
+              <p className="mb-3 px-3 text-xs font-medium text-muted-foreground">
+                {profile?.full_name} • {role === 'admin' ? 'Admin' : role === 'volunteer' ? 'Voluntário' : 'Caixa'}
+              </p>
               <nav className="space-y-1">
                 {filteredNav.map(item => (
                   <NavLink
-                    key={item.to}
+                    key={item.to + item.label}
                     to={item.to}
                     end={item.to === '/'}
                     onClick={() => setSidebarOpen(false)}
@@ -132,8 +146,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* More menu overlay (mobile) */}
-      {moreMenuOpen && (
+      {/* More menu overlay (mobile) - only for non-volunteer */}
+      {moreMenuOpen && !isVolunteer && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0" onClick={() => setMoreMenuOpen(false)} />
           <div className="absolute bottom-16 left-0 right-0 rounded-t-2xl border bg-card p-4 shadow-xl safe-bottom animate-slide-up">
@@ -146,7 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <nav className="grid grid-cols-3 gap-2">
               {filteredNav.filter(i => !bottomNavItems.slice(0, 4).some(b => b.to === i.to)).map(item => (
                 <NavLink
-                  key={item.to}
+                  key={item.to + item.label}
                   to={item.to}
                   onClick={() => setMoreMenuOpen(false)}
                   className={({ isActive }) => cn(

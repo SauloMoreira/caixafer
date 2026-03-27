@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface Profile {
   id: string;
   full_name: string;
-  role: 'admin' | 'cashier';
+  role: 'admin' | 'cashier' | 'volunteer';
   phone: string | null;
   address: string | null;
   email: string | null;
@@ -14,6 +14,7 @@ interface Profile {
   approval_status: string;
   approved_by: string | null;
   approved_at: string | null;
+  volunteer_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -25,6 +26,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isCashier: boolean;
+  isVolunteer: boolean;
   isApproved: boolean;
   isProfileComplete: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
@@ -102,14 +104,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
-  const isProfileComplete = !!(
-    profile &&
-    profile.full_name &&
-    profile.phone &&
-    profile.address &&
-    profile.email &&
-    profile.avatar_url
-  );
+  const isVolunteer = profile?.role === 'volunteer';
+
+  const isProfileComplete = isVolunteer
+    ? !!(profile && profile.full_name && profile.phone && profile.email)
+    : !!(profile && profile.full_name && profile.phone && profile.address && profile.email && profile.avatar_url);
 
   const isApproved = profile?.approval_status === 'approved' && profile?.is_active === true;
 
@@ -118,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session, user, profile, loading,
       isAdmin: profile?.role === 'admin',
       isCashier: profile?.role === 'cashier',
+      isVolunteer,
       isApproved,
       isProfileComplete,
       signIn, signUp, signOut, refreshProfile,
