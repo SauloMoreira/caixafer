@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import EmailInput from '@/components/EmailInput';
 import { toast } from 'sonner';
-import { Store, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import logoImg from '@/assets/logo.png';
 import { isValidEmail, normalizeEmail } from '@/lib/masks';
 
 type View = 'login' | 'signup' | 'forgot';
