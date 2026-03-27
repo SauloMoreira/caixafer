@@ -22,9 +22,15 @@ type Product = Database['public']['Tables']['products']['Row'];
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 interface CartItem {
-  product: Product;
+  product?: Product;
+  manualItem?: ManualItem;
   quantity: number;
+  itemType: 'product' | 'manual';
 }
+
+const getCartItemId = (item: CartItem) => item.itemType === 'product' ? item.product!.id : item.manualItem!.id;
+const getCartItemName = (item: CartItem) => item.itemType === 'product' ? item.product!.name : item.manualItem!.name;
+const getCartItemPrice = (item: CartItem) => item.itemType === 'product' ? Number(item.product!.unit_price) : item.manualItem!.unitPrice;
 
 export default function PDVPage() {
   const { profile } = useAuth();
