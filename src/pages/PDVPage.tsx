@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart } from 'lucide-react';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
+import SPRPaymentDialog from '@/components/SPRPaymentDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
@@ -42,6 +43,9 @@ export default function PDVPage() {
   // Receipt state
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+
+  // SPR Payment state
+  const [sprPaymentOpen, setSprPaymentOpen] = useState(false);
 
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
@@ -263,6 +267,18 @@ export default function PDVPage() {
             />
           </div>
 
+          {/* SPR action */}
+          <button
+            onClick={() => setSprPaymentOpen(true)}
+            className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
+          >
+            <div className="flex items-center gap-2">
+              <Heart className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium leading-tight text-primary">Receber SPR</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Pagamento de fiado</p>
+          </button>
+
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map(product => (
               <button
@@ -360,6 +376,9 @@ export default function PDVPage() {
 
       {/* Receipt Dialog */}
       <SaleReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+
+      {/* SPR Payment Dialog */}
+      <SPRPaymentDialog open={sprPaymentOpen} onOpenChange={setSprPaymentOpen} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
+import FiadoChargeDialog from '@/components/FiadoChargeDialog';
 import { toast } from 'sonner';
 import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
@@ -43,11 +44,8 @@ export default function SPRPage() {
   const volFileRef = useRef<HTMLInputElement>(null);
   const volCameraRef = useRef<HTMLInputElement>(null);
 
-  // Charge form
+  // Charge form (PDV-style dialog)
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
-  const [chargeVolunteerId, setChargeVolunteerId] = useState('');
-  const [chargeDesc, setChargeDesc] = useState('');
-  const [chargeAmount, setChargeAmount] = useState('');
 
   // Payment form
   const [payDialogOpen, setPayDialogOpen] = useState(false);
@@ -134,14 +132,8 @@ export default function SPRPage() {
     }
   };
 
-  const saveCharge = async () => {
-    if (!profile) return;
-    const { error } = await supabase.from('spr_fiado_charges').insert({
-      volunteer_id: chargeVolunteerId, description: chargeDesc || null,
-      amount: Number(chargeAmount), created_by: profile.id, business_date: todayISO(),
-    });
-    if (error) toast.error(error.message);
-    else { toast.success('Fiado registrado!'); setChargeDialogOpen(false); setChargeAmount(''); setChargeDesc(''); fetchCharges(); }
+  const handleChargeCreated = () => {
+    fetchCharges();
   };
 
   const openPayment = (charge: FiadoCharge) => { setPayCharge(charge); setPayAmount(''); setPayDialogOpen(true); };
@@ -299,23 +291,8 @@ export default function SPRPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Charge Dialog */}
-      <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Fiado</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Voluntário</Label>
-              <Select value={chargeVolunteerId} onValueChange={setChargeVolunteerId}>
-                <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{volunteers.filter(v => v.is_active).map(v => <SelectItem key={v.id} value={v.id}>{v.full_name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label>Descrição</Label><Input value={chargeDesc} onChange={e => setChargeDesc(e.target.value)} className="h-12" /></div>
-            <div><Label>Valor (R$)</Label><Input type="number" value={chargeAmount} onChange={e => setChargeAmount(e.target.value)} className="h-12" /></div>
-            <Button className="h-12 w-full" onClick={saveCharge}>Registrar Fiado</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Fiado Charge Dialog (PDV-style) */}
+      <FiadoChargeDialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen} onChargeCreated={handleChargeCreated} />
 
       {/* Payment Dialog */}
       <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
