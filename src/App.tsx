@@ -55,6 +55,7 @@ const App = () => (
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/insights" element={<ProtectedRoute adminOnly><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/notificacoes" element={<ProtectedRoute adminOnly><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/meu-spr" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
