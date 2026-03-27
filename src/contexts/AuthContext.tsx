@@ -266,6 +266,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isVolunteer = profile?.role === 'volunteer';
+  const isPrimaryAdmin = !!(profile as any)?.is_primary_admin;
+  const hasOperationalOverride = !!(profile as any)?.has_operational_override;
   const isProfileComplete = isVolunteer
     ? !!(profile && profile.full_name && profile.phone && profile.email)
     : !!(profile && profile.full_name && profile.phone && profile.email && profile.avatar_url);
@@ -275,6 +277,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{
       session, user, profile, loading,
       isAdmin: profile?.role === 'admin',
+      isPrimaryAdmin,
+      hasOperationalOverride,
       isCashier: profile?.role === 'cashier',
       isVolunteer,
       isApproved,
