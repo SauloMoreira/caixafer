@@ -35,6 +35,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 export default function UsuariosPage() {
   const { profile: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
