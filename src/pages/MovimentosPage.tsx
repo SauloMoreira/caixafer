@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 import { Plus, TrendingUp, TrendingDown, Trash2, Edit } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 type CashEntry = Database['public']['Tables']['cash_entries']['Row'];
 type EntryType = Database['public']['Enums']['entry_type'];
