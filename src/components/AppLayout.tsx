@@ -39,15 +39,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:bg-card">
-        <div className="flex h-16 items-center gap-3 border-b px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="text-sm font-bold text-primary-foreground">FER</span>
-          </div>
+        <NavLink to="/perfil" className="flex h-16 items-center gap-3 border-b px-5 hover:bg-muted/50 transition-colors">
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-lg object-cover" />
+          ) : (
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+              <span className="text-sm font-bold text-primary-foreground">FER</span>
+            </div>
+          )}
           <div>
             <p className="font-heading text-sm font-bold">Caixa da FER</p>
             <p className="text-xs text-muted-foreground">{profile?.full_name}</p>
           </div>
-        </div>
+        </NavLink>
         <nav className="flex-1 space-y-1 p-3">
           {filteredNav.map(item => (
             <NavLink
