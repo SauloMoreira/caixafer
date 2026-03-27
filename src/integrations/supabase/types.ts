@@ -189,6 +189,62 @@ export type Database = {
           },
         ]
       }
+      daily_operation_insights: {
+        Row: {
+          business_date: string
+          category: string
+          created_at: string
+          exposed_quantity: number | null
+          had_restock: boolean
+          had_shortage: boolean
+          id: string
+          leftover_quantity: number | null
+          notes: string | null
+          sold_quantity: number | null
+          suggested_quantity: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_date: string
+          category: string
+          created_at?: string
+          exposed_quantity?: number | null
+          had_restock?: boolean
+          had_shortage?: boolean
+          id?: string
+          leftover_quantity?: number | null
+          notes?: string | null
+          sold_quantity?: number | null
+          suggested_quantity?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_date?: string
+          category?: string
+          created_at?: string
+          exposed_quantity?: number | null
+          had_restock?: boolean
+          had_shortage?: boolean
+          id?: string
+          leftover_quantity?: number | null
+          notes?: string | null
+          sold_quantity?: number | null
+          suggested_quantity?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_operation_insights_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
