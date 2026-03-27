@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaSetupPage() {
-  const { profile, session, loading } = useAuth();
+  const { profile, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [qrUrl, setQrUrl] = useState('');
   const [secret, setSecret] = useState('');
