@@ -294,21 +294,40 @@ export default function PDVPage() {
 
   return (
     <div className="space-y-4">
+      {/* Pending transfer banner */}
+      <PendingTransferBanner
+        onTransferAccepted={checkCashRegister}
+        onTransferStatusChanged={checkCashRegister}
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2">
           PDV
           <span className="inline-flex items-center gap-1 rounded-full bg-income/10 px-2 py-0.5 text-[10px] font-medium text-income">
             <Unlock className="h-3 w-3" />Aberto
           </span>
-        </h1>
-        {cart.length > 0 && (
-          <Button onClick={() => setShowCart(true)} className="md:hidden relative">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
-              {cart.length}
+          {isTransferredSession && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              Transferido
             </span>
-          </Button>
-        )}
+          )}
+        </h1>
+        <div className="flex items-center gap-2">
+          {closingId && (
+            <Button variant="outline" size="sm" onClick={() => setTransferOpen(true)} className="text-xs">
+              <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />
+              Transferir
+            </Button>
+          )}
+          {cart.length > 0 && (
+            <Button onClick={() => setShowCart(true)} className="md:hidden relative">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
+                {cart.length}
+              </span>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row">
