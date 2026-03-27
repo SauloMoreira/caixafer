@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel,
@@ -7,27 +7,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AlertTriangle, ShieldAlert } from 'lucide-react';
 
-interface CriticalActionDialogProps {
+export interface CriticalActionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   description: string;
   details?: { label: string; value: string }[];
+  summary?: { label: string; value: string }[];
   severity?: 'warning' | 'danger';
   confirmLabel?: string;
-  confirmText?: string; // Text the user must type to confirm (e.g. "EXCLUIR")
+  confirmText?: string;
   loading?: boolean;
   onConfirm: () => void | Promise<void>;
+  children?: ReactNode;
 }
 
 export default function CriticalActionDialog({
-  open, onOpenChange, title, description, details, severity = 'warning',
-  confirmLabel = 'Confirmar', confirmText, loading, onConfirm,
+  open, onOpenChange, title, description, details, summary, severity = 'warning',
+  confirmLabel = 'Confirmar', confirmText, loading, onConfirm, children,
 }: CriticalActionDialogProps) {
   const [typed, setTyped] = useState('');
   const isDanger = severity === 'danger';
   const needsTyping = !!confirmText;
   const canConfirm = !needsTyping || typed.toUpperCase() === confirmText?.toUpperCase();
+  const infoItems = details || summary;
 
   const handleConfirm = async () => {
     await onConfirm();
@@ -47,9 +50,9 @@ export default function CriticalActionDialog({
           <AlertDialogDescription className="text-sm mt-2">{description}</AlertDialogDescription>
         </AlertDialogHeader>
 
-        {details && details.length > 0 && (
+        {infoItems && infoItems.length > 0 && (
           <div className="rounded-lg border bg-muted/50 p-3 space-y-1.5 text-sm">
-            {details.map((d, i) => (
+            {infoItems.map((d, i) => (
               <div key={i} className="flex justify-between gap-2">
                 <span className="text-muted-foreground">{d.label}</span>
                 <span className="font-medium text-right">{d.value}</span>
@@ -57,6 +60,8 @@ export default function CriticalActionDialog({
             ))}
           </div>
         )}
+
+        {children}
 
         {needsTyping && (
           <div className="space-y-2">
