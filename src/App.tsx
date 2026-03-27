@@ -23,6 +23,7 @@ import NotificacoesPage from "@/pages/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
 import SegurancaPage from "@/pages/SegurancaPage";
 import InsightsPage from "@/pages/InsightsPage";
+import InteligenciaPage from "@/pages/InteligenciaPage";
 import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 
