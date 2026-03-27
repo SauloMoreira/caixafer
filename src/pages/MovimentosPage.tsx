@@ -71,10 +71,18 @@ export default function MovimentosPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('cash_entries').delete().eq('id', id);
-    if (error) toast.error('Erro: ' + error.message);
+  const [deleteTarget, setDeleteTarget] = useState<CashEntry | null>(null);
+
+  const handleDelete = async (entry: CashEntry) => {
+    setDeleteTarget(entry);
+  };
+
+  const doDelete = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from('cash_entries').delete().eq('id', deleteTarget.id);
+    if (error) toast.error('Erro ao remover.');
     else { toast.success('Removido!'); fetchEntries(); }
+    setDeleteTarget(null);
   };
 
   const resetForm = () => {
