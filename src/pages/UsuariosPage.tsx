@@ -88,6 +88,11 @@ export default function UsuariosPage() {
   };
 
   const handleReject = async (userId: string) => {
+    const u = users.find(u => u.id === userId);
+    setCriticalAction({ type: 'reject', userId, userName: u?.full_name || '' });
+  };
+
+  const doReject = async (userId: string) => {
     const { error } = await supabase.from('profiles').update({
       approval_status: 'rejected',
       is_active: false,
