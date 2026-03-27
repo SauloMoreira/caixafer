@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaVerifyPage() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, session, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
