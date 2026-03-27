@@ -55,10 +55,18 @@ export default function FechamentoPage() {
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
     // Get stats
-    let salesQuery = supabase.from('sales').select('total_amount').eq('business_date', date);
+    let salesQuery = supabase.from('sales').select('total_amount, payment_method').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
     const sales = salesData?.reduce((s, r) => s + Number(r.total_amount), 0) || 0;
+
+    // Sales by payment method
+    const methodTotals: Record<string, number> = {};
+    salesData?.forEach(s => {
+      const key = s.payment_method as string;
+      methodTotals[key] = (methodTotals[key] || 0) + Number(s.total_amount);
+    });
+    setSalesByMethod(methodTotals);
 
     let entriesQuery = supabase.from('cash_entries').select('entry_type, amount').eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
