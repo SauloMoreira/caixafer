@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,16 +61,20 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(!!isEditingOther);
   const [submitted, setSubmitted] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Only populate form ONCE on mount (or when editing another user)
+  // This prevents refreshProfile from overwriting local state (especially avatar preview)
   useEffect(() => {
     if (isEditingOther) {
       fetchTargetProfile(editUserId);
-    } else if (currentProfile) {
+    } else if (currentProfile && !formInitialized) {
       populateForm(currentProfile as unknown as ProfileData);
+      setFormInitialized(true);
     }
-  }, [currentProfile, editUserId]);
+  }, [currentProfile, editUserId, formInitialized]);
 
   const fetchTargetProfile = async (userId: string) => {
     setLoading(true);
@@ -123,9 +127,14 @@ export default function ProfilePage() {
     setFetchingCep(false);
   };
 
-  // Auto-search when CEP reaches 9 chars (XXXXX-XXX)
+  // Auto-search when CEP reaches 8 digits, but only when user is actively typing (not on form init)
+  const cepUserEdited = useRef(false);
+  const handleCepChangeTracked = (value: string) => {
+    cepUserEdited.current = true;
+    handleCepChange(value);
+  };
   useEffect(() => {
-    if (cepDigits(cep).length === 8) {
+    if (cepDigits(cep).length === 8 && cepUserEdited.current) {
       handleCepSearch();
     }
   }, [cep]);
@@ -354,7 +363,7 @@ export default function ProfilePage() {
               <div className="space-y-1.5">
                 <Label>CEP</Label>
                 <div className="flex gap-2">
-                  <CepInput value={cep} onChange={handleCepChange} className="h-12 flex-1" disabled={fetchingCep} />
+                  <CepInput value={cep} onChange={handleCepChangeTracked} className="h-12 flex-1" disabled={fetchingCep} />
                   <Button type="button" variant="outline" size="icon" className="h-12 w-12 shrink-0" onClick={handleCepSearch} disabled={fetchingCep || cepDigits(cep).length < 8}>
                     {fetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </Button>
