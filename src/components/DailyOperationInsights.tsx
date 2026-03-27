@@ -8,23 +8,19 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
+import ProductImage from '@/components/ProductImage';
 import {
-  Package, TrendingDown, TrendingUp, AlertTriangle,
-  Check, RotateCcw, Save, ChevronDown, ChevronUp
+  Package, TrendingDown, RotateCcw, Save, Check, AlertTriangle
 } from 'lucide-react';
 
-const CATEGORIES = [
-  { value: 'salgados', label: 'Salgados', icon: '🥟', color: 'bg-amber-50 border-amber-200' },
-  { value: 'doces', label: 'Doces', icon: '🍬', color: 'bg-pink-50 border-pink-200' },
-  { value: 'bolos', label: 'Bolos', icon: '🍰', color: 'bg-purple-50 border-purple-200' },
-  { value: 'agua', label: 'Água', icon: '💧', color: 'bg-blue-50 border-blue-200' },
-  { value: 'refrigerante', label: 'Refrigerante', icon: '🥤', color: 'bg-green-50 border-green-200' },
-];
-
-interface CategoryData {
+interface ProductInsight {
   id?: string;
+  product_id: string;
+  product_name: string;
+  product_image?: string | null;
   category: string;
   suggested_quantity: number;
   exposed_quantity: number;
@@ -40,28 +36,52 @@ interface Props {
   disabled?: boolean;
 }
 
+const CATEGORY_META: Record<string, { icon: string; color: string }> = {
+  salgados: { icon: '🥟', color: 'bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-800' },
+  doces: { icon: '🍬', color: 'bg-pink-50 border-pink-200 dark:bg-pink-950/30 dark:border-pink-800' },
+  bolos: { icon: '🍰', color: 'bg-purple-50 border-purple-200 dark:bg-purple-950/30 dark:border-purple-800' },
+  agua: { icon: '💧', color: 'bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800' },
+  refrigerante: { icon: '🥤', color: 'bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800' },
+  geral: { icon: '📦', color: 'bg-gray-50 border-gray-200 dark:bg-gray-950/30 dark:border-gray-800' },
+};
+
+function getCategoryMeta(cat: string) {
+  const key = cat.toLowerCase();
+  return CATEGORY_META[key] || CATEGORY_META.geral;
+}
+
 export default function DailyOperationInsights({ businessDate, disabled = false }: Props) {
   const { profile } = useAuth();
-  const [data, setData] = useState<Record<string, CategoryData>>({});
+  const [products, setProducts] = useState<ProductInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [warnings, setWarnings] = useState<Record<string, string[]>>({});
-
-  useEffect(() => {
-    fetchData();
-  }, [businessDate, profile]);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
-    // Fetch existing insights
+    // Fetch active products
+    const { data: activeProducts } = await supabase
+      .from('products')
+      .select('id, name, category, image_url')
+      .eq('is_active', true)
+      .order('category')
+      .order('name');
+
+    if (!activeProducts || activeProducts.length === 0) {
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch existing insights for this date
     const { data: existing } = await supabase
       .from('daily_operation_insights')
       .select('*')
       .eq('business_date', businessDate)
-      .eq('user_id', profile.id);
+      .eq('user_id', profile.id)
+      .not('product_id', 'is', null);
 
     // Fetch sold quantities from sales
     const { data: salesData } = await supabase
@@ -74,41 +94,32 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
       .filter((s: any) => !s.is_deleted)
       .map((s: any) => s.id);
 
-    let soldByCategory: Record<string, number> = {};
+    let soldByProduct: Record<string, number> = {};
     if (activeSaleIds.length > 0) {
       const { data: items } = await supabase
         .from('sale_items')
         .select('quantity, product_id')
         .in('sale_id', activeSaleIds);
 
-      if (items && items.length > 0) {
-        const productIds = [...new Set(items.map((i: any) => i.product_id).filter(Boolean))];
-        if (productIds.length > 0) {
-          const { data: products } = await supabase
-            .from('products')
-            .select('id, category')
-            .in('id', productIds);
-
-          const catMap: Record<string, string> = {};
-          (products || []).forEach((p: any) => { catMap[p.id] = p.category; });
-
-          items.forEach((item: any) => {
-            const cat = catMap[item.product_id] || 'geral';
-            const normalizedCat = normalizeCat(cat);
-            soldByCategory[normalizedCat] = (soldByCategory[normalizedCat] || 0) + (item.quantity || 0);
-          });
+      (items || []).forEach((item: any) => {
+        if (item.product_id) {
+          soldByProduct[item.product_id] = (soldByProduct[item.product_id] || 0) + (item.quantity || 0);
         }
-      }
+      });
     }
 
-    const result: Record<string, CategoryData> = {};
-    CATEGORIES.forEach(cat => {
-      const existingRow = (existing || []).find((e: any) => e.category === cat.value);
-      const sold = soldByCategory[cat.value] || 0;
+    // Build product insights
+    const result: ProductInsight[] = activeProducts.map((p: any) => {
+      const existingRow = (existing || []).find((e: any) => e.product_id === p.id);
+      const sold = soldByProduct[p.id] || 0;
+
       if (existingRow) {
-        result[cat.value] = {
+        return {
           id: existingRow.id,
-          category: cat.value,
+          product_id: p.id,
+          product_name: p.name,
+          product_image: p.image_url,
+          category: p.category,
           suggested_quantity: existingRow.suggested_quantity || 0,
           exposed_quantity: existingRow.exposed_quantity || 0,
           sold_quantity: sold || existingRow.sold_quantity || 0,
@@ -117,67 +128,54 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
           had_restock: existingRow.had_restock || false,
           notes: existingRow.notes || '',
         };
-      } else {
-        result[cat.value] = {
-          category: cat.value,
-          suggested_quantity: 0,
-          exposed_quantity: 0,
-          sold_quantity: sold,
-          leftover_quantity: 0,
-          had_shortage: false,
-          had_restock: false,
-          notes: '',
-        };
       }
+      return {
+        product_id: p.id,
+        product_name: p.name,
+        product_image: p.image_url,
+        category: p.category,
+        suggested_quantity: 0,
+        exposed_quantity: 0,
+        sold_quantity: sold,
+        leftover_quantity: 0,
+        had_shortage: false,
+        had_restock: false,
+        notes: '',
+      };
     });
 
-    setData(result);
+    setProducts(result);
     setLoading(false);
   }, [businessDate, profile]);
 
-  const normalizeCat = (cat: string) => {
-    const lower = cat.toLowerCase();
-    if (lower.includes('salgado')) return 'salgados';
-    if (lower.includes('doce')) return 'doces';
-    if (lower.includes('bolo')) return 'bolos';
-    if (lower.includes('agua') || lower.includes('água')) return 'agua';
-    if (lower.includes('refrigerante')) return 'refrigerante';
-    return lower;
-  };
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  const updateField = (category: string, field: keyof CategoryData, value: any) => {
-    setData(prev => {
-      const updated = { ...prev[category], [field]: value };
-
-      // Auto-calculate leftover when exposed changes
-      if (field === 'exposed_quantity') {
-        const exposed = Number(value) || 0;
-        const sold = updated.sold_quantity || 0;
-        updated.leftover_quantity = Math.max(0, exposed - sold);
-      }
-
-      return { ...prev, [category]: updated };
-    });
-  };
-
+  // Validate
   useEffect(() => {
-    // Validate
     const w: Record<string, string[]> = {};
-    Object.entries(data).forEach(([cat, d]) => {
-      const catWarnings: string[] = [];
+    products.forEach(d => {
+      const pWarnings: string[] = [];
       if (d.exposed_quantity > 0 && d.sold_quantity > d.exposed_quantity && !d.had_restock) {
-        catWarnings.push('Vendido maior que exposto sem reposição marcada');
+        pWarnings.push('Vendido maior que exposto sem reposição');
       }
       if (d.leftover_quantity > d.exposed_quantity && d.exposed_quantity > 0) {
-        catWarnings.push('Sobra maior que quantidade exposta');
+        pWarnings.push('Sobra maior que quantidade exposta');
       }
-      if (catWarnings.length > 0) w[cat] = catWarnings;
+      if (pWarnings.length > 0) w[d.product_id] = pWarnings;
     });
     setWarnings(w);
-  }, [data]);
+  }, [products]);
 
-  const toggleExpand = (cat: string) => {
-    setExpandedCards(prev => ({ ...prev, [cat]: !prev[cat] }));
+  const updateField = (productId: string, field: keyof ProductInsight, value: any) => {
+    setProducts(prev => prev.map(p => {
+      if (p.product_id !== productId) return p;
+      const updated = { ...p, [field]: value };
+      if (field === 'exposed_quantity') {
+        const exposed = Number(value) || 0;
+        updated.leftover_quantity = Math.max(0, exposed - (updated.sold_quantity || 0));
+      }
+      return updated;
+    }));
   };
 
   const handleSave = async () => {
@@ -185,14 +183,12 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
     setSaving(true);
 
     try {
-      for (const cat of CATEGORIES) {
-        const d = data[cat.value];
-        if (!d) continue;
-
+      for (const d of products) {
         const row = {
           business_date: businessDate,
           user_id: profile.id,
-          category: cat.value,
+          category: d.category,
+          product_id: d.product_id,
           suggested_quantity: d.suggested_quantity,
           exposed_quantity: d.exposed_quantity,
           sold_quantity: d.sold_quantity,
@@ -204,7 +200,6 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
         };
 
         if (d.id) {
-          const oldData = { ...d };
           const { error } = await supabase
             .from('daily_operation_insights')
             .update(row)
@@ -217,11 +212,14 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
             entity_id: d.id,
             action: 'UPDATE',
             business_date: businessDate,
-            old_data: oldData as any,
             new_data: row as any,
             severity: 'info',
           });
         } else {
+          // Only save if user entered data
+          const hasData = d.exposed_quantity > 0 || d.leftover_quantity > 0 || d.had_shortage || d.had_restock || (d.notes && d.notes.trim());
+          if (!hasData) continue;
+
           const { data: inserted, error } = await supabase
             .from('daily_operation_insights')
             .insert(row)
@@ -229,10 +227,9 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
             .single();
           if (error) throw error;
 
-          setData(prev => ({
-            ...prev,
-            [cat.value]: { ...prev[cat.value], id: inserted.id },
-          }));
+          setProducts(prev => prev.map(p =>
+            p.product_id === d.product_id ? { ...p, id: inserted.id } : p
+          ));
 
           await logSecurityEvent({
             event_type: 'operation_day_created',
@@ -266,6 +263,25 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
     );
   }
 
+  if (products.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-6 text-center text-sm text-muted-foreground">
+          Nenhum produto ativo cadastrado.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Group products by category
+  const grouped: Record<string, ProductInsight[]> = {};
+  products.forEach(p => {
+    if (!grouped[p.category]) grouped[p.category] = [];
+    grouped[p.category].push(p);
+  });
+
+  const categories = Object.keys(grouped).sort();
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -274,156 +290,195 @@ export default function DailyOperationInsights({ businessDate, disabled = false 
           Operação do Dia
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Registre sobras, faltas e reposições para melhorar a inteligência do sistema.
+          Registre sobras, faltas e reposições por produto para melhorar a inteligência do sistema.
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {CATEGORIES.map(cat => {
-          const d = data[cat.value];
-          if (!d) return null;
-          const expanded = expandedCards[cat.value] ?? false;
-          const catWarnings = warnings[cat.value] || [];
-          const hasData = d.exposed_quantity > 0 || d.had_shortage || d.had_restock;
+      <CardContent className="space-y-2">
+        <Accordion type="multiple" className="space-y-2">
+          {categories.map(cat => {
+            const catProducts = grouped[cat];
+            const meta = getCategoryMeta(cat);
+            const filledCount = catProducts.filter(p => p.exposed_quantity > 0 || p.had_shortage || p.had_restock).length;
+            const catHasWarnings = catProducts.some(p => warnings[p.product_id]?.length > 0);
 
-          return (
-            <div
-              key={cat.value}
-              className={`rounded-xl border p-3 transition-all ${cat.color}`}
-            >
-              {/* Header - always visible */}
-              <button
-                type="button"
-                className="flex w-full items-center justify-between"
-                onClick={() => toggleExpand(cat.value)}
-                disabled={disabled}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{cat.icon}</span>
-                  <span className="font-semibold text-sm">{cat.label}</span>
-                  {hasData && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                      <Check className="h-3 w-3" />
-                    </Badge>
-                  )}
-                  {catWarnings.length > 0 && (
-                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-                      <AlertTriangle className="h-3 w-3" />
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {hasData && !expanded && (
-                    <span className="text-xs text-muted-foreground">
-                      {d.sold_quantity}v · {d.leftover_quantity}s
-                    </span>
-                  )}
-                  {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                </div>
-              </button>
-
-              {/* Expanded content */}
-              {expanded && (
-                <div className="mt-3 space-y-3">
-                  {/* Summary row */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase">Sugerido</p>
-                      <p className="font-bold text-sm">{d.suggested_quantity}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase">Vendido</p>
-                      <p className="font-bold text-sm text-primary">{d.sold_quantity}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase">Exposto</p>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={d.exposed_quantity || ''}
-                        onChange={e => updateField(cat.value, 'exposed_quantity', Math.max(0, Number(e.target.value)))}
-                        className="h-8 text-center text-sm font-bold bg-background/80"
-                        disabled={disabled}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] text-muted-foreground uppercase">Sobra</p>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={d.leftover_quantity || ''}
-                        onChange={e => updateField(cat.value, 'leftover_quantity', Math.max(0, Number(e.target.value)))}
-                        className="h-8 text-center text-sm font-bold bg-background/80"
-                        disabled={disabled}
-                        placeholder="0"
-                      />
-                    </div>
+            return (
+              <AccordionItem key={cat} value={cat} className={`rounded-xl border ${meta.color} overflow-hidden`}>
+                <AccordionTrigger className="px-3 py-3 hover:no-underline">
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="text-lg">{meta.icon}</span>
+                    <span className="font-semibold text-sm capitalize">{cat}</span>
+                    <span className="text-xs text-muted-foreground">({catProducts.length})</span>
+                    {filledCount > 0 && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-auto mr-2">
+                        <Check className="h-3 w-3 mr-0.5" />{filledCount}
+                      </Badge>
+                    )}
+                    {catHasWarnings && (
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+                        <AlertTriangle className="h-3 w-3" />
+                      </Badge>
+                    )}
                   </div>
-
-                  {/* Toggles */}
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                        <Label className="text-xs font-medium">Faltou produto?</Label>
-                      </div>
-                      <Switch
-                        checked={d.had_shortage}
-                        onCheckedChange={v => updateField(cat.value, 'had_shortage', v)}
+                </AccordionTrigger>
+                <AccordionContent className="px-3 pb-3">
+                  <div className="space-y-3">
+                    {catProducts.map(product => (
+                      <ProductInsightCard
+                        key={product.product_id}
+                        product={product}
+                        warnings={warnings[product.product_id] || []}
                         disabled={disabled}
+                        onUpdate={updateField}
                       />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <RotateCcw className="h-3.5 w-3.5 text-primary" />
-                        <Label className="text-xs font-medium">Houve reposição?</Label>
-                      </div>
-                      <Switch
-                        checked={d.had_restock}
-                        onCheckedChange={v => updateField(cat.value, 'had_restock', v)}
-                        disabled={disabled}
-                      />
-                    </div>
+                    ))}
                   </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
+          })}
+        </Accordion>
 
-                  {/* Warnings */}
-                  {catWarnings.length > 0 && (
-                    <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2">
-                      {catWarnings.map((w, i) => (
-                        <p key={i} className="text-xs text-destructive flex items-center gap-1.5">
-                          <AlertTriangle className="h-3 w-3 shrink-0" />
-                          {w}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  <Textarea
-                    placeholder="Observação (ex: evento especial, movimento atípico...)"
-                    value={d.notes}
-                    onChange={e => updateField(cat.value, 'notes', e.target.value)}
-                    className="min-h-[60px] text-xs bg-background/80"
-                    disabled={disabled}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {/* Save button */}
         {!disabled && (
-          <Button
-            className="w-full h-12"
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <Button className="w-full h-12 mt-2" onClick={handleSave} disabled={saving}>
             <Save className="mr-2 h-4 w-4" />
             {saving ? 'Salvando...' : 'Salvar Operação do Dia'}
           </Button>
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// ──────────────────────────────────────────────
+// Sub-component: each product row
+// ──────────────────────────────────────────────
+
+interface ProductCardProps {
+  product: ProductInsight;
+  warnings: string[];
+  disabled: boolean;
+  onUpdate: (productId: string, field: keyof ProductInsight, value: any) => void;
+}
+
+function ProductInsightCard({ product, warnings, disabled, onUpdate }: ProductCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const hasData = product.exposed_quantity > 0 || product.had_shortage || product.had_restock;
+  const pid = product.product_id;
+
+  return (
+    <div className="rounded-lg border bg-background/60 p-2.5 space-y-2">
+      {/* Product header */}
+      <button
+        type="button"
+        className="flex w-full items-center gap-2.5 text-left"
+        onClick={() => !disabled && setExpanded(!expanded)}
+        disabled={disabled && !expanded}
+      >
+        <ProductImage src={product.product_image} size="sm" alt={product.product_name} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{product.product_name}</p>
+          {!expanded && hasData && (
+            <p className="text-[10px] text-muted-foreground">
+              {product.sold_quantity}v · {product.leftover_quantity}s
+              {product.had_shortage && ' · faltou'}
+            </p>
+          )}
+        </div>
+        {hasData && !expanded && (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
+            <Check className="h-3 w-3" />
+          </Badge>
+        )}
+        {warnings.length > 0 && (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">
+            <AlertTriangle className="h-3 w-3" />
+          </Badge>
+        )}
+      </button>
+
+      {/* Expanded fields */}
+      {expanded && (
+        <div className="space-y-2.5 pt-1">
+          <div className="grid grid-cols-4 gap-2">
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground uppercase">Sugerido</p>
+              <p className="font-bold text-sm">{product.suggested_quantity}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground uppercase">Vendido</p>
+              <p className="font-bold text-sm text-primary">{product.sold_quantity}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground uppercase">Exposto</p>
+              <Input
+                type="number"
+                min="0"
+                value={product.exposed_quantity || ''}
+                onChange={e => onUpdate(pid, 'exposed_quantity', Math.max(0, Number(e.target.value)))}
+                className="h-8 text-center text-sm font-bold bg-background"
+                disabled={disabled}
+                placeholder="0"
+              />
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground uppercase">Sobra</p>
+              <Input
+                type="number"
+                min="0"
+                value={product.leftover_quantity || ''}
+                onChange={e => onUpdate(pid, 'leftover_quantity', Math.max(0, Number(e.target.value)))}
+                className="h-8 text-center text-sm font-bold bg-background"
+                disabled={disabled}
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                <Label className="text-xs font-medium">Faltou produto?</Label>
+              </div>
+              <Switch
+                checked={product.had_shortage}
+                onCheckedChange={v => onUpdate(pid, 'had_shortage', v)}
+                disabled={disabled}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                <Label className="text-xs font-medium">Houve reposição?</Label>
+              </div>
+              <Switch
+                checked={product.had_restock}
+                onCheckedChange={v => onUpdate(pid, 'had_restock', v)}
+                disabled={disabled}
+              />
+            </div>
+          </div>
+
+          {warnings.length > 0 && (
+            <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-2">
+              {warnings.map((w, i) => (
+                <p key={i} className="text-xs text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="h-3 w-3 shrink-0" />
+                  {w}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <Textarea
+            placeholder="Observação (ex: evento especial, movimento atípico...)"
+            value={product.notes}
+            onChange={e => onUpdate(pid, 'notes', e.target.value)}
+            className="min-h-[50px] text-xs bg-background"
+            disabled={disabled}
+          />
+        </div>
+      )}
+    </div>
   );
 }
