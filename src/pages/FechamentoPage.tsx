@@ -6,8 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle } from 'lucide-react';
+import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { CriticalActionDialog } from '@/components/CriticalActionDialog';
+
+const REOPEN_REASONS = [
+  { value: 'ajuste_operacional', label: 'Ajuste operacional' },
+  { value: 'correcao_lancamento', label: 'Correção de lançamento' },
+  { value: 'nova_venda', label: 'Nova venda após fechamento' },
+  { value: 'acerto_administrativo', label: 'Acerto administrativo' },
+  { value: 'outro', label: 'Outro' },
+];
 
 export default function FechamentoPage() {
   const { profile, isAdmin } = useAuth();
@@ -22,15 +33,23 @@ export default function FechamentoPage() {
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
+  // Reopen state
+  const [showReopenDialog, setShowReopenDialog] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
+  const [reopenCustomReason, setReopenCustomReason] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
+  const [closingHistory, setClosingHistory] = useState<any[]>([]);
+
   useEffect(() => { fetchData(); }, [date, profile]);
 
   const fetchData = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
 
-    // Get closing for selected date
+    // Get closing for selected date (latest version)
     let closingQuery = supabase.from('cash_closings').select('*').eq('business_date', date);
     if (!isAdmin) closingQuery = closingQuery.eq('user_id', profile.id);
+    closingQuery = closingQuery.eq('is_latest_version', true);
     const { data: closingData } = await closingQuery.maybeSingle();
     setClosing(closingData);
     if (closingData) {
@@ -60,7 +79,6 @@ export default function FechamentoPage() {
     const { data: salesData } = await salesQuery;
     const sales = salesData?.reduce((s, r) => s + Number(r.total_amount), 0) || 0;
 
-    // Sales by payment method
     const methodTotals: Record<string, number> = {};
     salesData?.forEach(s => {
       const key = s.payment_method as string;
@@ -78,8 +96,69 @@ export default function FechamentoPage() {
     setLoading(false);
   }, [date, profile, isAdmin]);
 
+  const fetchHistory = useCallback(async () => {
+    if (!closing || !isAdmin) return;
+    const { data } = await supabase
+      .from('cash_closings')
+      .select('*')
+      .eq('business_date', date)
+      .eq('user_id', closing.user_id)
+      .order('closing_version', { ascending: false });
+    setClosingHistory(data || []);
+  }, [closing, date, isAdmin]);
+
+  useEffect(() => {
+    if (showHistory) fetchHistory();
+  }, [showHistory, fetchHistory]);
+
   const expectedBalance = Number(openingBalance) + stats.sales + stats.income - stats.expense;
   const difference = countedBalance ? Number(countedBalance) - expectedBalance : null;
+
+  const canReopen = closing?.status === 'closed' && (
+    isAdmin || (date === todayISO())
+  );
+
+  const handleReopen = async () => {
+    if (!profile || !closing) return;
+    const reason = reopenReason === 'outro' ? reopenCustomReason : REOPEN_REASONS.find(r => r.value === reopenReason)?.label || reopenReason;
+    if (!reason.trim()) {
+      toast.error('Informe o motivo da reabertura.');
+      return;
+    }
+
+    // Save snapshot of closing state before reopen
+    const snapshot = {
+      closing_version: closing.closing_version,
+      closed_at: closing.closed_at,
+      counted_balance: closing.counted_balance,
+      expected_balance: closing.expected_balance,
+      difference_amount: closing.difference_amount,
+      sales_total: closing.sales_total,
+      income_total: closing.income_total,
+      expense_total: closing.expense_total,
+      opening_balance: closing.opening_balance,
+      notes: closing.notes,
+    };
+
+    const { error } = await supabase.from('cash_closings').update({
+      status: 'open' as any,
+      reopened_by: profile.id,
+      reopened_at: new Date().toISOString(),
+      reopen_reason: reason,
+      previous_closing_snapshot: snapshot,
+      closing_version: closing.closing_version + 1,
+    }).eq('id', closing.id);
+
+    if (error) {
+      toast.error('Erro ao reabrir: ' + error.message);
+    } else {
+      toast.success('Caixa reaberto com sucesso! O histórico foi preservado.');
+      setShowReopenDialog(false);
+      setReopenReason('');
+      setReopenCustomReason('');
+      fetchData();
+    }
+  };
 
   const openCashRegister = async () => {
     if (!profile) return;
@@ -180,6 +259,9 @@ export default function FechamentoPage() {
 
   if (loading) return <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>;
 
+  const wasReopened = closing?.reopened_at != null;
+  const closingVersion = closing?.closing_version || 1;
+
   return (
     <div className="space-y-4 max-w-xl mx-auto">
       <h1 className="page-title">Fechamento de Caixa</h1>
@@ -226,72 +308,219 @@ export default function FechamentoPage() {
 
       {/* Closing exists */}
       {closing && (
-        <Card ref={reportRef}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              {closing.status === 'closed' ? <Lock className="h-4 w-4 text-income" /> : <Unlock className="h-4 w-4 text-warning" />}
-              {closing.status === 'closed' ? 'Caixa Fechado' : 'Caixa Aberto'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Saldo Inicial (R$)</Label>
-              <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
+        <>
+          {/* Reopen badge banner */}
+          {wasReopened && (
+            <div className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm">
+              <RotateCcw className="h-4 w-4 shrink-0 mt-0.5 text-accent-foreground" />
+              <div className="space-y-0.5">
+                <p className="font-semibold text-accent-foreground">
+                  Caixa reaberto
+                  <Badge variant="outline" className="ml-2 text-[10px]">v{closingVersion}</Badge>
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Motivo: {closing.reopen_reason} · {closing.reopened_at ? formatDateTime(closing.reopened_at) : ''}
+                </p>
+              </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="stat-card"><p className="text-xs text-muted-foreground">Vendas</p><p className="financial-value text-primary">{formatCurrency(stats.sales)}</p></div>
-              <div className="stat-card"><p className="text-xs text-muted-foreground">Entradas</p><p className="financial-value financial-positive">{formatCurrency(stats.income)}</p></div>
-              <div className="stat-card"><p className="text-xs text-muted-foreground">Saídas</p><p className="financial-value financial-negative">{formatCurrency(stats.expense)}</p></div>
-              <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
-            </div>
-
-            {/* Sales by payment method */}
-            {Object.keys(salesByMethod).length > 0 && (
+          <Card ref={reportRef}>
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  {closing.status === 'closed' ? <Lock className="h-4 w-4 text-income" /> : <Unlock className="h-4 w-4 text-warning" />}
+                  {closing.status === 'closed' ? 'Caixa Fechado' : 'Caixa Aberto'}
+                  {wasReopened && closing.status === 'closed' && (
+                    <Badge variant="secondary" className="text-[10px]">Fechado novamente</Badge>
+                  )}
+                </CardTitle>
+                {closingVersion > 1 && (
+                  <Badge variant="outline" className="text-[10px] font-mono">v{closingVersion}</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Vendas por Forma de Pagamento</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {PAYMENT_METHODS.map(pm => {
-                    const val = salesByMethod[pm.value] || 0;
-                    if (val === 0) return null;
-                    return (
-                      <div key={pm.value} className="stat-card">
-                        <p className="text-xs text-muted-foreground">{pm.label}</p>
-                        <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
-                      </div>
-                    );
-                  })}
+                <Label>Saldo Inicial (R$)</Label>
+                <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="stat-card"><p className="text-xs text-muted-foreground">Vendas</p><p className="financial-value text-primary">{formatCurrency(stats.sales)}</p></div>
+                <div className="stat-card"><p className="text-xs text-muted-foreground">Entradas</p><p className="financial-value financial-positive">{formatCurrency(stats.income)}</p></div>
+                <div className="stat-card"><p className="text-xs text-muted-foreground">Saídas</p><p className="financial-value financial-negative">{formatCurrency(stats.expense)}</p></div>
+                <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
+              </div>
+
+              {Object.keys(salesByMethod).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Vendas por Forma de Pagamento</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {PAYMENT_METHODS.map(pm => {
+                      const val = salesByMethod[pm.value] || 0;
+                      if (val === 0) return null;
+                      return (
+                        <div key={pm.value} className="stat-card">
+                          <p className="text-xs text-muted-foreground">{pm.label}</p>
+                          <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div>
-              <Label>Saldo Contado (R$)</Label>
-              <Input type="number" value={countedBalance} onChange={e => setCountedBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
-            </div>
-            {difference !== null && (
-              <div className="stat-card">
-                <p className="text-xs text-muted-foreground">Diferença</p>
-                <p className={`financial-value text-xl ${difference >= 0 ? 'financial-positive' : 'financial-negative'}`}>{formatCurrency(difference)}</p>
+              <div>
+                <Label>Saldo Contado (R$)</Label>
+                <Input type="number" value={countedBalance} onChange={e => setCountedBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
               </div>
-            )}
-            <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
+              {difference !== null && (
+                <div className="stat-card">
+                  <p className="text-xs text-muted-foreground">Diferença</p>
+                  <p className={`financial-value text-xl ${difference >= 0 ? 'financial-positive' : 'financial-negative'}`}>{formatCurrency(difference)}</p>
+                </div>
+              )}
+              <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
 
-            {(closing.status !== 'closed' || isAdmin) && (
+              {/* Action buttons */}
+              {closing.status !== 'closed' && (
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
+                  <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                </div>
+              )}
+
+              {/* Reopen button */}
+              {canReopen && (
+                <Button
+                  variant="outline"
+                  className="w-full h-12 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning"
+                  onClick={() => setShowReopenDialog(true)}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Reabrir Caixa
+                </Button>
+              )}
+
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
-                <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                <Button variant="outline" className="flex-1" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" />Imprimir</Button>
+                <Button variant="outline" className="flex-1" onClick={handlePrint}><FileText className="mr-1 h-4 w-4" />PDF</Button>
+                <Button variant="outline" className="flex-1" onClick={handleShare}><Share2 className="mr-1 h-4 w-4" />Compartilhar</Button>
               </div>
-            )}
 
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" />Imprimir</Button>
-              <Button variant="outline" className="flex-1" onClick={handlePrint}><FileText className="mr-1 h-4 w-4" />PDF</Button>
-              <Button variant="outline" className="flex-1" onClick={handleShare}><Share2 className="mr-1 h-4 w-4" />Compartilhar</Button>
-            </div>
-          </CardContent>
-        </Card>
+              {/* History toggle for admin */}
+              {isAdmin && closingVersion > 1 && (
+                <Button
+                  variant="ghost"
+                  className="w-full text-sm text-muted-foreground"
+                  onClick={() => setShowHistory(!showHistory)}
+                >
+                  <History className="mr-2 h-4 w-4" />
+                  Histórico de versões ({closingVersion})
+                  {showHistory ? <ChevronUp className="ml-auto h-4 w-4" /> : <ChevronDown className="ml-auto h-4 w-4" />}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Version history */}
+          {showHistory && isAdmin && closingHistory.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <History className="h-4 w-4" />
+                  Histórico de Fechamentos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {closingHistory.map((ver, idx) => {
+                  const snap = ver.previous_closing_snapshot;
+                  return (
+                    <div key={ver.id} className={`rounded-lg border p-3 space-y-1 text-xs ${ver.is_latest_version ? 'border-primary/30 bg-primary/5' : 'border-border'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">
+                          Versão {ver.closing_version}
+                          {ver.is_latest_version && <Badge className="ml-2 text-[9px]">Atual</Badge>}
+                        </span>
+                        <Badge variant={ver.status === 'closed' ? 'secondary' : 'outline'} className="text-[9px]">
+                          {ver.status === 'closed' ? 'Fechado' : 'Aberto'}
+                        </Badge>
+                      </div>
+                      {ver.closed_at && <p className="text-muted-foreground">Fechado em: {formatDateTime(ver.closed_at)}</p>}
+                      {ver.reopened_at && (
+                        <div className="text-muted-foreground space-y-0.5">
+                          <p>Reaberto em: {formatDateTime(ver.reopened_at)}</p>
+                          <p>Motivo: {ver.reopen_reason}</p>
+                        </div>
+                      )}
+                      {snap && (
+                        <div className="mt-1 rounded bg-muted/50 p-2 space-y-0.5">
+                          <p className="font-medium text-muted-foreground">Snapshot v{snap.closing_version}:</p>
+                          <p>Saldo esperado: {formatCurrency(snap.expected_balance)}</p>
+                          <p>Saldo contado: {snap.counted_balance != null ? formatCurrency(snap.counted_balance) : '—'}</p>
+                          <p>Diferença: {snap.difference_amount != null ? formatCurrency(snap.difference_amount) : '—'}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
+
+      {/* Reopen Dialog */}
+      <CriticalActionDialog
+        open={showReopenDialog}
+        onOpenChange={setShowReopenDialog}
+        title="Reabrir Caixa"
+        description={`Deseja reabrir o caixa de ${formatDate(date)}?`}
+        severity="warning"
+        confirmLabel="Reabrir Caixa"
+        onConfirm={handleReopen}
+        summary={[
+          { label: 'Data', value: formatDate(date) },
+          { label: 'Versão atual', value: `v${closingVersion}` },
+          { label: 'Nova versão', value: `v${closingVersion + 1}` },
+        ]}
+      >
+        <div className="space-y-3 mt-2">
+          <div className="flex items-start gap-2 rounded-lg bg-primary/5 border border-primary/20 p-3 text-xs text-muted-foreground">
+            <Shield className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
+            <div className="space-y-1">
+              <p>O histórico anterior será <strong>totalmente preservado</strong>.</p>
+              <p>A reabertura será registrada em <strong>auditoria</strong>.</p>
+              <p>Um novo fechamento poderá ser realizado depois.</p>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold">Motivo da reabertura *</Label>
+            <Select value={reopenReason} onValueChange={setReopenReason}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {REOPEN_REASONS.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {reopenReason === 'outro' && (
+            <div>
+              <Label className="text-xs font-semibold">Descreva o motivo *</Label>
+              <Input
+                value={reopenCustomReason}
+                onChange={e => setReopenCustomReason(e.target.value)}
+                placeholder="Motivo da reabertura..."
+                className="mt-1"
+              />
+            </div>
+          )}
+        </div>
+      </CriticalActionDialog>
     </div>
   );
 }
