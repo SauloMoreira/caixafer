@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock, Unlock,
-  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell
+  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
