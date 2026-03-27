@@ -12,6 +12,8 @@ import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
 import QuickIncomeDialog, { QUICK_INCOME_CATEGORIES } from '@/components/QuickIncomeDialog';
+import ManualItemDialog from '@/components/ManualItemDialog';
+import type { ManualItem } from '@/components/ManualItemDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
