@@ -80,6 +80,15 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  const statCards = [
+    { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
+    { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
+    { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
+    { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
+    { label: 'Fiado em Aberto', value: stats.fiadoOpen, icon: Heart, color: 'text-warning' },
+    { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
+  ];
+
   const COLORS = ['hsl(142, 60%, 40%)', 'hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
   if (loading) {
