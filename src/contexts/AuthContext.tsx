@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session, user, profile, loading,
       isAdmin: profile?.role === 'admin',
       isCashier: profile?.role === 'cashier',
-      signIn, signOut,
+      signIn, signUp, signOut,
     }}>
       {children}
     </AuthContext.Provider>
