@@ -74,7 +74,7 @@ export default function FechamentoPage() {
     const { data: pendingClosings } = await supabase
       .from('cash_closings')
       .select('business_date')
-      .eq('user_id', profile.id)
+      .or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`)
       .eq('status', 'open')
       .lt('business_date', date)
       .order('business_date', { ascending: true })
