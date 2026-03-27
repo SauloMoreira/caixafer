@@ -72,7 +72,7 @@ export default function FechamentoPage() {
       setNotes('');
 
       // Check if another user already has an open cash session for this date
-      if (!isAdmin) {
+      if (!hasOperationalOverride) {
         const { data: openSessions } = await supabase
           .from('cash_closings')
           .select('current_responsible_id')
@@ -80,7 +80,7 @@ export default function FechamentoPage() {
           .eq('status', 'open')
           .eq('is_latest_version', true)
           .limit(1);
-        if (openSessions && openSessions.length > 0) {
+        if (openSessions && openSessions.length > 0 && openSessions[0].current_responsible_id !== profile.id) {
           const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSessions[0].current_responsible_id] });
           setExistingOpenByOther({ responsibleName: names?.[0]?.full_name || 'outro operador' });
         }
