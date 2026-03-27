@@ -162,20 +162,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await secureSignOut();
         return;
       }
-      await validateSingleSession(userId);
+      await validateSession(userId);
     }, SESSION_CHECK_INTERVAL);
-  }, [secureSignOut, validateSingleSession]);
+  }, [secureSignOut, validateSession]);
 
   // Validate on visibility change (user returns to tab)
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && user) {
-        validateSingleSession(user.id);
+        validateSession(user.id);
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [user, validateSingleSession]);
+  }, [user, validateSession]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
