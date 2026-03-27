@@ -562,6 +562,23 @@ export default function PDVPage() {
           onTransferred={checkCashRegister}
         />
       )}
+
+      {/* Override Confirm Dialog */}
+      <OverrideConfirmDialog
+        open={overrideDialogOpen}
+        onOpenChange={setOverrideDialogOpen}
+        actionLabel={overrideLabel}
+        responsibleName={sessionResponsibleName}
+        onConfirm={(reason) => {
+          logOverrideAction({
+            action_type: 'primary_admin_cash_operation',
+            reason,
+            responsible_id: null,
+            session_id: closingId,
+          });
+          overrideAction?.();
+        }}
+      />
     </div>
   );
 }
