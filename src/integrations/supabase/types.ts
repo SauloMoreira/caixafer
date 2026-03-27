@@ -469,6 +469,7 @@ export type Database = {
       }
       spr_volunteers: {
         Row: {
+          avatar_url: string | null
           created_at: string
           document_number: string | null
           full_name: string
@@ -478,6 +479,7 @@ export type Database = {
           phone: string | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           document_number?: string | null
           full_name: string
@@ -487,6 +489,7 @@ export type Database = {
           phone?: string | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           document_number?: string | null
           full_name?: string
