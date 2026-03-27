@@ -50,7 +50,13 @@ export default function LoginPage() {
     if (!validateEmail()) return;
     setLoading(true);
     const { error } = await signIn(normalizeEmail(email), password);
-    if (error) toast.error('Falha no login. Verifique suas credenciais.');
+    if (error) {
+      // Show user-friendly message without revealing internal details
+      const msg = error.message?.includes('desativada') || error.message?.includes('recusada')
+        ? error.message
+        : 'Falha no login. Verifique suas credenciais.';
+      toast.error(msg);
+    }
     setLoading(false);
   };
 

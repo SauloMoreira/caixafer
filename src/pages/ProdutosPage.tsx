@@ -72,7 +72,9 @@ export default function ProdutosPage() {
     if (!imageFile) return null;
     setUploading(true);
     const ext = imageFile.name.split('.').pop() || 'jpg';
-    const path = `${productId}.${ext}`;
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) { setUploading(false); return null; }
+    const path = `${userId}/${productId}.${ext}`;
 
     const { error } = await supabase.storage.from('product-images').upload(path, imageFile, { upsert: true });
     setUploading(false);
