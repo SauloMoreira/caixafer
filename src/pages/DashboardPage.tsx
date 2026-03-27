@@ -1,12 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO, PAYMENT_METHODS } from '@/lib/constants';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet, ArrowUpDown, Lock, ChevronRight } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { cn } from '@/lib/utils';
 import BalanceEvolutionChart from '@/components/BalanceEvolutionChart';
 
 interface DayStats {
@@ -25,8 +24,39 @@ function getGreeting(name: string) {
   return `Boa noite, ${name}! 🌙`;
 }
 
+const QUICK_ACTIONS = [
+  {
+    to: '/pdv',
+    icon: ShoppingCart,
+    label: 'PDV',
+    subtitle: 'Registrar venda e entradas rápidas',
+    gradient: 'from-primary/15 to-primary/5',
+    iconColor: 'text-primary',
+    borderColor: 'border-primary/20 hover:border-primary/40',
+  },
+  {
+    to: '/movimentos',
+    icon: ArrowUpDown,
+    label: 'Movimentos',
+    subtitle: 'Ver lançamentos do dia',
+    gradient: 'from-income/15 to-income/5',
+    iconColor: 'text-income',
+    borderColor: 'border-income/20 hover:border-income/40',
+  },
+  {
+    to: '/fechamento',
+    icon: Lock,
+    label: 'Fechamento',
+    subtitle: 'Conferir e fechar caixa',
+    gradient: 'from-warning/15 to-warning/5',
+    iconColor: 'text-warning',
+    borderColor: 'border-warning/20 hover:border-warning/40',
+  },
+];
+
 export default function DashboardPage() {
-  const { profile, isAdmin, isVolunteer } = useAuth();
+  const { profile, isAdmin, isVolunteer, isCashier } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DayStats>({
     salesToday: 0, incomeToday: 0, expenseToday: 0,
     balanceToday: 0, fiadoOpen: 0, fiadoReceived: 0,
@@ -80,14 +110,21 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
-  const statCards = [
-    { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
-    { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
-    { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
-    { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
-    { label: 'Fiado em Aberto', value: stats.fiadoOpen, icon: Heart, color: 'text-warning' },
-    { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
-  ];
+  const statCards = isCashier
+    ? [
+        { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
+        { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
+        { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
+        { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
+      ]
+    : [
+        { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
+        { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
+        { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
+        { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
+        { label: 'Fiado em Aberto', value: stats.fiadoOpen, icon: Heart, color: 'text-warning' },
+        { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
+      ];
 
   const COLORS = ['hsl(142, 60%, 40%)', 'hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
@@ -115,13 +152,44 @@ export default function DashboardPage() {
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {profile?.role === 'admin' ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+            {isAdmin ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
           </p>
         </div>
       </div>
 
+      {/* ═══ CASHIER QUICK ACTIONS ═══ */}
+      {isCashier && (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
+            Acesso Rápido
+          </p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {QUICK_ACTIONS.map(action => (
+              <button
+                key={action.to}
+                onClick={() => navigate(action.to)}
+                className={`group relative overflow-hidden rounded-2xl border-2 ${action.borderColor} bg-gradient-to-br ${action.gradient} p-5 text-left transition-all duration-200 active:scale-[0.97] hover:shadow-lg`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-background/80 shadow-sm ${action.iconColor}`}>
+                      <action.icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-base font-bold text-foreground">{action.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{action.subtitle}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
+      <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'}`}>
         {statCards.map(card => (
           <Card key={card.label} className="stat-card">
             <CardContent className="p-0">
@@ -137,8 +205,8 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ═══ BALANCE EVOLUTION CHART ═══ */}
-      <BalanceEvolutionChart />
+      {/* ═══ BALANCE EVOLUTION CHART — Admin only ═══ */}
+      {isAdmin && <BalanceEvolutionChart />}
 
       {/* Sales by payment method */}
       {salesByMethod.length > 0 && (
