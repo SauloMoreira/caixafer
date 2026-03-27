@@ -37,6 +37,7 @@ export default function FechamentoPage() {
   const [salesByMethod, setSalesByMethod] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
+  const [existingOpenByOther, setExistingOpenByOther] = useState<{ responsibleName: string } | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
   // Reopen state
