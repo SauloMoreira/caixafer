@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Store, Copy, CheckCircle2 } from 'lucide-react';
+import { Shield, Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
@@ -21,88 +21,83 @@ export default function MfaSetupPage() {
   const [enrolling, setEnrolling] = useState(true);
   const [copied, setCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const didRun = useRef(false);
 
   useEffect(() => {
-    if (!authLoading && !session) {
+    if (authLoading) return;
+    if (!session) {
       navigate('/login', { replace: true });
       return;
     }
-    if (session) enrollFactor();
+    // Only run once to avoid loops
+    if (didRun.current) return;
+    didRun.current = true;
+    setupMfa();
   }, [session, authLoading]);
 
-  const enrollFactor = async () => {
+  const setupMfa = async () => {
     setEnrolling(true);
     setErrorMsg('');
     try {
-      // Ensure we have a valid session from the server
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !sessionData.session) {
-        await supabase.auth.signOut();
-        navigate('/login', { replace: true });
-        return;
-      }
+      // Step 1: List existing factors using the .all array
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
 
-      // Refresh to get a fresh token
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        console.error('MFA: refresh failed', refreshError);
-        await supabase.auth.signOut();
-        toast.error('Sessão expirada. Faça login novamente.');
-        navigate('/login', { replace: true });
-        return;
-      }
+      // Get TOTP factors from .all (SDK returns them here, .totp may be empty)
+      const allRaw = (factorsData as any)?.all ?? [];
+      const totpFactors = allRaw.filter((f: any) => (f.factor_type ?? f.factorType) === 'totp');
 
-      // Check if user already has TOTP factors
-      const { data: factorsData } = await supabase.auth.mfa.listFactors();
-      
-      // Factors may be in .totp or .all (depending on SDK version)
-      const allFactors = factorsData?.all?.filter((f: any) => f.factor_type === 'totp') 
-        || factorsData?.totp || [];
-      
-      const existingVerified = allFactors.find((f: any) => f.status === 'verified');
-      if (existingVerified) {
+      // If already verified, redirect home
+      const verified = totpFactors.find((f: any) => f.status === 'verified');
+      if (verified) {
         navigate('/', { replace: true });
         return;
       }
-      
-      // Unenroll ALL existing unverified TOTP factors
-      for (const f of allFactors) {
+
+      // If there's an unverified factor, reuse it (it has the QR code data)
+      // We can't get the QR code again, so we need to unenroll and re-enroll
+      // Unenroll all unverified factors
+      for (const f of totpFactors) {
         try {
           await supabase.auth.mfa.unenroll({ factorId: f.id });
-        } catch (e) {
-          console.warn('Failed to unenroll factor', f.id, e);
+        } catch {
+          // Ignore unenroll errors
         }
       }
 
+      // Step 2: Enroll fresh factor with unique name
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
-        friendlyName: `totp-${Date.now()}`,
+        friendlyName: `admin-totp-${Date.now()}`,
       });
-      if (error) {
-        console.error('MFA enroll error:', error);
-        if (error.message?.includes('session_not_found')) {
-          await supabase.auth.signOut();
-          toast.error('Sessão inválida. Faça login novamente.');
-          navigate('/login', { replace: true });
-          return;
-        }
-        throw error;
-      }
+
+      if (error) throw error;
+
       setQrUrl(data.totp.qr_code);
       setSecret(data.totp.secret);
       setFactorId(data.id);
 
-      await logSecurityEvent({
+      logSecurityEvent({
         event_type: 'mfa_enrollment_started',
         entity_type: 'auth',
         action: 'MFA_ENROLL',
         severity: 'medium',
         notes: 'Admin iniciou configuração de MFA TOTP',
-      });
+      }).catch(() => {});
     } catch (err: any) {
-      console.error('MFA setup error:', err);
-      setErrorMsg(err.message || 'Erro desconhecido ao configurar MFA.');
-      toast.error('Erro ao iniciar configuração do MFA: ' + (err.message || ''));
+      const msg = err?.message || 'Erro desconhecido';
+      console.error('MFA setup error:', msg);
+
+      if (msg.includes('rate_limit') || msg.includes('rate limit') || err?.status === 429) {
+        setErrorMsg('Muitas tentativas. Aguarde 1 minuto e tente novamente.');
+      } else if (msg.includes('session_not_found') || msg.includes('bad_jwt') || msg.includes('missing sub')) {
+        // Session is truly invalid — sign out and redirect
+        await supabase.auth.signOut();
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setErrorMsg(msg);
+      }
     }
     setEnrolling(false);
   };
@@ -125,25 +120,25 @@ export default function MfaSetupPage() {
       });
       if (verify.error) throw verify.error;
 
-      await logSecurityEvent({
+      logSecurityEvent({
         event_type: 'mfa_enrollment_verified',
         entity_type: 'auth',
         action: 'MFA_VERIFIED',
         severity: 'high',
         notes: 'Admin concluiu ativação do MFA TOTP',
-      });
+      }).catch(() => {});
 
       toast.success('MFA ativado com sucesso! Sua conta está protegida.');
       navigate('/', { replace: true });
     } catch (err: any) {
       toast.error('Código inválido. Tente novamente.');
-      await logSecurityEvent({
+      logSecurityEvent({
         event_type: 'mfa_enrollment_failed',
         entity_type: 'auth',
         action: 'MFA_VERIFY_FAILED',
         severity: 'medium',
         notes: 'Falha na verificação do código MFA durante enrollment',
-      });
+      }).catch(() => {});
     }
     setLoading(false);
   };
@@ -153,6 +148,11 @@ export default function MfaSetupPage() {
     setCopied(true);
     toast.success('Chave copiada!');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRetry = () => {
+    didRun.current = false;
+    setupMfa();
   };
 
   return (
@@ -185,8 +185,9 @@ export default function MfaSetupPage() {
               </div>
             ) : errorMsg && !qrUrl ? (
               <div className="space-y-4 py-6 text-center">
-                <p className="text-sm text-destructive">{errorMsg}</p>
-                <Button variant="outline" onClick={enrollFactor}>Tentar novamente</Button>
+                <AlertTriangle className="mx-auto h-10 w-10 text-amber-500" />
+                <p className="text-sm text-muted-foreground">{errorMsg}</p>
+                <Button variant="outline" onClick={handleRetry}>Tentar novamente</Button>
               </div>
             ) : (
               <>
