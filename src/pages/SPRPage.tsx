@@ -124,8 +124,8 @@ export default function SPRPage() {
         avatarUrl = await uploadVolAvatar(tempId);
       }
       const { error } = await supabase.from('spr_volunteers').insert({
-        id: tempId, full_name: volName, document_number: volDoc || null,
-        phone: volPhone || null, notes: volNotes || null, avatar_url: avatarUrl,
+        id: tempId, full_name: volName,
+        phone: volPhone || null, avatar_url: avatarUrl,
       } as any);
       if (error) toast.error(error.message);
       else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); fetchVolunteers(); }
