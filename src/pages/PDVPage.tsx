@@ -331,6 +331,19 @@ export default function PDVPage() {
         onTransferStatusChanged={checkCashRegister}
       />
 
+      {/* Override mode banner */}
+      {sessionResponsibleName && hasOperationalOverride && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm flex items-start gap-2">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+          <div>
+            <p className="font-semibold text-destructive">Modo Override Ativo</p>
+            <p className="text-muted-foreground text-xs">
+              Responsável atual: <strong>{sessionResponsibleName}</strong>. Suas ações serão auditadas como override do administrador principal.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2">
           PDV
