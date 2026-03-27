@@ -443,6 +443,15 @@ export default function FechamentoPage() {
                     <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
                     <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
                   </div>
+                  {/* Transfer button */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-primary/30 text-primary hover:bg-primary/5"
+                    onClick={() => setShowTransferDialog(true)}
+                  >
+                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                    Transferir Caixa
+                  </Button>
                   {wasReopened && (
                     <Button
                       variant="outline"
