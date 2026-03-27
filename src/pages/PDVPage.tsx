@@ -361,26 +361,32 @@ export default function PDVPage() {
                 <p className="text-center text-sm text-muted-foreground py-8">Carrinho vazio</p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {cart.map(item => (
-                    <div key={item.product.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                  {cart.map(item => {
+                    const id = getCartItemId(item);
+                    return (
+                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatCurrency(Number(item.product.unit_price))}</p>
+                        <p className="text-sm font-medium truncate">
+                          {getCartItemName(item)}
+                          {item.itemType === 'manual' && <span className="ml-1 text-[10px] text-muted-foreground">(avulso)</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(getCartItemPrice(item))}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, -1)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(id, -1)}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, 1)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(id, 1)}>
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-expense" onClick={() => removeItem(item.product.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-expense" onClick={() => removeItem(id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
