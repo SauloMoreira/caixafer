@@ -309,24 +309,33 @@ export type Database = {
       sale_items: {
         Row: {
           id: string
+          item_type: string
           line_total: number
-          product_id: string
+          manual_item_name: string | null
+          notes: string | null
+          product_id: string | null
           quantity: number
           sale_id: string
           unit_price: number
         }
         Insert: {
           id?: string
+          item_type?: string
           line_total: number
-          product_id: string
+          manual_item_name?: string | null
+          notes?: string | null
+          product_id?: string | null
           quantity?: number
           sale_id: string
           unit_price: number
         }
         Update: {
           id?: string
+          item_type?: string
           line_total?: number
-          product_id?: string
+          manual_item_name?: string | null
+          notes?: string | null
+          product_id?: string | null
           quantity?: number
           sale_id?: string
           unit_price?: number
@@ -399,24 +408,33 @@ export type Database = {
         Row: {
           charge_id: string
           id: string
+          item_type: string
           line_total: number
-          product_id: string
+          manual_item_name: string | null
+          notes: string | null
+          product_id: string | null
           quantity: number
           unit_price: number
         }
         Insert: {
           charge_id: string
           id?: string
+          item_type?: string
           line_total: number
-          product_id: string
+          manual_item_name?: string | null
+          notes?: string | null
+          product_id?: string | null
           quantity?: number
           unit_price: number
         }
         Update: {
           charge_id?: string
           id?: string
+          item_type?: string
           line_total?: number
-          product_id?: string
+          manual_item_name?: string | null
+          notes?: string | null
+          product_id?: string | null
           quantity?: number
           unit_price?: number
         }
