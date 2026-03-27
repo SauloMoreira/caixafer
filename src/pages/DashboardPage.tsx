@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO } from '@/lib/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DayStats {
   salesToday: number;
@@ -13,6 +13,19 @@ interface DayStats {
   balanceToday: number;
   fiadoOpen: number;
   fiadoReceived: number;
+}
+
+const greetings = [
+  (name: string) => `Olá, ${name}! Bem-vindo de volta.`,
+  (name: string) => `Que bom te ver, ${name}. Tenha um ótimo trabalho hoje.`,
+  (name: string) => `Olá, ${name}! Pronto para mais um dia.`,
+];
+
+function getGreeting(name: string) {
+  const hour = new Date().getHours();
+  if (hour < 12) return `Bom dia, ${name}! ☀️`;
+  if (hour < 18) return `Boa tarde, ${name}!`;
+  return `Boa noite, ${name}! 🌙`;
 }
 
 export default function DashboardPage() {
@@ -24,36 +37,29 @@ export default function DashboardPage() {
   const [salesByMethod, setSalesByMethod] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, [profile]);
+  useEffect(() => { fetchStats(); }, [profile]);
 
   const fetchStats = async () => {
     if (!profile) return;
     const today = todayISO();
 
-    // Sales today
     let salesQuery = supabase.from('sales').select('total_amount').eq('business_date', today);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
     const salesToday = salesData?.reduce((sum, s) => sum + Number(s.total_amount), 0) || 0;
 
-    // Cash entries today
     let entriesQuery = supabase.from('cash_entries').select('entry_type, amount').eq('business_date', today);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
     const { data: entriesData } = await entriesQuery;
     const incomeToday = entriesData?.filter(e => e.entry_type === 'income').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
     const expenseToday = entriesData?.filter(e => e.entry_type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0) || 0;
 
-    // Fiado stats
     const { data: fiadoData } = await supabase.from('spr_fiado_charges').select('amount, status');
     const fiadoOpen = fiadoData?.filter(f => f.status !== 'paid').reduce((sum, f) => sum + Number(f.amount), 0) || 0;
 
-    // Fiado received today
     const { data: fiadoPayments } = await supabase.from('spr_fiado_payments').select('amount_paid').eq('payment_date', today);
     const fiadoReceived = fiadoPayments?.reduce((sum, p) => sum + Number(p.amount_paid), 0) || 0;
 
-    // Sales by payment method
     let methodQuery = supabase.from('sales').select('payment_method, total_amount').eq('business_date', today);
     if (!isAdmin) methodQuery = methodQuery.eq('created_by', profile.id);
     const { data: methodData } = await methodQuery;
@@ -65,12 +71,9 @@ export default function DashboardPage() {
     setSalesByMethod(Object.entries(methodMap).map(([name, value]) => ({ name, value })));
 
     setStats({
-      salesToday,
-      incomeToday,
-      expenseToday,
+      salesToday, incomeToday, expenseToday,
       balanceToday: salesToday + incomeToday - expenseToday,
-      fiadoOpen,
-      fiadoReceived,
+      fiadoOpen, fiadoReceived,
     });
     setLoading(false);
   };
@@ -96,11 +99,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="page-title">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Olá, {profile?.full_name}! Resumo do dia.
-        </p>
+      {/* User greeting header */}
+      <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-5">
+        {profile?.avatar_url ? (
+          <img
+            src={profile.avatar_url}
+            alt={profile.full_name}
+            className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0"
+          />
+        ) : (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl">
+            {profile?.full_name?.charAt(0)?.toUpperCase()}
+          </div>
+        )}
+        <div className="min-w-0">
+          <p className="text-base md:text-lg font-semibold text-foreground truncate">
+            {getGreeting(profile?.full_name?.split(' ')[0] || '')}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {profile?.role === 'admin' ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
