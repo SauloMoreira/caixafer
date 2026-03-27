@@ -32,3 +32,41 @@ export function isValidEmail(value: string): boolean {
 export function normalizeEmail(value: string): string {
   return value.trim().toLowerCase();
 }
+
+/** Apply Brazilian CEP mask: XXXXX-XXX */
+export function applyCepMask(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+/** Extract only digits from masked CEP */
+export function cepDigits(value: string): string {
+  return value.replace(/\D/g, '');
+}
+
+/** Validate Brazilian CEP: exactly 8 digits */
+export function isValidCep(value: string): boolean {
+  return cepDigits(value).length === 8;
+}
+
+/** Fetch address from ViaCEP API */
+export async function fetchAddressByCep(cep: string): Promise<{
+  logradouro: string;
+  bairro: string;
+  localidade: string;
+  uf: string;
+  erro?: boolean;
+} | null> {
+  const digits = cepDigits(cep);
+  if (digits.length !== 8) return null;
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.erro) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
