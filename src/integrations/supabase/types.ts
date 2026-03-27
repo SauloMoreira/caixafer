@@ -132,6 +132,63 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          read_at: string | null
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+          volunteer_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+          volunteer_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          read_at?: string | null
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+          volunteer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "spr_volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string
@@ -522,6 +579,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_spr_notifications: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "cashier" | "volunteer"
@@ -533,6 +591,7 @@ export type Database = {
         | "sem_documento"
       entry_type: "income" | "expense"
       fiado_status: "open" | "partial" | "paid"
+      notification_type: "spr_over_30_days"
       payment_method:
         | "pix"
         | "debito"
@@ -676,6 +735,7 @@ export const Constants = {
       ],
       entry_type: ["income", "expense"],
       fiado_status: ["open", "partial", "paid"],
+      notification_type: ["spr_over_30_days"],
       payment_method: ["pix", "debito", "credito", "transferencia", "dinheiro"],
     },
   },

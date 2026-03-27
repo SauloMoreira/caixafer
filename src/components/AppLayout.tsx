@@ -7,6 +7,7 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import NotificationBell from '@/components/NotificationBell';
 
 const allNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['admin', 'cashier'] },
@@ -16,6 +17,7 @@ const allNavItems = [
   { to: '/produtos', icon: Package, label: 'Produtos', roles: ['admin'] },
   { to: '/relatorios', icon: BarChart3, label: 'Relatórios', roles: ['admin', 'cashier'] },
   { to: '/spr', icon: Heart, label: 'SPR Ramatis', roles: ['admin', 'cashier'] },
+  { to: '/notificacoes', icon: Users, label: 'Acompanhamento SPR', roles: ['admin'] },
   { to: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
   // Volunteer-only
   { to: '/', icon: LayoutDashboard, label: 'Início', roles: ['volunteer'] },
@@ -51,19 +53,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:bg-card">
-        <NavLink to="/perfil" className="flex h-16 items-center gap-3 border-b px-5 hover:bg-muted/50 transition-colors">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-lg object-cover" />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">FER</span>
+        <div className="flex h-16 items-center justify-between border-b px-5">
+          <NavLink to="/perfil" className="flex items-center gap-3 hover:opacity-80 transition-opacity min-w-0">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="" className="h-9 w-9 rounded-lg object-cover shrink-0" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary shrink-0">
+                <span className="text-sm font-bold text-primary-foreground">FER</span>
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-heading text-sm font-bold truncate">Caixa da FER</p>
+              <p className="text-xs text-muted-foreground truncate">{profile?.full_name}</p>
             </div>
-          )}
-          <div>
-            <p className="font-heading text-sm font-bold">Caixa da FER</p>
-            <p className="text-xs text-muted-foreground">{profile?.full_name}</p>
-          </div>
-        </NavLink>
+          </NavLink>
+          {(isAdmin || isVolunteer) && <NotificationBell />}
+        </div>
         <nav className="flex-1 space-y-1 p-3">
           {filteredNav.map(item => (
             <NavLink
@@ -196,6 +201,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-heading text-sm font-bold">Caixa da FER</span>
           </button>
+          {(isAdmin || isVolunteer) && <NotificationBell />}
         </header>
 
         <div className="page-container">

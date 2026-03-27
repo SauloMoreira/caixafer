@@ -19,6 +19,7 @@ import RelatoriosPage from "@/pages/RelatoriosPage";
 import SPRPage from "@/pages/SPRPage";
 import UsuariosPage from "@/pages/UsuariosPage";
 import MeuSPRPage from "@/pages/MeuSPRPage";
+import NotificacoesPage from "@/pages/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/notificacoes" element={<ProtectedRoute adminOnly><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/meu-spr" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
