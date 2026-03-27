@@ -41,15 +41,9 @@ export default function CashTransferDialog({ open, onOpenChange, closingId, busi
     if (!open || !profile) return;
     // Fetch active approved cashiers (excluding self)
     supabase
-      .from('profiles')
-      .select('id, full_name')
-      .in('role', ['cashier', 'admin'])
-      .eq('is_active', true)
-      .eq('approval_status', 'approved')
-      .neq('id', profile.id)
-      .order('full_name')
+      .rpc('get_eligible_transfer_cashiers', { _exclude_user_id: profile.id })
       .then(({ data }) => {
-        if (data) setCashiers(data);
+        if (data) setCashiers(data as { id: string; full_name: string }[]);
       });
   }, [open, profile]);
 
