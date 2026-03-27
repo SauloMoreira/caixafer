@@ -99,6 +99,7 @@ export default function SegurancaPage() {
   const [detailLog, setDetailLog] = useState<any>(null);
   const [detailAlert, setDetailAlert] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState('');
+  const [showReviewInput, setShowReviewInput] = useState(false);
 
   // ─── Data Queries ───
   const { data: auditLogs = [], isLoading: loadingAudit } = useQuery({
