@@ -40,7 +40,7 @@ export default function MovimentosPage() {
   const fetchEntries = async () => {
     if (!profile) return;
     setLoading(true);
-    let query = supabase.from('cash_entries').select('*').eq('business_date', filterDate).order('created_at', { ascending: false });
+    let query = supabase.from('cash_entries').select('*').eq('business_date', filterDate).eq('is_deleted', false).order('created_at', { ascending: false });
     if (!isAdmin) query = query.eq('created_by', profile.id);
     const { data } = await query;
     setEntries(data || []);
