@@ -209,9 +209,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
         startSessionCheck(session.user.id);
         checkMfaStatus();
-        // Set session ID from existing session for validation
-        const sid = (session as any)?.access_token?.substring(0, 32) || crypto.randomUUID();
-        currentSessionIdRef.current = sid;
       } else {
         setMfaLoading(false);
       }
