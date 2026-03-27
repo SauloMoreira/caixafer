@@ -99,6 +99,7 @@ export default function SegurancaPage() {
   const [detailLog, setDetailLog] = useState<any>(null);
   const [detailAlert, setDetailAlert] = useState<any>(null);
   const [reviewNotes, setReviewNotes] = useState('');
+  const [showReviewInput, setShowReviewInput] = useState(false);
 
   // ─── Data Queries ───
   const { data: auditLogs = [], isLoading: loadingAudit } = useQuery({
@@ -491,7 +492,7 @@ export default function SegurancaPage() {
       </Dialog>
 
       {/* ═══ Alert Detail Dialog ═══ */}
-      <Dialog open={!!detailAlert} onOpenChange={open => { if (!open) { setDetailAlert(null); setReviewNotes(''); } }}>
+      <Dialog open={!!detailAlert} onOpenChange={open => { if (!open) { setDetailAlert(null); setReviewNotes(''); setShowReviewInput(false); } }}>
         <DialogContent className="max-w-md sm:max-w-lg max-h-[85vh] p-0">
           <DialogHeader className="px-4 pt-4 pb-2"><DialogTitle className="text-base">Detalhes do Alerta</DialogTitle></DialogHeader>
           {detailAlert && (
@@ -564,11 +565,25 @@ export default function SegurancaPage() {
                   </div>
                 ) : detailAlert.requires_admin_review ? (
                   <div className="space-y-2">
-                    <Textarea placeholder="Notas da revisão (opcional)..." value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} className="text-xs min-h-[60px]" />
-                    <Button className="w-full h-10" onClick={() => reviewMutation.mutate({ alertId: detailAlert.id, notes: reviewNotes })} disabled={reviewMutation.isPending}>
+                    <Button className="w-full h-10" onClick={() => {
+                      if (showReviewInput) {
+                        reviewMutation.mutate({ alertId: detailAlert.id, notes: reviewNotes });
+                      } else {
+                        setShowReviewInput(true);
+                      }
+                    }} disabled={reviewMutation.isPending}>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {reviewMutation.isPending ? 'Revisando...' : 'Marcar como revisado'}
+                      {reviewMutation.isPending ? 'Revisando...' : showReviewInput ? 'Confirmar revisão' : 'Marcar como revisado'}
                     </Button>
+                    {showReviewInput && (
+                      <Textarea
+                        placeholder="Notas da revisão (opcional)..."
+                        value={reviewNotes}
+                        onChange={e => setReviewNotes(e.target.value)}
+                        className="text-xs min-h-[60px]"
+                        autoFocus={false}
+                      />
+                    )}
                   </div>
                 ) : null}
               </div>
