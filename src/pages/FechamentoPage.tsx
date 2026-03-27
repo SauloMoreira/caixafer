@@ -306,27 +306,37 @@ export default function FechamentoPage() {
 
       {/* No closing exists for this date */}
       {!closing && (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-4 py-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <Unlock className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div className="text-center space-y-2">
-              <h2 className="font-heading text-lg font-bold">Nenhum caixa para {formatDate(date)}</h2>
-              <p className="text-sm text-muted-foreground">Abra o caixa para iniciar as operações do dia.</p>
-            </div>
-            <div className="w-full max-w-xs space-y-3">
-              <div>
-                <Label>Saldo Inicial (R$)</Label>
-                <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" />
+        <>
+          {/* AI Recommendations */}
+          {profile && (
+            <AIRecommendations
+              businessDate={date}
+              userId={profile.id}
+            />
+          )}
+
+          <Card>
+            <CardContent className="flex flex-col items-center gap-4 py-8">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <Unlock className="h-8 w-8 text-muted-foreground" />
               </div>
-              <Button className="h-12 w-full" onClick={openCashRegister} disabled={!!pendingDate}>
-                <Unlock className="mr-2 h-4 w-4" />
-                Abrir Caixa
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="text-center space-y-2">
+                <h2 className="font-heading text-lg font-bold">Nenhum caixa para {formatDate(date)}</h2>
+                <p className="text-sm text-muted-foreground">Abra o caixa para iniciar as operações do dia.</p>
+              </div>
+              <div className="w-full max-w-xs space-y-3">
+                <div>
+                  <Label>Saldo Inicial (R$)</Label>
+                  <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" />
+                </div>
+                <Button className="h-12 w-full" onClick={openCashRegister} disabled={!!pendingDate}>
+                  <Unlock className="mr-2 h-4 w-4" />
+                  Abrir Caixa
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       {/* Closing exists */}
