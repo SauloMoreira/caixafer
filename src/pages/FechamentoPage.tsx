@@ -13,6 +13,7 @@ import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, Hist
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
 import DailyOperationInsights from '@/components/DailyOperationInsights';
+import AIRecommendations from '@/components/AIRecommendations';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
