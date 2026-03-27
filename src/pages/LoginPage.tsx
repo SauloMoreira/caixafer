@@ -9,7 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import EmailInput from '@/components/EmailInput';
 import { toast } from 'sonner';
-import { Store, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import logoImg from '@/assets/logo.png';
 import { isValidEmail, normalizeEmail } from '@/lib/masks';
 
 type View = 'login' | 'signup' | 'forgot';
@@ -187,11 +188,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm animate-slide-up">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary">
-            <Store className="h-8 w-8 text-primary-foreground" />
-          </div>
+          <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="mx-auto mb-4 h-24 w-24 rounded-2xl object-contain" />
           <h1 className="font-heading text-2xl font-bold text-foreground">Caixa da FER</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Cantina da FER — Controle de Caixa</p>
+          <p className="mt-1 text-sm text-muted-foreground">Fraternidade Espírita Ramatis</p>
         </div>
 
         <Card>
