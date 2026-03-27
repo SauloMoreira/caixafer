@@ -463,3 +463,87 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function MfaSettingsSection({ profiles, auditLogs }: { profiles: any[]; auditLogs: any[] }) {
+  const adminProfiles = profiles.filter(p => p.role === 'admin' && p.is_active);
+
+  // MFA audit events
+  const mfaEvents = useMemo(() =>
+    auditLogs.filter(l =>
+      l.event_type?.startsWith('mfa_') || l.event_type === 'admin_access_blocked_missing_mfa'
+    ).slice(0, 10),
+    [auditLogs]
+  );
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            Autenticação Multifator (MFA)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>MFA obrigatório para administradores.</strong> Todo admin precisa configurar
+              verificação em duas etapas (TOTP) para acessar o sistema. Caixas e voluntários não
+              precisam de MFA neste momento.
+            </p>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">MFA para Admins</span>
+              <Badge variant="default" className="bg-primary">Obrigatório</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">MFA para Caixas</span>
+              <Badge variant="outline">Opcional (futuro)</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">MFA para Voluntários</span>
+              <Badge variant="outline">Não aplicável</Badge>
+            </div>
+          </div>
+
+          {/* Admin MFA status list */}
+          {adminProfiles.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-semibold text-muted-foreground">Administradores</p>
+              {adminProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <span className="text-sm truncate">{p.full_name}</span>
+                  <Badge variant="secondary" className="text-[10px]">Admin</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* MFA Audit Events */}
+      {mfaEvents.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Eventos MFA Recentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {mfaEvents.map(l => (
+              <div key={l.id} className="flex items-center justify-between gap-2 py-1.5 border-b last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {EVENT_LABELS[l.event_type] || l.event_type}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{fmt(l.created_at)}</p>
+                </div>
+                <Badge className={SEVERITY_COLORS[l.severity] || ''}>{l.severity}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </>
+  );
+}
