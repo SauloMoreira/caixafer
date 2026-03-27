@@ -38,12 +38,12 @@ export default function DashboardPage() {
   const [salesByMethod, setSalesByMethod] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => { if (!isVolunteer) fetchStats(); }, [profile, isVolunteer]);
+
   // Redirect volunteers to Meu SPR
   if (isVolunteer) {
     return <Navigate to="/meu-spr" replace />;
   }
-
-  useEffect(() => { fetchStats(); }, [profile]);
 
   const fetchStats = async () => {
     if (!profile) return;
