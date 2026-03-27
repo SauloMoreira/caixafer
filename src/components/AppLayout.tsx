@@ -76,12 +76,6 @@ const cashierSections: NavSection[] = [
       { to: '/spr', icon: Heart, label: 'SPR' },
     ],
   },
-  {
-    title: 'Outros',
-    items: [
-      { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
-    ],
-  },
 ];
 
 const volunteerSections: NavSection[] = [
