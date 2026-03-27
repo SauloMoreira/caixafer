@@ -88,7 +88,7 @@ export default function DashboardPage() {
     { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
   ];
 
-  const COLORS = ['hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
+  const COLORS = ['hsl(142, 60%, 40%)', 'hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
   if (loading) {
     return (
