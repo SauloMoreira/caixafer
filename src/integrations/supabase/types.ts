@@ -167,27 +167,59 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          approval_status: string
+          approved_at: string | null
+          approved_by: string | null
+          avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string
           id: string
           is_active: boolean
+          phone: string | null
           role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
         }
         Insert: {
+          address?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name: string
           id: string
           is_active?: boolean
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
         }
         Update: {
+          address?: string | null
+          approval_status?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
+          phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sale_items: {
         Row: {
