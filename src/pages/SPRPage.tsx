@@ -132,14 +132,8 @@ export default function SPRPage() {
     }
   };
 
-  const saveCharge = async () => {
-    if (!profile) return;
-    const { error } = await supabase.from('spr_fiado_charges').insert({
-      volunteer_id: chargeVolunteerId, description: chargeDesc || null,
-      amount: Number(chargeAmount), created_by: profile.id, business_date: todayISO(),
-    });
-    if (error) toast.error(error.message);
-    else { toast.success('Fiado registrado!'); setChargeDialogOpen(false); setChargeAmount(''); setChargeDesc(''); fetchCharges(); }
+  const handleChargeCreated = () => {
+    fetchCharges();
   };
 
   const openPayment = (charge: FiadoCharge) => { setPayCharge(charge); setPayAmount(''); setPayDialogOpen(true); };
