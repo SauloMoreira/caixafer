@@ -542,6 +542,9 @@ export default function FechamentoPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Transfer History */}
+          {closing && <CashTransferHistory closingId={closing.id} />}
         </>
       )}
 
