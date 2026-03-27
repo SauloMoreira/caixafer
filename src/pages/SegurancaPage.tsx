@@ -564,11 +564,25 @@ export default function SegurancaPage() {
                   </div>
                 ) : detailAlert.requires_admin_review ? (
                   <div className="space-y-2">
-                    <Textarea placeholder="Notas da revisão (opcional)..." value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} className="text-xs min-h-[60px]" />
-                    <Button className="w-full h-10" onClick={() => reviewMutation.mutate({ alertId: detailAlert.id, notes: reviewNotes })} disabled={reviewMutation.isPending}>
+                    <Button className="w-full h-10" onClick={() => {
+                      if (showReviewInput) {
+                        reviewMutation.mutate({ alertId: detailAlert.id, notes: reviewNotes });
+                      } else {
+                        setShowReviewInput(true);
+                      }
+                    }} disabled={reviewMutation.isPending}>
                       <CheckCircle2 className="h-4 w-4 mr-2" />
-                      {reviewMutation.isPending ? 'Revisando...' : 'Marcar como revisado'}
+                      {reviewMutation.isPending ? 'Revisando...' : showReviewInput ? 'Confirmar revisão' : 'Marcar como revisado'}
                     </Button>
+                    {showReviewInput && (
+                      <Textarea
+                        placeholder="Notas da revisão (opcional)..."
+                        value={reviewNotes}
+                        onChange={e => setReviewNotes(e.target.value)}
+                        className="text-xs min-h-[60px]"
+                        autoFocus={false}
+                      />
+                    )}
                   </div>
                 ) : null}
               </div>
