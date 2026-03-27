@@ -224,6 +224,9 @@ export default function UsuariosPage() {
               {/* Actions */}
               {selectedUser.id !== currentUser?.id && (
                 <div className="flex flex-wrap gap-2 pt-2">
+                  <Button size="sm" variant="outline" onClick={() => { setDialogOpen(false); navigate(`/perfil?user=${selectedUser.id}`); }} className="gap-1.5">
+                    <Pencil className="h-4 w-4" /> Editar Perfil
+                  </Button>
                   {selectedUser.approval_status === 'pending_approval' && (
                     <>
                       <Button size="sm" onClick={() => handleApprove(selectedUser.id)} className="gap-1.5">
