@@ -272,17 +272,33 @@ export default function PDVPage() {
             />
           </div>
 
-          {/* SPR action */}
-          <button
-            onClick={() => setSprPaymentOpen(true)}
-            className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
-          >
-            <div className="flex items-center gap-2">
-              <Heart className="h-4 w-4 text-primary" />
-              <p className="text-sm font-medium leading-tight text-primary">Receber SPR</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Pagamento de fiado</p>
-          </button>
+          {/* Quick actions */}
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            <button
+              onClick={() => setSprPaymentOpen(true)}
+              className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
+            >
+              <div className="flex items-center gap-1.5">
+                <Heart className="h-4 w-4 text-primary" />
+                <p className="text-xs font-medium leading-tight text-primary">Receber SPR</p>
+              </div>
+            </button>
+            {QUICK_INCOME_CATEGORIES.map(cat => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => { setQuickIncomeCategory(cat.value); setQuickIncomeOpen(true); }}
+                  className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium leading-tight text-primary">{cat.label}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map(product => (
