@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart } from 'lucide-react';
+import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 interface UserProfile {
   id: string;
