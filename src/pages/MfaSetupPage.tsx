@@ -22,12 +22,12 @@ export default function MfaSetupPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!loading && !session) {
+    if (!authLoading && !session) {
       navigate('/login', { replace: true });
       return;
     }
     if (session) enrollFactor();
-  }, [session, loading]);
+  }, [session, authLoading]);
 
   const enrollFactor = async () => {
     setEnrolling(true);
