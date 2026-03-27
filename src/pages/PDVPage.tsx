@@ -48,6 +48,10 @@ export default function PDVPage() {
   // SPR Payment state
   const [sprPaymentOpen, setSprPaymentOpen] = useState(false);
 
+  // Quick income state
+  const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
+  const [quickIncomeCategory, setQuickIncomeCategory] = useState<typeof QUICK_INCOME_CATEGORIES[number]['value'] | null>(null);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
