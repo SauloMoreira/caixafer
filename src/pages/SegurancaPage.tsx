@@ -40,6 +40,19 @@ const EVENT_LABELS: Record<string, string> = {
   mfa_login_verified: 'MFA: verificado', mfa_login_failed: 'MFA: falha login',
   admin_access_blocked_missing_mfa: 'Bloqueado (sem MFA)',
   session_invalidated_by_new_login: 'Sessão invalidada', forced_reauthentication: 'Reautenticação',
+  // Blocked operations
+  cash_open_blocked_existing_open_session: 'Abertura bloqueada',
+  cash_operation_blocked_wrong_user: 'Operação bloqueada',
+  cash_close_blocked_wrong_user: 'Fechamento bloqueado',
+  spr_operation_blocked_wrong_user: 'SPR bloqueado',
+  admin_operational_action_blocked: 'Admin operação bloqueada',
+  // Primary admin override
+  primary_admin_override_used: 'Override admin principal',
+  primary_admin_cash_operation: 'Override: operação caixa',
+  primary_admin_cash_close: 'Override: fechamento',
+  primary_admin_financial_override: 'Override: financeiro',
+  primary_admin_spr_override: 'Override: SPR',
+  primary_admin_forced_correction: 'Override: correção',
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
