@@ -133,7 +133,7 @@ export default function ProfilePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith('image/') && !file.type === undefined) { toast.error('Selecione uma imagem válida.'); return; }
+    if (file.type && !file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('A imagem deve ter no máximo 5MB.'); return; }
     setAvatarFile(file);
     const reader = new FileReader();
