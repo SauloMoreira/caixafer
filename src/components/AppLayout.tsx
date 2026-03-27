@@ -60,7 +60,6 @@ const cashierSections: NavSection[] = [
     title: 'Início',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Início' },
-      { to: '/spr', icon: Heart, label: 'SPR' },
     ],
   },
   {

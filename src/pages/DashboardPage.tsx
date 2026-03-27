@@ -36,6 +36,15 @@ const QUICK_ACTIONS = [
     borderColor: 'border-primary/20 hover:border-primary/40',
   },
   {
+    to: '/spr',
+    icon: Heart,
+    label: 'SPR',
+    subtitle: 'Gestão de fiado e voluntários',
+    gradient: 'from-[hsl(340,60%,50%)]/15 to-[hsl(340,60%,50%)]/5',
+    iconColor: 'text-[hsl(340,60%,50%)]',
+    borderColor: 'border-[hsl(340,60%,50%)]/20 hover:border-[hsl(340,60%,50%)]/40',
+  },
+  {
     to: '/movimentos',
     icon: ArrowUpDown,
     label: 'Movimentos',
