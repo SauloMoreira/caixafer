@@ -127,9 +127,14 @@ export default function ProfilePage() {
     setFetchingCep(false);
   };
 
-  // Auto-search when CEP reaches 9 chars (XXXXX-XXX)
+  // Auto-search when CEP reaches 8 digits, but only when user is actively typing (not on form init)
+  const cepUserEdited = useRef(false);
+  const handleCepChangeTracked = (value: string) => {
+    cepUserEdited.current = true;
+    handleCepChange(value);
+  };
   useEffect(() => {
-    if (cepDigits(cep).length === 8) {
+    if (cepDigits(cep).length === 8 && cepUserEdited.current) {
       handleCepSearch();
     }
   }, [cep]);
