@@ -336,14 +336,22 @@ export default function SegurancaPage() {
       )}
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full grid grid-cols-5 h-auto">
+        <TabsList className="w-full grid grid-cols-7 h-auto">
           <TabsTrigger value="alerts" className="text-xs px-1 py-2 relative">
             Alertas
             {unreadAlerts > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{unreadAlerts}</span>}
           </TabsTrigger>
-          <TabsTrigger value="overview" className="text-xs px-1 py-2">Visão Geral</TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs px-1 py-2">Geral</TabsTrigger>
           <TabsTrigger value="transfers" className="text-xs px-1 py-2">Transf.</TabsTrigger>
           <TabsTrigger value="changes" className="text-xs px-1 py-2">Alterações</TabsTrigger>
+          <TabsTrigger value="blocked" className="text-xs px-1 py-2 relative">
+            Bloqueios
+            {blockedToday > 0 && <span className="absolute -top-1 -right-1 bg-warning text-warning-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{blockedToday}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="overrides" className="text-xs px-1 py-2 relative">
+            Override
+            {overridesToday > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{overridesToday}</span>}
+          </TabsTrigger>
           <TabsTrigger value="incidents" className="text-xs px-1 py-2">Incidentes</TabsTrigger>
         </TabsList>
 
