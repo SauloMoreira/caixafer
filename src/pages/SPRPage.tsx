@@ -291,23 +291,8 @@ export default function SPRPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Charge Dialog */}
-      <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Fiado</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Voluntário</Label>
-              <Select value={chargeVolunteerId} onValueChange={setChargeVolunteerId}>
-                <SelectTrigger className="h-12"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>{volunteers.filter(v => v.is_active).map(v => <SelectItem key={v.id} value={v.id}>{v.full_name}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div><Label>Descrição</Label><Input value={chargeDesc} onChange={e => setChargeDesc(e.target.value)} className="h-12" /></div>
-            <div><Label>Valor (R$)</Label><Input type="number" value={chargeAmount} onChange={e => setChargeAmount(e.target.value)} className="h-12" /></div>
-            <Button className="h-12 w-full" onClick={saveCharge}>Registrar Fiado</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Fiado Charge Dialog (PDV-style) */}
+      <FiadoChargeDialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen} onChargeCreated={handleChargeCreated} />
 
       {/* Payment Dialog */}
       <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
