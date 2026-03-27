@@ -136,11 +136,11 @@ export default function ProfilePage() {
     if (file.type && !file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('A imagem deve ter no máximo 5MB.'); return; }
     setAvatarFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setPreviewUrl(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Use createObjectURL for instant, reliable preview on all devices
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    setAvatarUrl(null); // clear old URL so preview takes priority
+    // Reset input so same file can be re-selected
     e.target.value = '';
   };
 
