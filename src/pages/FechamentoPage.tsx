@@ -598,6 +598,19 @@ export default function FechamentoPage() {
           )}
         </div>
       </CriticalActionDialog>
+
+      {/* Cash Transfer Dialog */}
+      {closing && (
+        <CashTransferDialog
+          open={showTransferDialog}
+          onOpenChange={setShowTransferDialog}
+          closingId={closing.id}
+          businessDate={date}
+          currentStats={stats}
+          openingBalance={Number(openingBalance)}
+          onTransferred={fetchData}
+        />
+      )}
     </div>
   );
 }
