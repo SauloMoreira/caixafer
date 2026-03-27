@@ -44,6 +44,9 @@ export default function PDVPage() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
+  // SPR Payment state
+  const [sprPaymentOpen, setSprPaymentOpen] = useState(false);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
