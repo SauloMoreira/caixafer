@@ -8,17 +8,24 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import PhoneInput from '@/components/PhoneInput';
 import EmailInput from '@/components/EmailInput';
+import CepInput from '@/components/CepInput';
 import { toast } from 'sonner';
-import { Camera, Upload, User, Loader2, ArrowLeft } from 'lucide-react';
-import { isValidPhone, isValidEmail, normalizeEmail, applyPhoneMask } from '@/lib/masks';
+import { Camera, Upload, User, Loader2, ArrowLeft, Search } from 'lucide-react';
+import { isValidPhone, isValidEmail, normalizeEmail, applyPhoneMask, isValidCep, fetchAddressByCep, cepDigits } from '@/lib/masks';
 
 interface ProfileData {
   id: string;
   full_name: string;
   phone: string | null;
-  address: string | null;
   email: string | null;
   avatar_url: string | null;
+  cep: string | null;
+  street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  neighborhood: string | null;
+  city: string | null;
+  state: string | null;
   role: string;
   is_active: boolean;
   approval_status: string;
@@ -34,11 +41,22 @@ export default function ProfilePage() {
   const [targetProfile, setTargetProfile] = useState<ProfileData | null>(null);
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // Address fields
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [addressNumber, setAddressNumber] = useState('');
+  const [addressComplement, setAddressComplement] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [fetchingCep, setFetchingCep] = useState(false);
+  const [cepError, setCepError] = useState('');
+
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(!!isEditingOther);
@@ -68,11 +86,49 @@ export default function ProfilePage() {
   const populateForm = (p: ProfileData) => {
     setFullName(p.full_name || '');
     setPhone(p.phone ? applyPhoneMask(p.phone) : '');
-    setAddress(p.address || '');
     setEmail(p.email || '');
     setAvatarUrl(p.avatar_url);
     if (p.avatar_url) setPreviewUrl(p.avatar_url);
+    setCep(p.cep || '');
+    setStreet(p.street || '');
+    setAddressNumber(p.address_number || '');
+    setAddressComplement(p.address_complement || '');
+    setNeighborhood(p.neighborhood || '');
+    setCity(p.city || '');
+    setState(p.state || '');
   };
+
+  const handleCepChange = (value: string) => {
+    setCep(value);
+    setCepError('');
+  };
+
+  const handleCepSearch = async () => {
+    if (!isValidCep(cep)) {
+      setCepError('CEP inválido. Use o formato 00000-000.');
+      return;
+    }
+    setFetchingCep(true);
+    setCepError('');
+    const result = await fetchAddressByCep(cep);
+    if (result) {
+      setStreet(result.logradouro || '');
+      setNeighborhood(result.bairro || '');
+      setCity(result.localidade || '');
+      setState(result.uf || '');
+      toast.success('Endereço preenchido automaticamente!');
+    } else {
+      setCepError('CEP não encontrado. Verifique e tente novamente.');
+    }
+    setFetchingCep(false);
+  };
+
+  // Auto-search when CEP reaches 9 chars (XXXXX-XXX)
+  useEffect(() => {
+    if (cepDigits(cep).length === 8) {
+      handleCepSearch();
+    }
+  }, [cep]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -97,12 +153,13 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     setSubmitted(true);
-    if (!fullName.trim() || !phone.trim() || !address.trim() || !email.trim()) {
+    if (!fullName.trim() || !phone.trim() || !email.trim()) {
       toast.error('Preencha todos os campos obrigatórios.'); return;
     }
     if (!previewUrl && !avatarUrl) { toast.error('A foto é obrigatória.'); return; }
     if (!isValidPhone(phone)) { toast.error('Celular inválido. Use o formato (11) 99999-9999.'); return; }
     if (!isValidEmail(email)) { toast.error('E-mail inválido. Verifique o formato.'); return; }
+    if (cep.trim() && !isValidCep(cep)) { toast.error('CEP inválido. Use o formato 00000-000.'); return; }
 
     const targetId = isEditingOther ? editUserId! : user!.id;
     setSaving(true);
@@ -113,8 +170,18 @@ export default function ProfilePage() {
     }
 
     const { error } = await supabase.from('profiles').update({
-      full_name: fullName.trim(), phone: phone.trim(), address: address.trim(),
-      email: normalizeEmail(email), avatar_url: finalAvatarUrl, updated_at: new Date().toISOString(),
+      full_name: fullName.trim(),
+      phone: phone.trim(),
+      email: normalizeEmail(email),
+      avatar_url: finalAvatarUrl,
+      cep: cep.trim() || null,
+      street: street.trim() || null,
+      address_number: addressNumber.trim() || null,
+      address_complement: addressComplement.trim() || null,
+      neighborhood: neighborhood.trim() || null,
+      city: city.trim() || null,
+      state: state.trim() || null,
+      updated_at: new Date().toISOString(),
     } as any).eq('id', targetId);
 
     if (error) {
@@ -157,7 +224,7 @@ export default function ProfilePage() {
         {showIncompleteWarning && (
           <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
             <p className="text-sm font-medium text-primary">Complete seu cadastro para acessar o sistema</p>
-            <p className="mt-1 text-xs text-muted-foreground">Todos os campos são obrigatórios</p>
+            <p className="mt-1 text-xs text-muted-foreground">Preencha nome, celular, e-mail e foto</p>
           </div>
         )}
 
@@ -192,11 +259,10 @@ export default function ProfilePage() {
               </div>
               <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileSelect} className="hidden" />
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-              {submitted && !showAvatar && (
-                <p className="text-xs text-destructive">A foto é obrigatória.</p>
-              )}
+              {submitted && !showAvatar && <p className="text-xs text-destructive">A foto é obrigatória.</p>}
             </div>
 
+            {/* Required fields */}
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Nome completo *</Label>
@@ -209,14 +275,57 @@ export default function ProfilePage() {
                 {submitted && !phone.trim() && <p className="text-xs text-destructive">Celular é obrigatório.</p>}
               </div>
               <div className="space-y-1.5">
-                <Label>Endereço *</Label>
-                <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Endereço completo" className="h-12" />
-                {submitted && !address.trim() && <p className="text-xs text-destructive">Endereço é obrigatório.</p>}
-              </div>
-              <div className="space-y-1.5">
                 <Label>E-mail *</Label>
                 <EmailInput value={email} onChange={setEmail} placeholder="seu@email.com" className="h-12" showError={submitted && email.length > 0 ? !isValidEmail(email) : undefined} />
                 {submitted && !email.trim() && <p className="text-xs text-destructive">E-mail é obrigatório.</p>}
+              </div>
+            </div>
+
+            {/* Address section */}
+            <div className="space-y-3 border-t pt-4">
+              <p className="text-sm font-medium text-muted-foreground">Endereço (opcional)</p>
+
+              <div className="space-y-1.5">
+                <Label>CEP</Label>
+                <div className="flex gap-2">
+                  <CepInput value={cep} onChange={handleCepChange} className="h-12 flex-1" disabled={fetchingCep} />
+                  <Button type="button" variant="outline" size="icon" className="h-12 w-12 shrink-0" onClick={handleCepSearch} disabled={fetchingCep || cepDigits(cep).length < 8}>
+                    {fetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {cepError && <p className="text-xs text-destructive">{cepError}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Logradouro</Label>
+                <Input value={street} onChange={e => setStreet(e.target.value)} placeholder="Rua, Avenida..." className="h-12" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1.5">
+                  <Label>Número</Label>
+                  <Input value={addressNumber} onChange={e => setAddressNumber(e.target.value)} placeholder="Nº" className="h-12" />
+                </div>
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Complemento</Label>
+                  <Input value={addressComplement} onChange={e => setAddressComplement(e.target.value)} placeholder="Apto, Bloco..." className="h-12" />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label>Bairro</Label>
+                <Input value={neighborhood} onChange={e => setNeighborhood(e.target.value)} placeholder="Bairro" className="h-12" />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-2 space-y-1.5">
+                  <Label>Cidade</Label>
+                  <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Cidade" className="h-12" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>UF</Label>
+                  <Input value={state} onChange={e => setState(e.target.value.toUpperCase().slice(0, 2))} placeholder="UF" className="h-12" maxLength={2} />
+                </div>
               </div>
             </div>
 
