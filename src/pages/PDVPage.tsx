@@ -55,6 +55,7 @@ export default function PDVPage() {
 
   // SPR Payment state
   const [sprPaymentOpen, setSprPaymentOpen] = useState(false);
+  const [manualItemOpen, setManualItemOpen] = useState(false);
 
   // Quick income state
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
