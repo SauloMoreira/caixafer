@@ -82,40 +82,34 @@ export default function PDVPage() {
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check for any open cash register today
-    const { data: todayClosings } = await supabase
-      .from('cash_closings')
-      .select('id, status, user_id, current_responsible_id')
-      .eq('business_date', today)
-      .eq('status', 'open');
-
-    const openSession = todayClosings?.[0];
+    // Use SECURITY DEFINER function to check open session (bypasses RLS)
+    const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
+    const openSession = sessions?.[0];
 
     if (openSession) {
       const isCurrentResponsible = openSession.current_responsible_id === profile.id;
 
       if (isCurrentResponsible || hasOperationalOverride) {
         setCashStatus('open');
-        setClosingId(openSession.id);
+        setClosingId(openSession.closing_id);
         setIsTransferredSession(isCurrentResponsible && openSession.current_responsible_id !== openSession.user_id);
         
-        // Get responsible name for override mode
         if (!isCurrentResponsible && hasOperationalOverride) {
-          const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSession.current_responsible_id] });
-          setSessionResponsibleName(names?.[0]?.full_name || 'outro operador');
+          setSessionResponsibleName(openSession.responsible_name || 'outro operador');
         } else {
           setSessionResponsibleName(null);
         }
       } else {
         // Session exists but user is not responsible and has no override
-        setCashStatus('none');
+        // Show blocking message with responsible name
+        setCashStatus('blocked');
         setClosingId(null);
         setIsTransferredSession(false);
-        setSessionResponsibleName(null);
+        setSessionResponsibleName(openSession.responsible_name || 'outro operador');
       }
       setPendingDate(null);
     } else {
-      // Check for closed today
+      // Check for closed today (user's own)
       const { data: closedToday } = await supabase
         .from('cash_closings')
         .select('id')

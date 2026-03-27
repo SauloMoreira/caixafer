@@ -6,29 +6,21 @@ import { logSecurityEvent } from '@/lib/security';
 
 interface CashSessionState {
   loading: boolean;
-  /** Whether there's an open session today */
   sessionOpen: boolean;
-  /** ID of the open cash_closings record */
   closingId: string | null;
-  /** ID of the current responsible user */
   responsibleId: string | null;
-  /** Name of the current responsible user */
   responsibleName: string | null;
-  /** Whether the current user IS the session responsible */
   isResponsible: boolean;
-  /** Whether the current user can operate (is responsible OR has override) */
   canOperate: boolean;
-  /** Whether the current user is operating via primary admin override */
   isOverrideMode: boolean;
-  /** Whether the session was transferred to the current user */
   isTransferredSession: boolean;
-  /** Refresh the session state */
   refresh: () => Promise<void>;
 }
 
 /**
  * Hook to check if the current user can operate the cash session.
- * Enforces the rule: only the current responsible (or primary admin with override) can operate.
+ * Uses a SECURITY DEFINER function to bypass RLS so any cashier
+ * can see if a session is already open today.
  */
 export function useCashSession(): CashSessionState {
   const { profile } = useAuth();
@@ -45,38 +37,22 @@ export function useCashSession(): CashSessionState {
   const check = useCallback(async () => {
     if (!profile) return;
     setLoading(true);
-    const today = todayISO();
 
-    // Check for any open session today
-    const { data: openSessions } = await supabase
-      .from('cash_closings')
-      .select('id, user_id, current_responsible_id')
-      .eq('business_date', today)
-      .eq('status', 'open')
-      .eq('is_latest_version', true)
-      .limit(1);
+    // Use SECURITY DEFINER function to check open session (bypasses RLS)
+    const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
 
-    if (openSessions && openSessions.length > 0) {
-      const session = openSessions[0];
+    if (sessions && sessions.length > 0) {
+      const session = sessions[0];
       setSessionOpen(true);
-      setClosingId(session.id);
+      setClosingId(session.closing_id);
       setResponsibleId(session.current_responsible_id);
+      setResponsibleName(session.responsible_name);
 
       const userIsResponsible = session.current_responsible_id === profile.id;
       setIsResponsible(userIsResponsible);
       setIsTransferredSession(
         userIsResponsible && session.current_responsible_id !== session.user_id
       );
-
-      // Get responsible name
-      if (!userIsResponsible) {
-        const { data: names } = await supabase.rpc('get_user_names', {
-          _user_ids: [session.current_responsible_id],
-        });
-        setResponsibleName(names?.[0]?.full_name || 'outro operador');
-      } else {
-        setResponsibleName(profile.full_name);
-      }
     } else {
       setSessionOpen(false);
       setClosingId(null);
