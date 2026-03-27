@@ -27,7 +27,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     const printWindow = window.open('', '_blank', 'width=400,height=700');
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>Comprovante #${data.saleNumber}</title>
+      <html><head><title>Pedido #${data.saleNumber}</title>
       <style>
         body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
         @media print { body { padding: 5mm; } @page { size: 80mm auto; margin: 0; } }
@@ -43,7 +43,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       '      CANTINA DA FER',
       '=============================',
       '',
-      `Venda: #${data.saleNumber}`,
+      `Pedido: #${data.saleNumber}`,
       `Data: ${formatDateTime(data.createdAt)}`,
       `Operador: ${data.operatorName}`,
       '-----------------------------',
@@ -63,7 +63,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     const text = buildPlainText();
     if (navigator.share) {
       try {
-        await navigator.share({ title: `Comprovante #${data.saleNumber}`, text });
+        await navigator.share({ title: `Pedido #${data.saleNumber}`, text });
       } catch { /* user cancelled */ }
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
@@ -79,7 +79,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">Comprovante de Venda</DialogTitle>
+          <DialogTitle className="text-center">Pedido</DialogTitle>
         </DialogHeader>
 
         <div className="overflow-x-auto">
