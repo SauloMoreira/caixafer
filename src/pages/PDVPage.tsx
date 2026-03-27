@@ -157,13 +157,16 @@ export default function PDVPage() {
 
       const items = cart.map(i => ({
         sale_id: sale.id,
-        product_id: i.product.id,
+        product_id: i.itemType === 'product' ? i.product!.id : null,
+        manual_item_name: i.itemType === 'manual' ? i.manualItem!.name : null,
+        item_type: i.itemType,
         quantity: i.quantity,
-        unit_price: Number(i.product.unit_price),
-        line_total: Number(i.product.unit_price) * i.quantity,
+        unit_price: getCartItemPrice(i),
+        line_total: getCartItemPrice(i) * i.quantity,
+        notes: i.itemType === 'manual' ? (i.manualItem!.notes || null) : null,
       }));
 
-      const { error: itemsError } = await supabase.from('sale_items').insert(items);
+      const { error: itemsError } = await supabase.from('sale_items').insert(items as any);
       if (itemsError) throw itemsError;
 
       // Show receipt
@@ -172,10 +175,10 @@ export default function PDVPage() {
         createdAt: sale.created_at,
         operatorName: profile.full_name,
         items: cart.map(i => ({
-          name: i.product.name,
+          name: getCartItemName(i),
           quantity: i.quantity,
-          unitPrice: Number(i.product.unit_price),
-          lineTotal: Number(i.product.unit_price) * i.quantity,
+          unitPrice: getCartItemPrice(i),
+          lineTotal: getCartItemPrice(i) * i.quantity,
         })),
         subtotal,
         discount,
