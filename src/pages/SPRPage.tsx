@@ -31,9 +31,9 @@ export default function SPRPage() {
   const [volDialogOpen, setVolDialogOpen] = useState(false);
   const [editingVol, setEditingVol] = useState<Volunteer | null>(null);
   const [volName, setVolName] = useState('');
-  const [volDoc, setVolDoc] = useState('');
+  
   const [volPhone, setVolPhone] = useState('');
-  const [volNotes, setVolNotes] = useState('');
+  
   const [volActive, setVolActive] = useState(true);
   const [volAvatarFile, setVolAvatarFile] = useState<File | null>(null);
   const [volPreviewUrl, setVolPreviewUrl] = useState<string | null>(null);
@@ -69,15 +69,14 @@ export default function SPRPage() {
 
   const openNewVolunteer = () => {
     setEditingVol(null);
-    setVolName(''); setVolDoc(''); setVolPhone(''); setVolNotes(''); setVolActive(true);
+    setVolName(''); setVolPhone(''); setVolActive(true);
     setVolAvatarFile(null); setVolPreviewUrl(null);
     setVolDialogOpen(true);
   };
 
   const openEditVolunteer = (v: Volunteer) => {
     setEditingVol(v);
-    setVolName(v.full_name); setVolDoc(v.document_number || ''); setVolPhone(v.phone || '');
-    setVolNotes(v.notes || ''); setVolActive(v.is_active);
+    setVolName(v.full_name); setVolPhone(v.phone || ''); setVolActive(v.is_active);
     setVolAvatarFile(null); setVolPreviewUrl(v.avatar_url || null);
     setVolDialogOpen(true);
   };
@@ -113,8 +112,8 @@ export default function SPRPage() {
         if (volAvatarFile && !avatarUrl) return;
       }
       const { error } = await supabase.from('spr_volunteers').update({
-        full_name: volName, document_number: volDoc || null, phone: volPhone || null,
-        notes: volNotes || null, is_active: volActive, avatar_url: avatarUrl,
+        full_name: volName, phone: volPhone || null,
+        is_active: volActive, avatar_url: avatarUrl,
       } as any).eq('id', editingVol.id);
       if (error) toast.error(error.message);
       else { toast.success('Voluntário atualizado!'); setVolDialogOpen(false); fetchVolunteers(); }
@@ -125,8 +124,8 @@ export default function SPRPage() {
         avatarUrl = await uploadVolAvatar(tempId);
       }
       const { error } = await supabase.from('spr_volunteers').insert({
-        id: tempId, full_name: volName, document_number: volDoc || null,
-        phone: volPhone || null, notes: volNotes || null, avatar_url: avatarUrl,
+        id: tempId, full_name: volName,
+        phone: volPhone || null, avatar_url: avatarUrl,
       } as any);
       if (error) toast.error(error.message);
       else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); fetchVolunteers(); }
@@ -280,9 +279,9 @@ export default function SPRPage() {
 
             <div className="space-y-3">
               <div><Label>Nome Completo *</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
-              <div><Label>Documento</Label><Input value={volDoc} onChange={e => setVolDoc(e.target.value)} className="h-12" /></div>
+              
               <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" type="tel" /></div>
-              <div><Label>Observações</Label><Textarea value={volNotes} onChange={e => setVolNotes(e.target.value)} rows={2} /></div>
+              
               {editingVol && (
                 <div className="flex items-center justify-between">
                   <Label>Ativo</Label>
