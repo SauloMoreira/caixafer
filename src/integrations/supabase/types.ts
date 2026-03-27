@@ -287,6 +287,7 @@ export type Database = {
           id: string
           leftover_quantity: number | null
           notes: string | null
+          product_id: string | null
           sold_quantity: number | null
           suggested_quantity: number | null
           updated_at: string
@@ -302,6 +303,7 @@ export type Database = {
           id?: string
           leftover_quantity?: number | null
           notes?: string | null
+          product_id?: string | null
           sold_quantity?: number | null
           suggested_quantity?: number | null
           updated_at?: string
@@ -317,12 +319,20 @@ export type Database = {
           id?: string
           leftover_quantity?: number | null
           notes?: string | null
+          product_id?: string | null
           sold_quantity?: number | null
           suggested_quantity?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "daily_operation_insights_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "daily_operation_insights_user_id_fkey"
             columns: ["user_id"]
