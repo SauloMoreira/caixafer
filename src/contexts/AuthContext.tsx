@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isProfileComplete = isVolunteer
     ? !!(profile && profile.full_name && profile.phone && profile.email)
-    : !!(profile && profile.full_name && profile.phone && profile.address && profile.email && profile.avatar_url);
+    : !!(profile && profile.full_name && profile.phone && profile.email && profile.avatar_url);
 
   const isApproved = profile?.approval_status === 'approved' && profile?.is_active === true;
 

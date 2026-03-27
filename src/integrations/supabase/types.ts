@@ -224,50 +224,68 @@ export type Database = {
       }
       profiles: {
         Row: {
-          address: string | null
+          address_complement: string | null
+          address_number: string | null
           approval_status: string
           approved_at: string | null
           approved_by: string | null
           avatar_url: string | null
+          cep: string | null
+          city: string | null
           created_at: string
           email: string | null
           full_name: string
           id: string
           is_active: boolean
+          neighborhood: string | null
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
+          state: string | null
+          street: string | null
           updated_at: string
           volunteer_id: string | null
         }
         Insert: {
-          address?: string | null
+          address_complement?: string | null
+          address_number?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null
+          cep?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name: string
           id: string
           is_active?: boolean
+          neighborhood?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          state?: string | null
+          street?: string | null
           updated_at?: string
           volunteer_id?: string | null
         }
         Update: {
-          address?: string | null
+          address_complement?: string | null
+          address_number?: string | null
           approval_status?: string
           approved_at?: string | null
           approved_by?: string | null
           avatar_url?: string | null
+          cep?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
           id?: string
           is_active?: boolean
+          neighborhood?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
+          state?: string | null
+          street?: string | null
           updated_at?: string
           volunteer_id?: string | null
         }
