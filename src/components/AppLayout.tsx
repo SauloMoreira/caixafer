@@ -36,6 +36,7 @@ const pageTitles: Record<string, string> = {
   '/spr': 'SPR Ramatis',
   '/notificacoes': 'Acompanhamento SPR',
   '/usuarios': 'Usuários',
+  '/seguranca': 'Segurança',
   '/meu-spr': 'Meu SPR',
   '/perfil': 'Meu Perfil',
 };
