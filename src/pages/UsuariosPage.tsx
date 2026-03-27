@@ -359,6 +359,46 @@ export default function UsuariosPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Critical action confirmation */}
+      <CriticalActionDialog
+        open={!!criticalAction}
+        onOpenChange={open => { if (!open) setCriticalAction(null); }}
+        title={
+          criticalAction?.type === 'deactivate' ? 'Desativar Usuário' :
+          criticalAction?.type === 'reject' ? 'Rejeitar Usuário' :
+          'Alterar Papel do Usuário'
+        }
+        description={
+          criticalAction?.type === 'deactivate'
+            ? `Tem certeza que deseja desativar "${criticalAction.userName}"? O usuário perderá o acesso ao sistema imediatamente.`
+            : criticalAction?.type === 'reject'
+            ? `Tem certeza que deseja rejeitar "${criticalAction?.userName}"? O acesso será bloqueado.`
+            : `Tem certeza que deseja alterar o papel de "${criticalAction?.userName}" para ${
+                criticalAction?.newRole === 'admin' ? 'Administrador' : criticalAction?.newRole === 'cashier' ? 'Caixa' : 'Voluntário'
+              }?`
+        }
+        details={[
+          { label: 'Usuário', value: criticalAction?.userName || '' },
+          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: criticalAction.newRole === 'admin' ? 'Admin' : criticalAction.newRole === 'cashier' ? 'Caixa' : 'Voluntário' }] : []),
+        ]}
+        severity={criticalAction?.type === 'role_change' && criticalAction.newRole === 'admin' ? 'danger' : criticalAction?.type === 'deactivate' || criticalAction?.type === 'reject' ? 'danger' : 'warning'}
+        confirmLabel={
+          criticalAction?.type === 'deactivate' ? 'Desativar' :
+          criticalAction?.type === 'reject' ? 'Rejeitar' : 'Alterar Papel'
+        }
+        onConfirm={async () => {
+          if (!criticalAction) return;
+          if (criticalAction.type === 'deactivate') {
+            await doToggleActive(criticalAction.userId, false);
+          } else if (criticalAction.type === 'reject') {
+            await doReject(criticalAction.userId);
+          } else if (criticalAction.type === 'role_change' && criticalAction.newRole) {
+            await doChangeRole(criticalAction.userId, criticalAction.newRole);
+          }
+          setCriticalAction(null);
+        }}
+      />
     </div>
   );
 }
