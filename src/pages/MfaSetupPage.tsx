@@ -176,6 +176,11 @@ export default function MfaSetupPage() {
               <div className="flex items-center justify-center py-12">
                 <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               </div>
+            ) : errorMsg && !qrUrl ? (
+              <div className="space-y-4 py-6 text-center">
+                <p className="text-sm text-destructive">{errorMsg}</p>
+                <Button variant="outline" onClick={enrollFactor}>Tentar novamente</Button>
+              </div>
             ) : (
               <>
                 {/* Step 1: QR Code */}
