@@ -122,24 +122,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Register this session as the active one in the DB
-  const registerSession = useCallback(async (userId: string, sessionId: string) => {
-    currentSessionIdRef.current = sessionId;
+  // Update last login timestamp
+  const registerSession = useCallback(async (userId: string, _sessionId: string) => {
     await supabase
       .from('profiles')
       .update({
-        active_session_id: sessionId,
         last_login_at: new Date().toISOString(),
       } as any)
       .eq('id', userId);
   }, []);
 
-  // Check if current session is still the active one
-  const validateSingleSession = useCallback(async (userId: string) => {
-    if (!currentSessionIdRef.current) return true;
+  // Periodic check: deactivation, role changes
+  const validateSession = useCallback(async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('active_session_id, is_active, approval_status, role')
+      .select('is_active, approval_status, role')
       .eq('id', userId)
       .single();
     
@@ -154,22 +151,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Update role if changed
     setProfile(prev => prev ? { ...prev, role: data.role as any, is_active: data.is_active, approval_status: data.approval_status } : prev);
 
-    // Single session check
-    if (data.active_session_id && data.active_session_id !== currentSessionIdRef.current) {
-      await secureSignOut('Sua sessão foi encerrada porque sua conta foi acessada em outro dispositivo.');
-      
-      // Log the event (fire and forget)
-      supabase.from('security_audit_logs').insert({
-        event_type: 'session_invalidated_by_new_login',
-        entity_type: 'session',
-        action: 'SESSION_INVALIDATED',
-        severity: 'medium',
-        user_id: userId,
-        notes: 'Sessão encerrada por novo login em outro dispositivo',
-      } as any).then(() => {});
-      
-      return false;
-    }
     return true;
   }, [secureSignOut]);
 
@@ -181,20 +162,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await secureSignOut();
         return;
       }
-      await validateSingleSession(userId);
+      await validateSession(userId);
     }, SESSION_CHECK_INTERVAL);
-  }, [secureSignOut, validateSingleSession]);
+  }, [secureSignOut, validateSession]);
 
   // Validate on visibility change (user returns to tab)
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && user) {
-        validateSingleSession(user.id);
+        validateSession(user.id);
       }
     };
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, [user, validateSingleSession]);
+  }, [user, validateSession]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -228,9 +209,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
         startSessionCheck(session.user.id);
         checkMfaStatus();
-        // Set session ID from existing session for validation
-        const sid = (session as any)?.access_token?.substring(0, 32) || crypto.randomUUID();
-        currentSessionIdRef.current = sid;
       } else {
         setMfaLoading(false);
       }
@@ -257,20 +235,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error('Sua conta foi recusada. Entre em contato com o administrador.') };
       }
 
-      // Register single session — generate unique ID for this login
+      // Update last login
       const sessionId = crypto.randomUUID();
       await registerSession(data.user.id, sessionId);
-
-      // Log single session policy applied
-      supabase.from('security_audit_logs').insert({
-        event_type: 'single_session_policy_applied',
-        entity_type: 'session',
-        action: 'LOGIN',
-        severity: 'info',
-        user_id: data.user.id,
-        user_role: p?.role || 'unknown',
-        notes: 'Nova sessão registrada. Sessões anteriores serão invalidadas.',
-      } as any).then(() => {});
 
       await checkMfaStatus();
     }
