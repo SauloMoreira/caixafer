@@ -65,7 +65,8 @@ export default function DashboardPage() {
     const { data: methodData } = await methodQuery;
     const methodMap: Record<string, number> = {};
     methodData?.forEach(s => {
-      const label = s.payment_method === 'pix' ? 'PIX' : s.payment_method === 'debito' ? 'Débito' : s.payment_method === 'credito' ? 'Crédito' : 'Transferência';
+      const pm = PAYMENT_METHODS.find(p => p.value === s.payment_method);
+      const label = pm?.label || s.payment_method;
       methodMap[label] = (methodMap[label] || 0) + Number(s.total_amount);
     });
     setSalesByMethod(Object.entries(methodMap).map(([name, value]) => ({ name, value })));
