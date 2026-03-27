@@ -79,7 +79,7 @@ export default function CashCorrectionReview({ businessDate, closingId, onClose,
   const canModify = useCallback((entry: EntryItem) => {
     if (entry.is_deleted) return false;
     if (isAdmin) return true;
-    return entry.business_date === todayISO() || businessDate === todayISO();
+    return businessDate === todayISO();
   }, [isAdmin, businessDate]);
 
   const fetchEntries = useCallback(async () => {
