@@ -492,7 +492,7 @@ export default function SegurancaPage() {
       </Dialog>
 
       {/* ═══ Alert Detail Dialog ═══ */}
-      <Dialog open={!!detailAlert} onOpenChange={open => { if (!open) { setDetailAlert(null); setReviewNotes(''); } }}>
+      <Dialog open={!!detailAlert} onOpenChange={open => { if (!open) { setDetailAlert(null); setReviewNotes(''); setShowReviewInput(false); } }}>
         <DialogContent className="max-w-md sm:max-w-lg max-h-[85vh] p-0">
           <DialogHeader className="px-4 pt-4 pb-2"><DialogTitle className="text-base">Detalhes do Alerta</DialogTitle></DialogHeader>
           {detailAlert && (
