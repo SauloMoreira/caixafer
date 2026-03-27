@@ -46,6 +46,7 @@ export default function FechamentoPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [closingHistory, setClosingHistory] = useState<any[]>([]);
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
 
   useEffect(() => { fetchData(); }, [date, profile]);
 
