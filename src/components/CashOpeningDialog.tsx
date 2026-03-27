@@ -31,6 +31,7 @@ export default function CashOpeningDialog({ open, onOpenChange, userId, pendingD
     const { error } = await supabase.from('cash_closings').insert({
       business_date: todayISO(),
       user_id: userId,
+      current_responsible_id: userId,
       opening_balance: Number(openingBalance),
       notes: notes || null,
       status: 'open' as const,
