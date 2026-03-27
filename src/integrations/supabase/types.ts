@@ -194,6 +194,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          image_url: string | null
           internal_code: string | null
           is_active: boolean
           name: string
@@ -204,6 +205,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           internal_code?: string | null
           is_active?: boolean
           name: string
@@ -214,6 +216,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          image_url?: string | null
           internal_code?: string | null
           is_active?: boolean
           name?: string
