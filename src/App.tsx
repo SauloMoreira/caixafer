@@ -22,6 +22,8 @@ import MeuSPRPage from "@/pages/MeuSPRPage";
 import NotificacoesPage from "@/pages/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
 import SegurancaPage from "@/pages/SegurancaPage";
+import MfaSetupPage from "@/pages/MfaSetupPage";
+import MfaVerifyPage from "@/pages/MfaVerifyPage";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +43,8 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/pending-approval" element={<PendingApprovalPage />} />
             <Route path="/perfil" element={<ProfilePage />} />
+            <Route path="/mfa-setup" element={<MfaSetupPage />} />
+            <Route path="/mfa-verify" element={<MfaVerifyPage />} />
             <Route path="/" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'volunteer']}><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/pdv" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/movimentos" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />

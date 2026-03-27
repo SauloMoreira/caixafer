@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
@@ -41,6 +41,12 @@ const EVENT_LABELS: Record<string, string> = {
   profile_updated: 'Perfil atualizado',
   unauthorized_route_access: 'Acesso negado',
   unauthorized_data_access_attempt: 'Tentativa acesso dado',
+  mfa_enrollment_started: 'MFA: início config.',
+  mfa_enrollment_verified: 'MFA: ativado',
+  mfa_enrollment_failed: 'MFA: falha ativação',
+  mfa_login_verified: 'MFA: login verificado',
+  mfa_login_failed: 'MFA: falha login',
+  admin_access_blocked_missing_mfa: 'Acesso bloqueado (sem MFA)',
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -346,40 +352,8 @@ export default function SegurancaPage() {
           </div>
         </TabsContent>
 
-        {/* ═══ CONFIGURAÇÕES ═══ */}
         <TabsContent value="settings" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Lock className="h-4 w-4" />
-                Autenticação Multifator (MFA)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-lg border border-dashed p-4 text-center space-y-2">
-                <Shield className="h-8 w-8 text-muted-foreground mx-auto" />
-                <p className="text-sm font-medium">MFA disponível em breve</p>
-                <p className="text-xs text-muted-foreground">
-                  A autenticação multifator adicionará uma camada extra de segurança para contas administrativas.
-                  Esta funcionalidade está sendo preparada.
-                </p>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-muted-foreground">MFA para Admins</span>
-                  <Badge variant="outline">Em breve</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-muted-foreground">MFA para Caixas</span>
-                  <Badge variant="outline">Opcional (futuro)</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-muted-foreground">MFA para Voluntários</span>
-                  <Badge variant="outline">Não aplicável</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MfaSettingsSection profiles={profiles} auditLogs={auditLogs} />
 
           <Card>
             <CardHeader className="pb-2">
@@ -493,5 +467,89 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span className="text-muted-foreground shrink-0">{label}</span>
       <span className="font-medium text-right">{value}</span>
     </div>
+  );
+}
+
+function MfaSettingsSection({ profiles, auditLogs }: { profiles: any[]; auditLogs: any[] }) {
+  const adminProfiles = profiles.filter(p => p.role === 'admin' && p.is_active);
+
+  // MFA audit events
+  const mfaEvents = useMemo(() =>
+    auditLogs.filter(l =>
+      l.event_type?.startsWith('mfa_') || l.event_type === 'admin_access_blocked_missing_mfa'
+    ).slice(0, 10),
+    [auditLogs]
+  );
+
+  return (
+    <>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            Autenticação Multifator (MFA)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>MFA obrigatório para administradores.</strong> Todo admin precisa configurar
+              verificação em duas etapas (TOTP) para acessar o sistema. Caixas e voluntários não
+              precisam de MFA neste momento.
+            </p>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">MFA para Admins</span>
+              <Badge variant="default" className="bg-primary">Obrigatório</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b">
+              <span className="text-muted-foreground">MFA para Caixas</span>
+              <Badge variant="outline">Opcional (futuro)</Badge>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">MFA para Voluntários</span>
+              <Badge variant="outline">Não aplicável</Badge>
+            </div>
+          </div>
+
+          {/* Admin MFA status list */}
+          {adminProfiles.length > 0 && (
+            <div className="space-y-2 pt-2">
+              <p className="text-xs font-semibold text-muted-foreground">Administradores</p>
+              {adminProfiles.map(p => (
+                <div key={p.id} className="flex items-center justify-between py-1.5 border-b last:border-0">
+                  <span className="text-sm truncate">{p.full_name}</span>
+                  <Badge variant="secondary" className="text-[10px]">Admin</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* MFA Audit Events */}
+      {mfaEvents.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-semibold">Eventos MFA Recentes</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {mfaEvents.map(l => (
+              <div key={l.id} className="flex items-center justify-between gap-2 py-1.5 border-b last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {EVENT_LABELS[l.event_type] || l.event_type}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{fmt(l.created_at)}</p>
+                </div>
+                <Badge className={SEVERITY_COLORS[l.severity] || ''}>{l.severity}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+    </>
   );
 }

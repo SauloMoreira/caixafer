@@ -14,7 +14,7 @@ import { isValidEmail, normalizeEmail } from '@/lib/masks';
 type View = 'login' | 'signup' | 'forgot';
 
 export default function LoginPage() {
-  const { signIn, signUp, session, loading: authLoading } = useAuth();
+  const { signIn, signUp, session, loading: authLoading, profile, isAdmin, mfaEnrolled, mfaVerified, mfaLoading } = useAuth();
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +22,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  if (authLoading) return null;
+  if (authLoading || mfaLoading) return null;
+
+  // If admin session exists, check MFA
+  if (session && profile?.role === 'admin') {
+    if (!mfaEnrolled) return <Navigate to="/mfa-setup" replace />;
+    if (!mfaVerified) return <Navigate to="/mfa-verify" replace />;
+    return <Navigate to="/" replace />;
+  }
   if (session) return <Navigate to="/" replace />;
 
   const resetFields = () => {
