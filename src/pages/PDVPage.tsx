@@ -365,7 +365,13 @@ export default function PDVPage() {
                   {cart.map(item => {
                     const id = getCartItemId(item);
                     return (
-                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                    <div key={id} className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
+                      <ProductImage
+                        src={item.itemType === 'product' ? (item.product as any)?.image_url : null}
+                        itemType={item.itemType}
+                        size="sm"
+                        alt={getCartItemName(item)}
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">
                           {getCartItemName(item)}
