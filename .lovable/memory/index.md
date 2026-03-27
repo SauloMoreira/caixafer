@@ -5,9 +5,9 @@ Caixa da FER - POS/cash register for Cantina da FER. Mobile-first, light theme, 
 
 ## Memories
 - [Design system](mem://design/tokens) — Teal primary palette, income/expense/warning colors, financial-value utility classes
-- [Database schema](mem://features/schema) — 10 tables: profiles, products, sales, sale_items, cash_entries, cash_closings, spr_volunteers, spr_fiado_charges, spr_fiado_charge_items, spr_fiado_payments + cash_session_transfers
-- [Auth & permissions](mem://features/auth) — admin sees all, cashier only own data for current business_date. has_role() security definer function. Multiple sessions allowed.
+- [Database schema](mem://features/schema) — 10 tables: profiles, products, sales, sale_items, cash_entries, cash_closings, spr_volunteers, spr_fiado_charges, spr_fiado_charge_items, spr_fiado_payments
+- [Auth & permissions](mem://features/auth) — admin sees all, cashier only own data for current business_date. has_role() security definer function
 - [SPR Ramatis](mem://features/spr) — Fiado module for volunteers. Payment triggers auto cash_entry creation via handle_fiado_payment() trigger
-- [User roles](mem://features/roles) — admin, cashier, volunteer with different access levels and menu visibility
-- [Cash transfers](mem://features/cash-transfers) — Cashier-to-cashier transfer of cash register with dual authorization, audit, notifications
-- [MFA](mem://features/mfa.md) — MFA obrigatório para admins via TOTP
+- [Cash transfers](mem://features/cash-transfers) — Cashier-to-cashier transfer with dual authorization, audit trail, notifications
+- [Roles](mem://features/roles) — Role system details
+- [Security Central](mem://features/security-central) — Admin security dashboard: 4 tabs, filters, badges, real-time, audit detail view. Audit logs have session_id, action_summary, reason, status, requires_admin_review
