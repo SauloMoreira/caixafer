@@ -61,16 +61,20 @@ export default function ProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(!!isEditingOther);
   const [submitted, setSubmitted] = useState(false);
+  const [formInitialized, setFormInitialized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // Only populate form ONCE on mount (or when editing another user)
+  // This prevents refreshProfile from overwriting local state (especially avatar preview)
   useEffect(() => {
     if (isEditingOther) {
       fetchTargetProfile(editUserId);
-    } else if (currentProfile) {
+    } else if (currentProfile && !formInitialized) {
       populateForm(currentProfile as unknown as ProfileData);
+      setFormInitialized(true);
     }
-  }, [currentProfile, editUserId]);
+  }, [currentProfile, editUserId, formInitialized]);
 
   const fetchTargetProfile = async (userId: string) => {
     setLoading(true);
