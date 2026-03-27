@@ -20,6 +20,7 @@ const allNavItems = [
   { to: '/spr', icon: Heart, label: 'SPR Ramatis', roles: ['admin', 'cashier'] },
   { to: '/notificacoes', icon: Bell, label: 'Acompanhamento SPR', roles: ['admin'] },
   { to: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
+  { to: '/seguranca', icon: Shield, label: 'Segurança', roles: ['admin'] },
   // Volunteer-only
   { to: '/', icon: LayoutDashboard, label: 'Início', roles: ['volunteer'] },
   { to: '/meu-spr', icon: Heart, label: 'Meu SPR', roles: ['volunteer'] },
