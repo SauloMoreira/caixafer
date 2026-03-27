@@ -5,11 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO, PAYMENT_METHODS } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet, BarChart3 } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Area, AreaChart } from 'recharts';
-import { Button } from '@/components/ui/button';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
-import { format, subDays, subWeeks, subMonths, startOfWeek, startOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import BalanceEvolutionChart from '@/components/BalanceEvolutionChart';
 
 interface DayStats {
   salesToday: number;
