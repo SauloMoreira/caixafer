@@ -125,8 +125,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {/* Header / User */}
-      <div className="px-5 pt-5 pb-4">
+      {/* Logo */}
+      <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+        <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="h-10 w-10 rounded-xl object-contain shrink-0" />
+        <div className="min-w-0">
+          <p className="font-heading text-sm font-bold truncate">Caixa da FER</p>
+          <p className="text-[10px] text-muted-foreground">Fraternidade Espírita Ramatis</p>
+        </div>
+      </div>
+
+      {/* User */}
+      <div className="px-5 pb-4">
         <NavLink
           to="/perfil"
           className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
@@ -135,18 +144,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <img
               src={profile.avatar_url}
               alt=""
-              className="h-11 w-11 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
+              className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
             />
           ) : (
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary shrink-0">
-              <span className="text-sm font-bold text-primary-foreground">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shrink-0">
+              <span className="text-xs font-bold text-primary-foreground">
                 {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
               </span>
             </div>
           )}
           <div className="min-w-0">
-            <p className="font-heading text-sm font-bold truncate">{profile?.full_name}</p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-sm font-medium truncate">{profile?.full_name}</p>
+            <p className="text-[10px] text-muted-foreground">
               {role === 'admin' ? 'Administrador' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
             </p>
           </div>
