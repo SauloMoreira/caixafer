@@ -14,7 +14,7 @@ import { isValidEmail, normalizeEmail } from '@/lib/masks';
 type View = 'login' | 'signup' | 'forgot';
 
 export default function LoginPage() {
-  const { signIn, signUp, session, loading: authLoading } = useAuth();
+  const { signIn, signUp, session, loading: authLoading, profile, isAdmin, mfaEnrolled, mfaVerified, mfaLoading } = useAuth();
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
