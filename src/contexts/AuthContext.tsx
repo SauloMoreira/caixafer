@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { Session, User, AuthenticatorAssuranceLevels } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface Profile {
   id: string;
@@ -29,11 +30,8 @@ interface AuthContextType {
   isVolunteer: boolean;
   isApproved: boolean;
   isProfileComplete: boolean;
-  /** Admin has at least one verified TOTP factor enrolled */
   mfaEnrolled: boolean;
-  /** Current session AAL level is aal2 (MFA verified this session) */
   mfaVerified: boolean;
-  /** True while MFA status is being checked */
   mfaLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
@@ -44,7 +42,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const SESSION_CHECK_INTERVAL = 5 * 60 * 1000;
+const SESSION_CHECK_INTERVAL = 2 * 60 * 1000; // 2 min for single-session checks
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -55,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mfaVerified, setMfaVerified] = useState(false);
   const [mfaLoading, setMfaLoading] = useState(true);
   const sessionCheckRef = useRef<ReturnType<typeof setInterval>>();
+  const currentSessionIdRef = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     const { data } = await supabase
@@ -81,8 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setMfaLoading(false);
         return;
       }
-      // currentLevel is 'aal1' or 'aal2'
-      // nextLevel tells what the user CAN reach
       setMfaVerified(data.currentLevel === 'aal2');
       setMfaEnrolled(data.nextLevel === 'aal2' || data.currentLevel === 'aal2');
     } catch {
@@ -96,11 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await checkMfaStatus();
   }, [checkMfaStatus]);
 
-  const secureSignOut = useCallback(async () => {
+  const secureSignOut = useCallback(async (showMessage?: string) => {
     if (sessionCheckRef.current) {
       clearInterval(sessionCheckRef.current);
       sessionCheckRef.current = undefined;
     }
+    currentSessionIdRef.current = null;
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
@@ -118,7 +116,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       keysToRemove.forEach(k => localStorage.removeItem(k));
       sessionStorage.clear();
     } catch {}
+    if (showMessage) {
+      // Slight delay so toast renders after state clears
+      setTimeout(() => toast.info(showMessage), 100);
+    }
   }, []);
+
+  // Register this session as the active one in the DB
+  const registerSession = useCallback(async (userId: string, sessionId: string) => {
+    currentSessionIdRef.current = sessionId;
+    await supabase
+      .from('profiles')
+      .update({
+        active_session_id: sessionId,
+        last_login_at: new Date().toISOString(),
+      } as any)
+      .eq('id', userId);
+  }, []);
+
+  // Check if current session is still the active one
+  const validateSingleSession = useCallback(async (userId: string) => {
+    if (!currentSessionIdRef.current) return true;
+    const { data } = await supabase
+      .from('profiles')
+      .select('active_session_id, is_active, approval_status, role')
+      .eq('id', userId)
+      .single();
+    
+    if (!data) return true;
+
+    // Check if user was deactivated/unapproved
+    if (!data.is_active || data.approval_status !== 'approved') {
+      await secureSignOut('Sua conta foi desativada. Entre em contato com o administrador.');
+      return false;
+    }
+
+    // Update role if changed
+    setProfile(prev => prev ? { ...prev, role: data.role as any, is_active: data.is_active, approval_status: data.approval_status } : prev);
+
+    // Single session check
+    if (data.active_session_id && data.active_session_id !== currentSessionIdRef.current) {
+      await secureSignOut('Sua sessão foi encerrada porque sua conta foi acessada em outro dispositivo.');
+      
+      // Log the event (fire and forget)
+      supabase.from('security_audit_logs').insert({
+        event_type: 'session_invalidated_by_new_login',
+        entity_type: 'session',
+        action: 'SESSION_INVALIDATED',
+        severity: 'medium',
+        user_id: userId,
+        notes: 'Sessão encerrada por novo login em outro dispositivo',
+      } as any).then(() => {});
+      
+      return false;
+    }
+    return true;
+  }, [secureSignOut]);
 
   const startSessionCheck = useCallback((userId: string) => {
     if (sessionCheckRef.current) clearInterval(sessionCheckRef.current);
@@ -128,18 +181,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await secureSignOut();
         return;
       }
-      const { data: freshProfile } = await supabase
-        .from('profiles')
-        .select('is_active, approval_status, role')
-        .eq('id', userId)
-        .single();
-      if (freshProfile && (!freshProfile.is_active || freshProfile.approval_status !== 'approved')) {
-        await secureSignOut();
-      } else if (freshProfile) {
-        setProfile(prev => prev ? { ...prev, role: freshProfile.role as any, is_active: freshProfile.is_active, approval_status: freshProfile.approval_status } : prev);
-      }
+      await validateSingleSession(userId);
     }, SESSION_CHECK_INTERVAL);
-  }, [secureSignOut]);
+  }, [secureSignOut, validateSingleSession]);
+
+  // Validate on visibility change (user returns to tab)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && user) {
+        validateSingleSession(user.id);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [user, validateSingleSession]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -173,6 +228,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fetchProfile(session.user.id);
         startSessionCheck(session.user.id);
         checkMfaStatus();
+        // Set session ID from existing session for validation
+        const sid = (session as any)?.access_token?.substring(0, 32) || crypto.randomUUID();
+        currentSessionIdRef.current = sid;
       } else {
         setMfaLoading(false);
       }
@@ -198,11 +256,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut();
         return { error: new Error('Sua conta foi recusada. Entre em contato com o administrador.') };
       }
-      // Check MFA after login
+
+      // Register single session — generate unique ID for this login
+      const sessionId = crypto.randomUUID();
+      await registerSession(data.user.id, sessionId);
+
+      // Log single session policy applied
+      supabase.from('security_audit_logs').insert({
+        event_type: 'single_session_policy_applied',
+        entity_type: 'session',
+        action: 'LOGIN',
+        severity: 'info',
+        user_id: data.user.id,
+        user_role: p?.role || 'unknown',
+        notes: 'Nova sessão registrada. Sessões anteriores serão invalidadas.',
+      } as any).then(() => {});
+
       await checkMfaStatus();
     }
     return { error: null };
-  }, [fetchProfile, checkMfaStatus]);
+  }, [fetchProfile, checkMfaStatus, registerSession]);
 
   const signUp = useCallback(async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({

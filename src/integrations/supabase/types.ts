@@ -252,6 +252,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_session_id: string | null
           address_complement: string | null
           address_number: string | null
           approval_status: string
@@ -265,6 +266,7 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          last_login_at: string | null
           neighborhood: string | null
           phone: string | null
           role: Database["public"]["Enums"]["app_role"]
@@ -274,6 +276,7 @@ export type Database = {
           volunteer_id: string | null
         }
         Insert: {
+          active_session_id?: string | null
           address_complement?: string | null
           address_number?: string | null
           approval_status?: string
@@ -287,6 +290,7 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          last_login_at?: string | null
           neighborhood?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
@@ -296,6 +300,7 @@ export type Database = {
           volunteer_id?: string | null
         }
         Update: {
+          active_session_id?: string | null
           address_complement?: string | null
           address_number?: string | null
           approval_status?: string
@@ -309,6 +314,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          last_login_at?: string | null
           neighborhood?: string | null
           phone?: string | null
           role?: Database["public"]["Enums"]["app_role"]
