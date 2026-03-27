@@ -32,6 +32,25 @@ export default function MfaSetupPage() {
   const enrollFactor = async () => {
     setEnrolling(true);
     try {
+      // Refresh session first to ensure it's valid on the server
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        // Session is invalid, force re-login
+        await supabase.auth.signOut();
+        toast.error('Sessão expirada. Faça login novamente.');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Check if user already has a TOTP factor enrolled (unverified)
+      const { data: factorsData } = await supabase.auth.mfa.listFactors();
+      const existingUnverified = factorsData?.totp?.find(f => f.status === 'unverified');
+      
+      if (existingUnverified) {
+        // Unenroll stale unverified factor before re-enrolling
+        await supabase.auth.mfa.unenroll({ factorId: existingUnverified.id });
+      }
+
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         friendlyName: `${profile?.full_name || 'Admin'} - TOTP`,
@@ -49,6 +68,12 @@ export default function MfaSetupPage() {
         notes: 'Admin iniciou configuração de MFA TOTP',
       });
     } catch (err: any) {
+      if (err.message?.includes('session_not_found') || err.message?.includes('session')) {
+        await supabase.auth.signOut();
+        toast.error('Sessão inválida. Faça login novamente.');
+        navigate('/login', { replace: true });
+        return;
+      }
       toast.error('Erro ao iniciar configuração do MFA: ' + (err.message || ''));
     }
     setEnrolling(false);
