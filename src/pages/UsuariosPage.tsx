@@ -10,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil } from 'lucide-react';
+import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart } from 'lucide-react';
 
 interface UserProfile {
   id: string;
   full_name: string;
-  role: 'admin' | 'cashier';
+  role: 'admin' | 'cashier' | 'volunteer';
   phone: string | null;
   address: string | null;
   email: string | null;
@@ -24,7 +24,13 @@ interface UserProfile {
   approval_status: string;
   approved_by: string | null;
   approved_at: string | null;
+  volunteer_id: string | null;
   created_at: string;
+}
+
+interface Volunteer {
+  id: string;
+  full_name: string;
 }
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: typeof Clock }> = {
@@ -33,21 +39,33 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
   rejected: { label: 'Rejeitado', variant: 'destructive', icon: XCircle },
 };
 
+const roleLabels: Record<string, string> = {
+  admin: 'Admin',
+  cashier: 'Caixa',
+  volunteer: 'Voluntário',
+};
+
 export default function UsuariosPage() {
   const { profile: currentUser } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); fetchVolunteers(); }, []);
 
   const fetchUsers = async () => {
     const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (data) setUsers(data as unknown as UserProfile[]);
+  };
+
+  const fetchVolunteers = async () => {
+    const { data } = await supabase.from('spr_volunteers').select('id, full_name').eq('is_active', true).order('full_name');
+    if (data) setVolunteers(data);
   };
 
   const handleApprove = async (userId: string) => {
@@ -81,13 +99,37 @@ export default function UsuariosPage() {
     else { toast.success(active ? 'Usuário reativado!' : 'Usuário desativado.'); fetchUsers(); setDialogOpen(false); }
   };
 
-  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier') => {
+  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'volunteer') => {
+    const updateData: any = { role, updated_at: new Date().toISOString() };
+    // Clear volunteer_id if changing away from volunteer
+    if (role !== 'volunteer') {
+      updateData.volunteer_id = null;
+    }
+    const { error } = await supabase.from('profiles').update(updateData).eq('id', userId);
+    if (error) toast.error(error.message);
+    else {
+      toast.success('Perfil atualizado!');
+      fetchUsers();
+      // Update selectedUser in dialog
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, role, volunteer_id: role !== 'volunteer' ? null : prev.volunteer_id } : null);
+      }
+    }
+  };
+
+  const handleLinkVolunteer = async (userId: string, volunteerId: string | null) => {
     const { error } = await supabase.from('profiles').update({
-      role,
+      volunteer_id: volunteerId,
       updated_at: new Date().toISOString(),
     } as any).eq('id', userId);
     if (error) toast.error(error.message);
-    else { toast.success('Perfil atualizado!'); fetchUsers(); }
+    else {
+      toast.success('Vínculo atualizado!');
+      fetchUsers();
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, volunteer_id: volunteerId } : null);
+      }
+    }
   };
 
   const filtered = users.filter(u => {
@@ -103,6 +145,12 @@ export default function UsuariosPage() {
   };
 
   const pendingCount = users.filter(u => u.approval_status === 'pending_approval').length;
+
+  const getRoleIcon = (role: string) => {
+    if (role === 'admin') return <Shield className="h-5 w-5 text-primary" />;
+    if (role === 'volunteer') return <Heart className="h-5 w-5 text-primary" />;
+    return <User className="h-5 w-5 text-muted-foreground" />;
+  };
 
   return (
     <div className="space-y-4">
@@ -136,6 +184,7 @@ export default function UsuariosPage() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="cashier">Caixa</SelectItem>
+            <SelectItem value="volunteer">Voluntário</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -152,12 +201,12 @@ export default function UsuariosPage() {
                     <img src={u.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
                   ) : (
                     <div className={`flex h-10 w-10 items-center justify-center rounded-full shrink-0 ${u.role === 'admin' ? 'bg-primary/10' : 'bg-muted'}`}>
-                      {u.role === 'admin' ? <Shield className="h-5 w-5 text-primary" /> : <User className="h-5 w-5 text-muted-foreground" />}
+                      {getRoleIcon(u.role)}
                     </div>
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{u.full_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{u.email} • {u.role === 'admin' ? 'Admin' : 'Caixa'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{u.email} • {roleLabels[u.role] || u.role}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -208,18 +257,44 @@ export default function UsuariosPage() {
                 <div>
                   <span className="text-muted-foreground">Perfil:</span>
                   {selectedUser.id !== currentUser?.id ? (
-                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier')}>
+                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier' | 'volunteer')}>
                       <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="cashier">Caixa</SelectItem>
+                        <SelectItem value="volunteer">Voluntário</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
-                    <p>{selectedUser.role === 'admin' ? 'Administrador' : 'Caixa'}</p>
+                    <p>{roleLabels[selectedUser.role] || selectedUser.role}</p>
                   )}
                 </div>
               </div>
+
+              {/* Volunteer linking */}
+              {selectedUser.role === 'volunteer' && selectedUser.id !== currentUser?.id && (
+                <div className="rounded-xl border p-3 space-y-2 bg-primary/5">
+                  <Label className="text-xs font-semibold flex items-center gap-1.5">
+                    <Heart className="h-3.5 w-3.5 text-primary" />
+                    Vincular ao Voluntário SPR
+                  </Label>
+                  <Select
+                    value={selectedUser.volunteer_id || 'none'}
+                    onValueChange={v => handleLinkVolunteer(selectedUser.id, v === 'none' ? null : v)}
+                  >
+                    <SelectTrigger className="h-9"><SelectValue placeholder="Selecione o voluntário" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sem vínculo</SelectItem>
+                      {volunteers.map(v => (
+                        <SelectItem key={v.id} value={v.id}>{v.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!selectedUser.volunteer_id && (
+                    <p className="text-[10px] text-warning">⚠️ Voluntário sem vínculo não terá acesso ao Meu SPR</p>
+                  )}
+                </div>
+              )}
 
               {/* Actions */}
               {selectedUser.id !== currentUser?.id && (
