@@ -282,7 +282,7 @@ export default function SPRPage() {
             <div className="space-y-3">
               <div><Label>Nome Completo *</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
               
-              <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" type="tel" /></div>
+              <div><Label>Telefone</Label><PhoneInput value={volPhone} onChange={setVolPhone} placeholder="(11) 99999-9999" className="h-12" /></div>
               
               {editingVol && (
                 <div className="flex items-center justify-between">
