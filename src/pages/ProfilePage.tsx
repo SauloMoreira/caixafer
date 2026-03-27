@@ -6,8 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import PhoneInput from '@/components/PhoneInput';
+import EmailInput from '@/components/EmailInput';
 import { toast } from 'sonner';
 import { Camera, Upload, User, Loader2, ArrowLeft } from 'lucide-react';
+import { isValidPhone, isValidEmail, normalizeEmail, applyPhoneMask } from '@/lib/masks';
 
 interface ProfileData {
   id: string;
@@ -39,6 +42,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(!!isEditingOther);
+  const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,7 +67,7 @@ export default function ProfilePage() {
 
   const populateForm = (p: ProfileData) => {
     setFullName(p.full_name || '');
-    setPhone(p.phone || '');
+    setPhone(p.phone ? applyPhoneMask(p.phone) : '');
     setAddress(p.address || '');
     setEmail(p.email || '');
     setAvatarUrl(p.avatar_url);
@@ -92,11 +96,13 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    setSubmitted(true);
     if (!fullName.trim() || !phone.trim() || !address.trim() || !email.trim()) {
       toast.error('Preencha todos os campos obrigatórios.'); return;
     }
     if (!previewUrl && !avatarUrl) { toast.error('A foto é obrigatória.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast.error('E-mail inválido.'); return; }
+    if (!isValidPhone(phone)) { toast.error('Celular inválido. Use o formato (11) 99999-9999.'); return; }
+    if (!isValidEmail(email)) { toast.error('E-mail inválido. Verifique o formato.'); return; }
 
     const targetId = isEditingOther ? editUserId! : user!.id;
     setSaving(true);
@@ -108,7 +114,7 @@ export default function ProfilePage() {
 
     const { error } = await supabase.from('profiles').update({
       full_name: fullName.trim(), phone: phone.trim(), address: address.trim(),
-      email: email.trim(), avatar_url: finalAvatarUrl, updated_at: new Date().toISOString(),
+      email: normalizeEmail(email), avatar_url: finalAvatarUrl, updated_at: new Date().toISOString(),
     } as any).eq('id', targetId);
 
     if (error) {
@@ -116,6 +122,7 @@ export default function ProfilePage() {
     } else {
       toast.success('Perfil salvo com sucesso!');
       setAvatarFile(null);
+      setSubmitted(false);
       if (isEditingOther) {
         navigate('/usuarios');
       } else {
@@ -184,13 +191,32 @@ export default function ProfilePage() {
               </div>
               <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileSelect} className="hidden" />
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+              {submitted && !showAvatar && (
+                <p className="text-xs text-destructive">A foto é obrigatória.</p>
+              )}
             </div>
 
             <div className="space-y-3">
-              <div className="space-y-1.5"><Label>Nome completo *</Label><Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nome completo" className="h-12" /></div>
-              <div className="space-y-1.5"><Label>Celular *</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(11) 99999-9999" className="h-12" type="tel" /></div>
-              <div className="space-y-1.5"><Label>Endereço *</Label><Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Endereço completo" className="h-12" /></div>
-              <div className="space-y-1.5"><Label>E-mail *</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder="seu@email.com" className="h-12" type="email" /></div>
+              <div className="space-y-1.5">
+                <Label>Nome completo *</Label>
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Nome completo" className="h-12" />
+                {submitted && !fullName.trim() && <p className="text-xs text-destructive">Nome é obrigatório.</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Celular *</Label>
+                <PhoneInput value={phone} onChange={setPhone} placeholder="(11) 99999-9999" className="h-12" showError={submitted && phone.length > 0 ? !isValidPhone(phone) : undefined} />
+                {submitted && !phone.trim() && <p className="text-xs text-destructive">Celular é obrigatório.</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>Endereço *</Label>
+                <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Endereço completo" className="h-12" />
+                {submitted && !address.trim() && <p className="text-xs text-destructive">Endereço é obrigatório.</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label>E-mail *</Label>
+                <EmailInput value={email} onChange={setEmail} placeholder="seu@email.com" className="h-12" showError={submitted && email.length > 0 ? !isValidEmail(email) : undefined} />
+                {submitted && !email.trim() && <p className="text-xs text-destructive">E-mail é obrigatório.</p>}
+              </div>
             </div>
 
             <Button onClick={handleSave} disabled={saving} className="h-12 w-full text-base">

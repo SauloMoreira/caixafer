@@ -11,8 +11,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import PhoneInput from '@/components/PhoneInput';
 import { toast } from 'sonner';
 import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
+import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
 import type { Database } from '@/integrations/supabase/types';
 
 type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'] & { avatar_url?: string | null };
@@ -76,7 +78,7 @@ export default function SPRPage() {
 
   const openEditVolunteer = (v: Volunteer) => {
     setEditingVol(v);
-    setVolName(v.full_name); setVolPhone(v.phone || ''); setVolActive(v.is_active);
+    setVolName(v.full_name); setVolPhone(v.phone ? applyPhoneMask(v.phone) : ''); setVolActive(v.is_active);
     setVolAvatarFile(null); setVolPreviewUrl(v.avatar_url || null);
     setVolDialogOpen(true);
   };
@@ -280,7 +282,7 @@ export default function SPRPage() {
             <div className="space-y-3">
               <div><Label>Nome Completo *</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
               
-              <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" type="tel" /></div>
+              <div><Label>Telefone</Label><PhoneInput value={volPhone} onChange={setVolPhone} placeholder="(11) 99999-9999" className="h-12" /></div>
               
               {editingVol && (
                 <div className="flex items-center justify-between">
