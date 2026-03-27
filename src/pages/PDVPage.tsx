@@ -7,14 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine, ArrowRightLeft } from 'lucide-react';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
 import QuickIncomeDialog, { QUICK_INCOME_CATEGORIES } from '@/components/QuickIncomeDialog';
 import ProductImage from '@/components/ProductImage';
 import ManualItemDialog from '@/components/ManualItemDialog';
+import PendingTransferBanner from '@/components/PendingTransferBanner';
 import type { ManualItem } from '@/components/ManualItemDialog';
+import CashTransferDialog from '@/components/CashTransferDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +51,8 @@ export default function PDVPage() {
   const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none'>('loading');
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [isTransferredSession, setIsTransferredSession] = useState(false);
 
   // Receipt state
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -62,35 +66,66 @@ export default function PDVPage() {
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
   const [quickIncomeCategory, setQuickIncomeCategory] = useState<typeof QUICK_INCOME_CATEGORIES[number]['value'] | null>(null);
 
+  // Transfer state
+  const [transferOpen, setTransferOpen] = useState(false);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check if there's an open cash register for today
-    const { data: todayClosing } = await supabase
+    // Check if there's an open cash register for today where I am the current responsible
+    const { data: todayClosings } = await supabase
       .from('cash_closings')
-      .select('id, status')
+      .select('id, status, user_id, current_responsible_id')
       .eq('business_date', today)
-      .eq('user_id', profile.id)
-      .maybeSingle();
+      .eq('status', 'open');
 
-    if (todayClosing) {
-      setCashStatus(todayClosing.status === 'open' ? 'open' : 'closed_today');
+    // Find a closing where I am the original user or the current responsible
+    const myClosing = todayClosings?.find(
+      (c: any) => c.user_id === profile.id || c.current_responsible_id === profile.id
+    );
+
+    if (myClosing) {
+      if ((myClosing as any).current_responsible_id === profile.id) {
+        setCashStatus('open');
+        setClosingId(myClosing.id);
+        setIsTransferredSession((myClosing as any).current_responsible_id !== myClosing.user_id);
+      } else {
+        // I opened it but it was transferred to someone else
+        setCashStatus('none');
+        setClosingId(null);
+        setIsTransferredSession(false);
+      }
       setPendingDate(null);
     } else {
-      // Check for pending previous days (open closings before today)
-      const { data: pendingClosings } = await supabase
+      // Check for closed today
+      const { data: closedToday } = await supabase
         .from('cash_closings')
-        .select('business_date')
+        .select('id')
+        .eq('business_date', today)
         .eq('user_id', profile.id)
-        .eq('status', 'open')
-        .lt('business_date', today)
-        .order('business_date', { ascending: false })
+        .eq('status', 'closed')
         .limit(1);
 
-      setPendingDate(pendingClosings?.[0]?.business_date || null);
-      setCashStatus('none');
+      if (closedToday && closedToday.length > 0) {
+        setCashStatus('closed_today');
+      } else {
+        // Check for pending previous days
+        const { data: pendingClosings } = await supabase
+          .from('cash_closings')
+          .select('business_date')
+          .eq('user_id', profile.id)
+          .eq('status', 'open')
+          .lt('business_date', today)
+          .order('business_date', { ascending: false })
+          .limit(1);
+
+        setPendingDate(pendingClosings?.[0]?.business_date || null);
+        setCashStatus('none');
+      }
+      setClosingId(null);
+      setIsTransferredSession(false);
     }
   }, [profile]);
 
@@ -259,21 +294,40 @@ export default function PDVPage() {
 
   return (
     <div className="space-y-4">
+      {/* Pending transfer banner */}
+      <PendingTransferBanner
+        onTransferAccepted={checkCashRegister}
+        onTransferStatusChanged={checkCashRegister}
+      />
+
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2">
           PDV
           <span className="inline-flex items-center gap-1 rounded-full bg-income/10 px-2 py-0.5 text-[10px] font-medium text-income">
             <Unlock className="h-3 w-3" />Aberto
           </span>
-        </h1>
-        {cart.length > 0 && (
-          <Button onClick={() => setShowCart(true)} className="md:hidden relative">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
-              {cart.length}
+          {isTransferredSession && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+              Transferido
             </span>
-          </Button>
-        )}
+          )}
+        </h1>
+        <div className="flex items-center gap-2">
+          {closingId && (
+            <Button variant="outline" size="sm" onClick={() => setTransferOpen(true)} className="text-xs">
+              <ArrowRightLeft className="h-3.5 w-3.5 mr-1" />
+              Transferir
+            </Button>
+          )}
+          {cart.length > 0 && (
+            <Button onClick={() => setShowCart(true)} className="md:hidden relative">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
+                {cart.length}
+              </span>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 md:flex-row">
@@ -446,6 +500,19 @@ export default function PDVPage() {
 
       {/* Manual Item Dialog */}
       <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
+
+      {/* Cash Transfer Dialog */}
+      {closingId && (
+        <CashTransferDialog
+          open={transferOpen}
+          onOpenChange={setTransferOpen}
+          closingId={closingId}
+          businessDate={todayISO()}
+          currentStats={{ sales: subtotal, income: 0, expense: 0 }}
+          openingBalance={0}
+          onTransferred={checkCashRegister}
+        />
+      )}
     </div>
   );
 }

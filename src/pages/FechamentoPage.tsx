@@ -9,11 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles } from 'lucide-react';
+import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles, ArrowRightLeft } from 'lucide-react';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
 import DailyOperationInsights from '@/components/DailyOperationInsights';
 import AIRecommendations from '@/components/AIRecommendations';
+import CashTransferDialog from '@/components/CashTransferDialog';
+import PendingTransferBanner from '@/components/PendingTransferBanner';
+import CashTransferHistory from '@/components/CashTransferHistory';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -43,6 +46,7 @@ export default function FechamentoPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [closingHistory, setClosingHistory] = useState<any[]>([]);
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
+  const [showTransferDialog, setShowTransferDialog] = useState(false);
 
   useEffect(() => { fetchData(); }, [date, profile]);
 
@@ -290,6 +294,12 @@ export default function FechamentoPage() {
       <h1 className="page-title">Fechamento de Caixa</h1>
       <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12" />
 
+      {/* Pending transfer banner */}
+      <PendingTransferBanner
+        onTransferAccepted={fetchData}
+        onTransferStatusChanged={fetchData}
+      />
+
       {/* Warning for pending previous day */}
       {pendingDate && date !== pendingDate && (
         <div className="flex items-start gap-2 rounded-lg bg-warning/10 border border-warning/20 p-3 text-warning text-sm">
@@ -433,6 +443,15 @@ export default function FechamentoPage() {
                     <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
                     <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
                   </div>
+                  {/* Transfer button */}
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 border-primary/30 text-primary hover:bg-primary/5"
+                    onClick={() => setShowTransferDialog(true)}
+                  >
+                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                    Transferir Caixa
+                  </Button>
                   {wasReopened && (
                     <Button
                       variant="outline"
@@ -523,6 +542,9 @@ export default function FechamentoPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Transfer History */}
+          {closing && <CashTransferHistory closingId={closing.id} />}
         </>
       )}
 
@@ -576,6 +598,19 @@ export default function FechamentoPage() {
           )}
         </div>
       </CriticalActionDialog>
+
+      {/* Cash Transfer Dialog */}
+      {closing && (
+        <CashTransferDialog
+          open={showTransferDialog}
+          onOpenChange={setShowTransferDialog}
+          closingId={closing.id}
+          businessDate={date}
+          currentStats={stats}
+          openingBalance={Number(openingBalance)}
+          onTransferred={fetchData}
+        />
+      )}
     </div>
   );
 }
