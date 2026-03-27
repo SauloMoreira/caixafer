@@ -22,6 +22,7 @@ import MeuSPRPage from "@/pages/MeuSPRPage";
 import NotificacoesPage from "@/pages/NotificacoesPage";
 import NotFound from "@/pages/NotFound";
 import SegurancaPage from "@/pages/SegurancaPage";
+import InsightsPage from "@/pages/InsightsPage";
 import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 
