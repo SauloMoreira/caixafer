@@ -1244,6 +1244,17 @@ export type Database = {
           id: string
         }[]
       }
+      get_open_cash_session_today: {
+        Args: never
+        Returns: {
+          business_date: string
+          closing_id: string
+          current_responsible_id: string
+          responsible_name: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_user_names: {
         Args: { _user_ids: string[] }
         Returns: {

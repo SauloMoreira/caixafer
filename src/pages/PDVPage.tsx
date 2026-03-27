@@ -50,7 +50,7 @@ export default function PDVPage() {
   const [showCart, setShowCart] = useState(false);
 
   // Cash register state
-  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none'>('loading');
+  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none' | 'blocked'>('loading');
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
   const [closingId, setClosingId] = useState<string | null>(null);
@@ -82,40 +82,34 @@ export default function PDVPage() {
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check for any open cash register today
-    const { data: todayClosings } = await supabase
-      .from('cash_closings')
-      .select('id, status, user_id, current_responsible_id')
-      .eq('business_date', today)
-      .eq('status', 'open');
-
-    const openSession = todayClosings?.[0];
+    // Use SECURITY DEFINER function to check open session (bypasses RLS)
+    const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
+    const openSession = sessions?.[0];
 
     if (openSession) {
       const isCurrentResponsible = openSession.current_responsible_id === profile.id;
 
       if (isCurrentResponsible || hasOperationalOverride) {
         setCashStatus('open');
-        setClosingId(openSession.id);
+        setClosingId(openSession.closing_id);
         setIsTransferredSession(isCurrentResponsible && openSession.current_responsible_id !== openSession.user_id);
         
-        // Get responsible name for override mode
         if (!isCurrentResponsible && hasOperationalOverride) {
-          const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSession.current_responsible_id] });
-          setSessionResponsibleName(names?.[0]?.full_name || 'outro operador');
+          setSessionResponsibleName(openSession.responsible_name || 'outro operador');
         } else {
           setSessionResponsibleName(null);
         }
       } else {
         // Session exists but user is not responsible and has no override
-        setCashStatus('none');
+        // Show blocking message with responsible name
+        setCashStatus('blocked');
         setClosingId(null);
         setIsTransferredSession(false);
-        setSessionResponsibleName(null);
+        setSessionResponsibleName(openSession.responsible_name || 'outro operador');
       }
       setPendingDate(null);
     } else {
-      // Check for closed today
+      // Check for closed today (user's own)
       const { data: closedToday } = await supabase
         .from('cash_closings')
         .select('id')
@@ -280,14 +274,39 @@ export default function PDVPage() {
           onTransferAccepted={checkCashRegister}
           onTransferStatusChanged={checkCashRegister}
         />
+
+        {/* Blocked: another cashier has the session */}
+        {cashStatus === 'blocked' && sessionResponsibleName && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2 max-w-md mx-auto">
+            <div className="flex items-start gap-2">
+              <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+              <div className="space-y-1">
+                <p className="font-semibold text-destructive">Caixa já aberto</p>
+                <p className="text-sm text-destructive/90">
+                  Caixa já foi aberto por <strong>{sessionResponsibleName}</strong>.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Se você precisa operar, solicite a transferência da responsabilidade.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Card className="max-w-md mx-auto">
           <CardContent className="flex flex-col items-center gap-4 py-8">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
               <Lock className="h-8 w-8 text-warning" />
             </div>
             <div className="text-center space-y-2">
-              <h2 className="font-heading text-lg font-bold">Caixa Fechado</h2>
-              {cashStatus === 'closed_today' ? (
+              <h2 className="font-heading text-lg font-bold">
+                {cashStatus === 'blocked' ? 'Operação Bloqueada' : 'Caixa Fechado'}
+              </h2>
+              {cashStatus === 'blocked' ? (
+                <p className="text-sm text-muted-foreground">
+                  Você não pode operar enquanto outro operador estiver com o caixa aberto.
+                </p>
+              ) : cashStatus === 'closed_today' ? (
                 <p className="text-sm text-muted-foreground">O caixa de hoje já foi fechado. Não é possível realizar novas vendas.</p>
               ) : pendingDate ? (
                 <p className="text-sm text-muted-foreground">
@@ -297,7 +316,12 @@ export default function PDVPage() {
                 <p className="text-sm text-muted-foreground">Abra o caixa para começar a registrar vendas.</p>
               )}
             </div>
-            {pendingDate ? (
+            {cashStatus === 'blocked' ? (
+              <Button variant="outline" className="h-12 w-full max-w-xs" onClick={() => navigate('/fechamento')}>
+                <ArrowRightLeft className="mr-2 h-4 w-4" />
+                Ir para Fechamento
+              </Button>
+            ) : pendingDate ? (
               <Button className="h-12 w-full max-w-xs" onClick={() => navigate('/fechamento')}>
                 Ir para Fechamento
               </Button>
@@ -310,7 +334,7 @@ export default function PDVPage() {
           </CardContent>
         </Card>
 
-        {profile && (
+        {profile && cashStatus === 'none' && (
           <CashOpeningDialog
             open={openingDialogOpen}
             onOpenChange={setOpeningDialogOpen}
