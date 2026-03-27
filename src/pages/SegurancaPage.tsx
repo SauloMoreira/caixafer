@@ -346,40 +346,8 @@ export default function SegurancaPage() {
           </div>
         </TabsContent>
 
-        {/* ═══ CONFIGURAÇÕES ═══ */}
         <TabsContent value="settings" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Lock className="h-4 w-4" />
-                Autenticação Multifator (MFA)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="rounded-lg border border-dashed p-4 text-center space-y-2">
-                <Shield className="h-8 w-8 text-muted-foreground mx-auto" />
-                <p className="text-sm font-medium">MFA disponível em breve</p>
-                <p className="text-xs text-muted-foreground">
-                  A autenticação multifator adicionará uma camada extra de segurança para contas administrativas.
-                  Esta funcionalidade está sendo preparada.
-                </p>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-muted-foreground">MFA para Admins</span>
-                  <Badge variant="outline">Em breve</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-muted-foreground">MFA para Caixas</span>
-                  <Badge variant="outline">Opcional (futuro)</Badge>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-muted-foreground">MFA para Voluntários</span>
-                  <Badge variant="outline">Não aplicável</Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <MfaSettingsSection profiles={profiles} auditLogs={auditLogs} />
 
           <Card>
             <CardHeader className="pb-2">
