@@ -363,7 +363,7 @@ export default function ProfilePage() {
               <div className="space-y-1.5">
                 <Label>CEP</Label>
                 <div className="flex gap-2">
-                  <CepInput value={cep} onChange={handleCepChange} className="h-12 flex-1" disabled={fetchingCep} />
+                  <CepInput value={cep} onChange={handleCepChangeTracked} className="h-12 flex-1" disabled={fetchingCep} />
                   <Button type="button" variant="outline" size="icon" className="h-12 w-12 shrink-0" onClick={handleCepSearch} disabled={fetchingCep || cepDigits(cep).length < 8}>
                     {fetchingCep ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                   </Button>
