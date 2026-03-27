@@ -340,7 +340,6 @@ export type Database = {
       }
       profiles: {
         Row: {
-          active_session_id: string | null
           address_complement: string | null
           address_number: string | null
           approval_status: string
@@ -364,7 +363,6 @@ export type Database = {
           volunteer_id: string | null
         }
         Insert: {
-          active_session_id?: string | null
           address_complement?: string | null
           address_number?: string | null
           approval_status?: string
@@ -388,7 +386,6 @@ export type Database = {
           volunteer_id?: string | null
         }
         Update: {
-          active_session_id?: string | null
           address_complement?: string | null
           address_number?: string | null
           approval_status?: string
