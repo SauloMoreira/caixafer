@@ -267,6 +267,18 @@ export default function PDVPage() {
             />
           </div>
 
+          {/* SPR action */}
+          <button
+            onClick={() => setSprPaymentOpen(true)}
+            className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
+          >
+            <div className="flex items-center gap-2">
+              <Heart className="h-4 w-4 text-primary" />
+              <p className="text-sm font-medium leading-tight text-primary">Receber SPR</p>
+            </div>
+            <p className="text-xs text-muted-foreground">Pagamento de fiado</p>
+          </button>
+
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map(product => (
               <button
