@@ -1,0 +1,632 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
+  public: {
+    Tables: {
+      cash_closings: {
+        Row: {
+          business_date: string
+          closed_at: string | null
+          counted_balance: number | null
+          created_at: string
+          difference_amount: number | null
+          expected_balance: number
+          expense_total: number
+          id: string
+          income_total: number
+          notes: string | null
+          opening_balance: number
+          sales_total: number
+          status: Database["public"]["Enums"]["closing_status"]
+          user_id: string
+        }
+        Insert: {
+          business_date: string
+          closed_at?: string | null
+          counted_balance?: number | null
+          created_at?: string
+          difference_amount?: number | null
+          expected_balance?: number
+          expense_total?: number
+          id?: string
+          income_total?: number
+          notes?: string | null
+          opening_balance?: number
+          sales_total?: number
+          status?: Database["public"]["Enums"]["closing_status"]
+          user_id: string
+        }
+        Update: {
+          business_date?: string
+          closed_at?: string | null
+          counted_balance?: number | null
+          created_at?: string
+          difference_amount?: number | null
+          expected_balance?: number
+          expense_total?: number
+          id?: string
+          income_total?: number
+          notes?: string | null
+          opening_balance?: number
+          sales_total?: number
+          status?: Database["public"]["Enums"]["closing_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_closings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_entries: {
+        Row: {
+          amount: number
+          business_date: string
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          document_reference: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          entry_type: Database["public"]["Enums"]["entry_type"]
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
+          source_id: string | null
+          source_type: string | null
+        }
+        Insert: {
+          amount: number
+          business_date?: string
+          category: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          document_reference?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          entry_type: Database["public"]["Enums"]["entry_type"]
+          id?: string
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          source_id?: string | null
+          source_type?: string | null
+        }
+        Update: {
+          amount?: number
+          business_date?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          document_reference?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          entry_type?: Database["public"]["Enums"]["entry_type"]
+          id?: string
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          source_id?: string | null
+          source_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          internal_code: string | null
+          is_active: boolean
+          name: string
+          notes: string | null
+          unit_price: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          internal_code?: string | null
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          unit_price: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          internal_code?: string | null
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          unit_price?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          is_active: boolean
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          id: string
+          line_total: number
+          product_id: string
+          quantity: number
+          sale_id: string
+          unit_price: number
+        }
+        Insert: {
+          id?: string
+          line_total: number
+          product_id: string
+          quantity?: number
+          sale_id: string
+          unit_price: number
+        }
+        Update: {
+          id?: string
+          line_total?: number
+          product_id?: string
+          quantity?: number
+          sale_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          business_date: string
+          created_at: string
+          created_by: string
+          discount_amount: number
+          id: string
+          notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          sale_number: number
+          subtotal: number
+          total_amount: number
+        }
+        Insert: {
+          business_date?: string
+          created_at?: string
+          created_by: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          sale_number?: number
+          subtotal?: number
+          total_amount?: number
+        }
+        Update: {
+          business_date?: string
+          created_at?: string
+          created_by?: string
+          discount_amount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          sale_number?: number
+          subtotal?: number
+          total_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spr_fiado_charge_items: {
+        Row: {
+          charge_id: string
+          id: string
+          line_total: number
+          product_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          charge_id: string
+          id?: string
+          line_total: number
+          product_id: string
+          quantity?: number
+          unit_price: number
+        }
+        Update: {
+          charge_id?: string
+          id?: string
+          line_total?: number
+          product_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spr_fiado_charge_items_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "spr_fiado_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spr_fiado_charge_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spr_fiado_charges: {
+        Row: {
+          amount: number
+          business_date: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["fiado_status"]
+          volunteer_id: string
+        }
+        Insert: {
+          amount: number
+          business_date?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["fiado_status"]
+          volunteer_id: string
+        }
+        Update: {
+          amount?: number
+          business_date?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["fiado_status"]
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spr_fiado_charges_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spr_fiado_charges_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "spr_volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spr_fiado_payments: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          created_by: string
+          document_reference: string | null
+          document_type: Database["public"]["Enums"]["document_type"] | null
+          fiado_charge_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          volunteer_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          created_by: string
+          document_reference?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          fiado_charge_id: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          volunteer_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          created_by?: string
+          document_reference?: string | null
+          document_type?: Database["public"]["Enums"]["document_type"] | null
+          fiado_charge_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          volunteer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spr_fiado_payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spr_fiado_payments_fiado_charge_id_fkey"
+            columns: ["fiado_charge_id"]
+            isOneToOne: false
+            referencedRelation: "spr_fiado_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spr_fiado_payments_volunteer_id_fkey"
+            columns: ["volunteer_id"]
+            isOneToOne: false
+            referencedRelation: "spr_volunteers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spr_volunteers: {
+        Row: {
+          created_at: string
+          document_number: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_number?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_number?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          phone?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+    }
+    Enums: {
+      app_role: "admin" | "cashier"
+      closing_status: "open" | "closed"
+      document_type:
+        | "recibo"
+        | "nota_fiscal"
+        | "id_transferencia"
+        | "sem_documento"
+      entry_type: "income" | "expense"
+      fiado_status: "open" | "partial" | "paid"
+      payment_method: "pix" | "debito" | "credito" | "transferencia"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      app_role: ["admin", "cashier"],
+      closing_status: ["open", "closed"],
+      document_type: [
+        "recibo",
+        "nota_fiscal",
+        "id_transferencia",
+        "sem_documento",
+      ],
+      entry_type: ["income", "expense"],
+      fiado_status: ["open", "partial", "paid"],
+      payment_method: ["pix", "debito", "credito", "transferencia"],
+    },
+  },
+} as const
