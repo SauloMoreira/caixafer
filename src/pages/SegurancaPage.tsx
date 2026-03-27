@@ -151,6 +151,7 @@ export default function SegurancaPage() {
           <TabsTrigger value="closings" className="flex-1 min-w-[100px]">Fechamentos</TabsTrigger>
           <TabsTrigger value="incidents" className="flex-1 min-w-[100px]">Incidentes</TabsTrigger>
           <TabsTrigger value="users" className="flex-1 min-w-[100px]">Usuários</TabsTrigger>
+          <TabsTrigger value="settings" className="flex-1 min-w-[100px]">Configurações</TabsTrigger>
         </TabsList>
 
         {/* ═══ VISÃO GERAL ═══ */}
