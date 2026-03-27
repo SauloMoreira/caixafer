@@ -31,31 +31,55 @@ export default function MfaSetupPage() {
 
   const enrollFactor = async () => {
     setEnrolling(true);
+    setErrorMsg('');
     try {
-      // Refresh session first to ensure it's valid on the server
+      // Ensure we have a valid session from the server
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !sessionData.session) {
+        await supabase.auth.signOut();
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Refresh to get a fresh token
       const { error: refreshError } = await supabase.auth.refreshSession();
       if (refreshError) {
-        // Session is invalid, force re-login
+        console.error('MFA: refresh failed', refreshError);
         await supabase.auth.signOut();
         toast.error('Sessão expirada. Faça login novamente.');
         navigate('/login', { replace: true });
         return;
       }
 
-      // Check if user already has a TOTP factor enrolled (unverified)
+      // Check if user already has TOTP factors
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
-      const existingUnverified = factorsData?.totp?.find(f => (f.status as string) === 'unverified');
+      const existingVerified = factorsData?.totp?.find(f => f.status === 'verified');
+      if (existingVerified) {
+        // Already enrolled, redirect
+        navigate('/', { replace: true });
+        return;
+      }
       
-      if (existingUnverified) {
-        // Unenroll stale unverified factor before re-enrolling
-        await supabase.auth.mfa.unenroll({ factorId: existingUnverified.id });
+      // Unenroll any stale unverified factors
+      const unverifiedFactors = factorsData?.totp?.filter(f => (f.status as string) === 'unverified') || [];
+      for (const f of unverifiedFactors) {
+        await supabase.auth.mfa.unenroll({ factorId: f.id });
       }
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
         friendlyName: `${profile?.full_name || 'Admin'} - TOTP`,
       });
-      if (error) throw error;
+      if (error) {
+        console.error('MFA enroll error:', error);
+        if (error.message?.includes('session_not_found')) {
+          await supabase.auth.signOut();
+          toast.error('Sessão inválida. Faça login novamente.');
+          navigate('/login', { replace: true });
+          return;
+        }
+        throw error;
+      }
       setQrUrl(data.totp.qr_code);
       setSecret(data.totp.secret);
       setFactorId(data.id);
@@ -68,12 +92,8 @@ export default function MfaSetupPage() {
         notes: 'Admin iniciou configuração de MFA TOTP',
       });
     } catch (err: any) {
-      if (err.message?.includes('session_not_found') || err.message?.includes('session')) {
-        await supabase.auth.signOut();
-        toast.error('Sessão inválida. Faça login novamente.');
-        navigate('/login', { replace: true });
-        return;
-      }
+      console.error('MFA setup error:', err);
+      setErrorMsg(err.message || 'Erro desconhecido ao configurar MFA.');
       toast.error('Erro ao iniciar configuração do MFA: ' + (err.message || ''));
     }
     setEnrolling(false);
