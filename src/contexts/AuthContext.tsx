@@ -1,15 +1,21 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
-
-type AppRole = Database['public']['Enums']['app_role'];
 
 interface Profile {
   id: string;
   full_name: string;
-  role: AppRole;
+  role: 'admin' | 'cashier';
+  phone: string | null;
+  address: string | null;
+  email: string | null;
+  avatar_url: string | null;
   is_active: boolean;
+  approval_status: string;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -19,9 +25,12 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isCashier: boolean;
+  isApproved: boolean;
+  isProfileComplete: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +47,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select('*')
       .eq('id', userId)
       .single();
-    if (data) setProfile(data as Profile);
+    if (data) setProfile(data as unknown as Profile);
+  };
+
+  const refreshProfile = async () => {
+    if (user) await fetchProfile(user.id);
   };
 
   useEffect(() => {
@@ -89,12 +102,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfile(null);
   };
 
+  const isProfileComplete = !!(
+    profile &&
+    profile.full_name &&
+    profile.phone &&
+    profile.address &&
+    profile.email &&
+    profile.avatar_url
+  );
+
+  const isApproved = profile?.approval_status === 'approved' && profile?.is_active === true;
+
   return (
     <AuthContext.Provider value={{
       session, user, profile, loading,
       isAdmin: profile?.role === 'admin',
       isCashier: profile?.role === 'cashier',
-      signIn, signUp, signOut,
+      isApproved,
+      isProfileComplete,
+      signIn, signUp, signOut, refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
