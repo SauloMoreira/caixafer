@@ -104,14 +104,31 @@ export default function MovimentosPage() {
     return acc;
   }, { income: 0, expense: 0 });
 
+  // Block new entry button for non-responsible on today
+  const isBlockedToday = filterDate === todayISO() && sessionOpen && !canOperate;
+
   return (
     <div className="space-y-4">
+      {/* Blocked banner */}
+      {isBlockedToday && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm flex items-start gap-2">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+          <div>
+            <p className="font-semibold text-destructive">Operação bloqueada</p>
+            <p className="text-muted-foreground text-xs">
+              O caixa de hoje está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>. Você não pode inserir movimentos.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="page-title">Movimentos</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo</Button>
-          </DialogTrigger>
+        {!isBlockedToday && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo</Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Novo Movimento</DialogTitle></DialogHeader>
             <div className="space-y-3">
