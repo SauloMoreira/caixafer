@@ -997,6 +997,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_eligible_transfer_cashiers: {
+        Args: { _exclude_user_id: string }
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
