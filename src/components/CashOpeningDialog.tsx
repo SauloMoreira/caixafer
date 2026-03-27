@@ -26,18 +26,11 @@ export default function CashOpeningDialog({ open, onOpenChange, userId, pendingD
   useEffect(() => {
     if (!open) return;
     setExistingOpenByOther(null);
-    // Check if another user already has an open session today
+    // Use SECURITY DEFINER function to check (bypasses RLS)
     (async () => {
-      const { data: openSessions } = await supabase
-        .from('cash_closings')
-        .select('current_responsible_id')
-        .eq('business_date', todayISO())
-        .eq('status', 'open')
-        .eq('is_latest_version', true)
-        .limit(1);
-      if (openSessions && openSessions.length > 0 && openSessions[0].current_responsible_id !== userId) {
-        const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSessions[0].current_responsible_id] });
-        setExistingOpenByOther({ responsibleName: names?.[0]?.full_name || 'outro operador' });
+      const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
+      if (sessions && sessions.length > 0 && sessions[0].current_responsible_id !== userId) {
+        setExistingOpenByOther({ responsibleName: sessions[0].responsible_name || 'outro operador' });
       }
     })();
   }, [open, userId]);
