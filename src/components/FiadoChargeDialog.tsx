@@ -260,7 +260,14 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
                   {cart.map(item => {
                     const id = getItemId(item);
                     return (
-                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                    <div key={id} className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
+                      <ProductImage
+                        src={item.itemType === 'product' ? (item.product as any)?.image_url : null}
+                        itemType={item.itemType}
+                        size="sm"
+                        alt={getItemName(item)}
+                        className="h-6 w-6"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">
                           {getItemName(item)}
