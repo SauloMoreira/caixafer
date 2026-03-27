@@ -4,27 +4,32 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, todayISO } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, PenLine } from 'lucide-react';
+import ManualItemDialog from '@/components/ManualItemDialog';
+import type { ManualItem } from '@/components/ManualItemDialog';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'];
 
 interface CartItem {
-  product: Product;
+  product?: Product;
+  manualItem?: ManualItem;
   quantity: number;
+  itemType: 'product' | 'manual';
 }
+
+const getItemId = (i: CartItem) => i.itemType === 'product' ? i.product!.id : i.manualItem!.id;
+const getItemName = (i: CartItem) => i.itemType === 'product' ? i.product!.name : i.manualItem!.name;
+const getItemPrice = (i: CartItem) => i.itemType === 'product' ? Number(i.product!.unit_price) : i.manualItem!.unitPrice;
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChargeCreated?: () => void;
-  /** Pre-select volunteer (skip selection step) */
   preSelectedVolunteerId?: string;
 }
 
@@ -41,6 +46,7 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
   const [volSearch, setVolSearch] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [manualItemOpen, setManualItemOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -51,15 +57,10 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
       setSelectedVolunteer(null);
       fetchVolunteers();
       fetchProducts();
-      if (preSelectedVolunteerId) {
-        setStep('select_products');
-      } else {
-        setStep('select_volunteer');
-      }
+      setStep(preSelectedVolunteerId ? 'select_products' : 'select_volunteer');
     }
   }, [open, preSelectedVolunteerId]);
 
-  // When pre-selected volunteer loads
   useEffect(() => {
     if (preSelectedVolunteerId && volunteers.length > 0) {
       const vol = volunteers.find(v => v.id === preSelectedVolunteerId);
@@ -84,31 +85,35 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
 
   const addToCart = (product: Product) => {
     setCart(prev => {
-      const existing = prev.find(i => i.product.id === product.id);
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product, quantity: 1 }];
+      const existing = prev.find(i => i.itemType === 'product' && i.product?.id === product.id);
+      if (existing) return prev.map(i => i.itemType === 'product' && i.product?.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { product, quantity: 1, itemType: 'product' as const }];
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const addManualToCart = (item: ManualItem) => {
+    setCart(prev => [...prev, { manualItem: item, quantity: item.quantity, itemType: 'manual' as const }]);
+  };
+
+  const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(i => {
-      if (i.product.id !== productId) return i;
+      if (getItemId(i) !== id) return i;
       const newQty = i.quantity + delta;
       return newQty > 0 ? { ...i, quantity: newQty } : i;
     }).filter(i => i.quantity > 0));
   };
 
-  const removeItem = (productId: string) => {
-    setCart(prev => prev.filter(i => i.product.id !== productId));
+  const removeItem = (id: string) => {
+    setCart(prev => prev.filter(i => getItemId(i) !== id));
   };
 
-  const total = cart.reduce((sum, i) => sum + Number(i.product.unit_price) * i.quantity, 0);
+  const total = cart.reduce((sum, i) => sum + getItemPrice(i) * i.quantity, 0);
 
   const confirmCharge = async () => {
     if (!profile || !selectedVolunteer || cart.length === 0) return;
     setLoading(true);
     try {
-      const description = cart.map(i => `${i.quantity}x ${i.product.name}`).join(', ');
+      const description = cart.map(i => `${i.quantity}x ${getItemName(i)}`).join(', ');
 
       const { data: charge, error: chargeError } = await supabase.from('spr_fiado_charges').insert({
         volunteer_id: selectedVolunteer.id,
@@ -123,13 +128,16 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
 
       const items = cart.map(i => ({
         charge_id: charge.id,
-        product_id: i.product.id,
+        product_id: i.itemType === 'product' ? i.product!.id : null,
+        manual_item_name: i.itemType === 'manual' ? i.manualItem!.name : null,
+        item_type: i.itemType,
         quantity: i.quantity,
-        unit_price: Number(i.product.unit_price),
-        line_total: Number(i.product.unit_price) * i.quantity,
+        unit_price: getItemPrice(i),
+        line_total: getItemPrice(i) * i.quantity,
+        notes: i.itemType === 'manual' ? (i.manualItem!.notes || null) : null,
       }));
 
-      const { error: itemsError } = await supabase.from('spr_fiado_charge_items').insert(items);
+      const { error: itemsError } = await supabase.from('spr_fiado_charge_items').insert(items as any);
       if (itemsError) throw itemsError;
 
       toast.success(`Fiado de ${formatCurrency(total)} registrado para ${selectedVolunteer.full_name}!`);
@@ -220,6 +228,16 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
 
             {/* Product grid */}
             <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+              {/* Manual item button */}
+              <button
+                onClick={() => setManualItemOpen(true)}
+                className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-muted-foreground/20 p-2"
+              >
+                <div className="flex items-center gap-1.5">
+                  <PenLine className="h-3 w-3 text-muted-foreground" />
+                  <p className="text-xs font-medium leading-tight text-muted-foreground">Item Avulso</p>
+                </div>
+              </button>
               {filteredProducts.map(product => (
                 <button
                   key={product.id}
@@ -238,26 +256,32 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Itens ({cart.length})</p>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
-                  {cart.map(item => (
-                    <div key={item.product.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                  {cart.map(item => {
+                    const id = getItemId(item);
+                    return (
+                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{item.product.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(Number(item.product.unit_price))}</p>
+                        <p className="text-xs font-medium truncate">
+                          {getItemName(item)}
+                          {item.itemType === 'manual' && <span className="ml-1 text-[10px] text-muted-foreground">(avulso)</span>}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{formatCurrency(getItemPrice(item))}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.product.id, -1)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(id, -1)}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-5 text-center text-xs font-medium">{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(item.product.id, 1)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateQuantity(id, 1)}>
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-expense" onClick={() => removeItem(item.product.id)}>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-expense" onClick={() => removeItem(id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <Input placeholder="Observações (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
@@ -275,6 +299,9 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
           </div>
         )}
       </DialogContent>
+
+      {/* Manual Item Dialog */}
+      <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
     </Dialog>
   );
 }

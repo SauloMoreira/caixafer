@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine } from 'lucide-react';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
 import QuickIncomeDialog, { QUICK_INCOME_CATEGORIES } from '@/components/QuickIncomeDialog';
+import ManualItemDialog from '@/components/ManualItemDialog';
+import type { ManualItem } from '@/components/ManualItemDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
@@ -20,9 +22,15 @@ type Product = Database['public']['Tables']['products']['Row'];
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 interface CartItem {
-  product: Product;
+  product?: Product;
+  manualItem?: ManualItem;
   quantity: number;
+  itemType: 'product' | 'manual';
 }
+
+const getCartItemId = (item: CartItem) => item.itemType === 'product' ? item.product!.id : item.manualItem!.id;
+const getCartItemName = (item: CartItem) => item.itemType === 'product' ? item.product!.name : item.manualItem!.name;
+const getCartItemPrice = (item: CartItem) => item.itemType === 'product' ? Number(item.product!.unit_price) : item.manualItem!.unitPrice;
 
 export default function PDVPage() {
   const { profile } = useAuth();
@@ -47,6 +55,7 @@ export default function PDVPage() {
 
   // SPR Payment state
   const [sprPaymentOpen, setSprPaymentOpen] = useState(false);
+  const [manualItemOpen, setManualItemOpen] = useState(false);
 
   // Quick income state
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
@@ -101,25 +110,29 @@ export default function PDVPage() {
 
   const addToCart = (product: Product) => {
     setCart(prev => {
-      const existing = prev.find(i => i.product.id === product.id);
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product, quantity: 1 }];
+      const existing = prev.find(i => i.itemType === 'product' && i.product?.id === product.id);
+      if (existing) return prev.map(i => i.itemType === 'product' && i.product?.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { product, quantity: 1, itemType: 'product' as const }];
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const addManualToCart = (item: ManualItem) => {
+    setCart(prev => [...prev, { manualItem: item, quantity: item.quantity, itemType: 'manual' as const }]);
+  };
+
+  const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(i => {
-      if (i.product.id !== productId) return i;
+      if (getCartItemId(i) !== id) return i;
       const newQty = i.quantity + delta;
       return newQty > 0 ? { ...i, quantity: newQty } : i;
     }).filter(i => i.quantity > 0));
   };
 
-  const removeItem = (productId: string) => {
-    setCart(prev => prev.filter(i => i.product.id !== productId));
+  const removeItem = (id: string) => {
+    setCart(prev => prev.filter(i => getCartItemId(i) !== id));
   };
 
-  const subtotal = cart.reduce((sum, i) => sum + Number(i.product.unit_price) * i.quantity, 0);
+  const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
 
   const finalizeSale = async () => {
@@ -144,13 +157,16 @@ export default function PDVPage() {
 
       const items = cart.map(i => ({
         sale_id: sale.id,
-        product_id: i.product.id,
+        product_id: i.itemType === 'product' ? i.product!.id : null,
+        manual_item_name: i.itemType === 'manual' ? i.manualItem!.name : null,
+        item_type: i.itemType,
         quantity: i.quantity,
-        unit_price: Number(i.product.unit_price),
-        line_total: Number(i.product.unit_price) * i.quantity,
+        unit_price: getCartItemPrice(i),
+        line_total: getCartItemPrice(i) * i.quantity,
+        notes: i.itemType === 'manual' ? (i.manualItem!.notes || null) : null,
       }));
 
-      const { error: itemsError } = await supabase.from('sale_items').insert(items);
+      const { error: itemsError } = await supabase.from('sale_items').insert(items as any);
       if (itemsError) throw itemsError;
 
       // Show receipt
@@ -159,10 +175,10 @@ export default function PDVPage() {
         createdAt: sale.created_at,
         operatorName: profile.full_name,
         items: cart.map(i => ({
-          name: i.product.name,
+          name: getCartItemName(i),
           quantity: i.quantity,
-          unitPrice: Number(i.product.unit_price),
-          lineTotal: Number(i.product.unit_price) * i.quantity,
+          unitPrice: getCartItemPrice(i),
+          lineTotal: getCartItemPrice(i) * i.quantity,
         })),
         subtotal,
         discount,
@@ -301,6 +317,17 @@ export default function PDVPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {/* Manual item button */}
+            <button
+              onClick={() => setManualItemOpen(true)}
+              className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-muted-foreground/20"
+            >
+              <div className="flex items-center gap-1.5">
+                <PenLine className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium leading-tight text-muted-foreground">Item Avulso</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Sem cadastro</p>
+            </button>
             {filteredProducts.map(product => (
               <button
                 key={product.id}
@@ -334,26 +361,32 @@ export default function PDVPage() {
                 <p className="text-center text-sm text-muted-foreground py-8">Carrinho vazio</p>
               ) : (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {cart.map(item => (
-                    <div key={item.product.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                  {cart.map(item => {
+                    const id = getCartItemId(item);
+                    return (
+                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{item.product.name}</p>
-                        <p className="text-xs text-muted-foreground">{formatCurrency(Number(item.product.unit_price))}</p>
+                        <p className="text-sm font-medium truncate">
+                          {getCartItemName(item)}
+                          {item.itemType === 'manual' && <span className="ml-1 text-[10px] text-muted-foreground">(avulso)</span>}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(getCartItemPrice(item))}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, -1)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(id, -1)}>
                           <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-6 text-center text-sm font-medium">{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(item.product.id, 1)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => updateQuantity(id, 1)}>
                           <Plus className="h-3 w-3" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-expense" onClick={() => removeItem(item.product.id)}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-expense" onClick={() => removeItem(id)}>
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -403,6 +436,9 @@ export default function PDVPage() {
 
       {/* Quick Income Dialog */}
       <QuickIncomeDialog open={quickIncomeOpen} onOpenChange={setQuickIncomeOpen} category={quickIncomeCategory} />
+
+      {/* Manual Item Dialog */}
+      <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
     </div>
   );
 }
