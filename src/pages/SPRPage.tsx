@@ -31,7 +31,7 @@ export default function SPRPage() {
   const [volDialogOpen, setVolDialogOpen] = useState(false);
   const [editingVol, setEditingVol] = useState<Volunteer | null>(null);
   const [volName, setVolName] = useState('');
-  const [volDoc, setVolDoc] = useState('');
+  
   const [volPhone, setVolPhone] = useState('');
   const [volNotes, setVolNotes] = useState('');
   const [volActive, setVolActive] = useState(true);
