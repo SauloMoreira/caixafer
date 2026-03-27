@@ -246,6 +246,25 @@ export default function FechamentoPage() {
               <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
             </div>
 
+            {/* Sales by payment method */}
+            {Object.keys(salesByMethod).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Vendas por Forma de Pagamento</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAYMENT_METHODS.map(pm => {
+                    const val = salesByMethod[pm.value] || 0;
+                    if (val === 0) return null;
+                    return (
+                      <div key={pm.value} className="stat-card">
+                        <p className="text-xs text-muted-foreground">{pm.label}</p>
+                        <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div>
               <Label>Saldo Contado (R$)</Label>
               <Input type="number" value={countedBalance} onChange={e => setCountedBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
