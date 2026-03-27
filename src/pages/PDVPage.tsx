@@ -66,6 +66,9 @@ export default function PDVPage() {
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
   const [quickIncomeCategory, setQuickIncomeCategory] = useState<typeof QUICK_INCOME_CATEGORIES[number]['value'] | null>(null);
 
+  // Transfer state
+  const [transferOpen, setTransferOpen] = useState(false);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
