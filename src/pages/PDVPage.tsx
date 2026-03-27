@@ -342,6 +342,11 @@ export default function PDVPage() {
               Transferido
             </span>
           )}
+          {sessionResponsibleName && hasOperationalOverride && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+              Override
+            </span>
+          )}
         </h1>
         <div className="flex items-center gap-2">
           {closingId && (
