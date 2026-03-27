@@ -158,6 +158,14 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* ═══ PENDING TRANSFER BANNER ═══ */}
+      {(isCashier || isAdmin) && (
+        <PendingTransferBanner
+          onTransferAccepted={() => window.location.reload()}
+          onTransferStatusChanged={() => window.location.reload()}
+        />
+      )}
+
       {/* ═══ CASHIER QUICK ACTIONS ═══ */}
       {isCashier && (
         <div className="space-y-3">
