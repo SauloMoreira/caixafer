@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCashSession } from '@/hooks/useCashSession';
 import { formatCurrency, formatDateTime, todayISO, ENTRY_CATEGORIES, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, TrendingUp, TrendingDown, Trash2, Edit } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Trash2, Edit, Lock } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 
@@ -20,6 +21,7 @@ type DocumentType = Database['public']['Enums']['document_type'];
 
 export default function MovimentosPage() {
   const { profile, isAdmin } = useAuth();
+  const { loading: sessionLoading, sessionOpen, canOperate, responsibleName } = useCashSession();
   const [entries, setEntries] = useState<CashEntry[]>([]);
   const [filterDate, setFilterDate] = useState(todayISO());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -49,6 +51,10 @@ export default function MovimentosPage() {
 
   const handleSubmit = async () => {
     if (!profile || !amount) return;
+    if (filterDate === todayISO() && sessionOpen && !canOperate) {
+      toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
+      return;
+    }
     const { error } = await supabase.from('cash_entries').insert({
       entry_type: entryType,
       category,
@@ -98,14 +104,31 @@ export default function MovimentosPage() {
     return acc;
   }, { income: 0, expense: 0 });
 
+  // Block new entry button for non-responsible on today
+  const isBlockedToday = filterDate === todayISO() && sessionOpen && !canOperate;
+
   return (
     <div className="space-y-4">
+      {/* Blocked banner */}
+      {isBlockedToday && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm flex items-start gap-2">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+          <div>
+            <p className="font-semibold text-destructive">Operação bloqueada</p>
+            <p className="text-muted-foreground text-xs">
+              O caixa de hoje está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>. Você não pode inserir movimentos.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="page-title">Movimentos</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo</Button>
-          </DialogTrigger>
+        {!isBlockedToday && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo</Button>
+            </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Novo Movimento</DialogTitle></DialogHeader>
             <div className="space-y-3">
@@ -143,6 +166,7 @@ export default function MovimentosPage() {
             </div>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="h-12 max-w-xs" />

@@ -57,9 +57,29 @@ const adminSections: NavSection[] = [
 
 const cashierSections: NavSection[] = [
   {
-    title: 'Menu',
+    title: 'Início',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Início' },
+    ],
+  },
+  {
+    title: 'Caixa',
+    items: [
+      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
+      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
+      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
+    ],
+  },
+  {
+    title: 'SPR',
+    items: [
+      { to: '/spr', icon: Heart, label: 'SPR' },
+    ],
+  },
+  {
+    title: 'Outros',
+    items: [
+      { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
     ],
   },
 ];
