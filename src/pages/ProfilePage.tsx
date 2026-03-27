@@ -32,7 +32,7 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
-  const { profile: currentProfile, user, refreshProfile, isProfileComplete, isAdmin } = useAuth();
+  const { profile: currentProfile, user, refreshProfile, updateProfile, isProfileComplete, isAdmin } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const editUserId = searchParams.get('user');
@@ -241,25 +241,30 @@ export default function ProfilePage() {
       return;
     }
 
-    // 3. Update local state immediately with the final URL
+    // 3. Immediately update global profile state (optimistic) so header/sidebar/dashboard render new photo
+    if (!isEditingOther) {
+      updateProfile({
+        full_name: fullName.trim(),
+        avatar_url: finalAvatarUrl,
+        phone: phone.trim(),
+        email: normalizeEmail(email),
+      } as any);
+    }
+
+    // 4. Update local state
     setAvatarUrl(finalAvatarUrl);
     setPreviewUrl(finalAvatarUrl);
     setAvatarFile(null);
     setSubmitted(false);
 
-    // 4. Refresh global profile state so header/sidebar/dashboard update
-    if (!isEditingOther) {
-      await refreshProfile();
-    }
-
     toast.success('Perfil salvo com sucesso!');
     setSaving(false);
 
-    // 5. Navigate AFTER state is fully updated
-    if (isEditingOther) {
-      navigate('/usuarios');
+    // 5. Background refresh from DB to ensure consistency, then navigate
+    if (!isEditingOther) {
+      refreshProfile().then(() => navigate('/'));
     } else {
-      navigate('/');
+      navigate('/usuarios');
     }
   };
 

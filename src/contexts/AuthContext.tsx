@@ -38,6 +38,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshMfaStatus: () => Promise<void>;
+  updateProfile: (partial: Partial<Profile>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,6 +70,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshProfile = useCallback(async () => {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
+
+  const updateProfile = useCallback((partial: Partial<Profile>) => {
+    setProfile(prev => prev ? { ...prev, ...partial } : prev);
+  }, []);
 
   const checkMfaStatus = useCallback(async () => {
     setMfaLoading(true);
@@ -273,7 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mfaEnrolled,
       mfaVerified,
       mfaLoading,
-      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus,
+      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus, updateProfile,
     }}>
       {children}
     </AuthContext.Provider>
