@@ -71,6 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
+  const updateProfile = useCallback((partial: Partial<Profile>) => {
+    setProfile(prev => prev ? { ...prev, ...partial } : prev);
+  }, []);
+
   const checkMfaStatus = useCallback(async () => {
     setMfaLoading(true);
     try {
