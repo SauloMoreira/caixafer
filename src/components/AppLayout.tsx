@@ -134,6 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           {profile?.avatar_url ? (
             <img
+              key={profile.avatar_url}
               src={profile.avatar_url}
               alt=""
               className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
