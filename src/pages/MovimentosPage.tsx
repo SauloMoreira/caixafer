@@ -51,6 +51,10 @@ export default function MovimentosPage() {
 
   const handleSubmit = async () => {
     if (!profile || !amount) return;
+    if (filterDate === todayISO() && sessionOpen && !canOperate) {
+      toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
+      return;
+    }
     const { error } = await supabase.from('cash_entries').insert({
       entry_type: entryType,
       category,
