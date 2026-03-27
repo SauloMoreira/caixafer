@@ -15,9 +15,9 @@ type: feature
 - Volunteer role requires linking to spr_volunteers via volunteer_id in profiles
 
 ## Volunteer Access
-- Menu: Início (redirects to /meu-spr), Meu SPR, Meu Perfil
+- Menu: Meu Consumo, Perfil, Sair (no Início or Pendências)
+- Route: /meu-consumo (renamed from /meu-spr)
 - Cannot access: PDV, movimentos, fechamento, produtos, relatórios, usuários, SPR management
-- RLS: can only SELECT own fiado charges, items, and payments via volunteer_id link
 - Profile completion: name, phone, email (no address/avatar required)
 
 ## Route Protection
