@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency, todayISO } from '@/lib/constants';
+import { formatCurrency, todayISO, PAYMENT_METHODS } from '@/lib/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
@@ -65,7 +65,8 @@ export default function DashboardPage() {
     const { data: methodData } = await methodQuery;
     const methodMap: Record<string, number> = {};
     methodData?.forEach(s => {
-      const label = s.payment_method === 'pix' ? 'PIX' : s.payment_method === 'debito' ? 'Débito' : s.payment_method === 'credito' ? 'Crédito' : 'Transferência';
+      const pm = PAYMENT_METHODS.find(p => p.value === s.payment_method);
+      const label = pm?.label || s.payment_method;
       methodMap[label] = (methodMap[label] || 0) + Number(s.total_amount);
     });
     setSalesByMethod(Object.entries(methodMap).map(([name, value]) => ({ name, value })));
@@ -87,7 +88,7 @@ export default function DashboardPage() {
     { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
   ];
 
-  const COLORS = ['hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
+  const COLORS = ['hsl(142, 60%, 40%)', 'hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
 
   if (loading) {
     return (

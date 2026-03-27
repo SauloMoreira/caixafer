@@ -523,7 +523,12 @@ export type Database = {
         | "sem_documento"
       entry_type: "income" | "expense"
       fiado_status: "open" | "partial" | "paid"
-      payment_method: "pix" | "debito" | "credito" | "transferencia"
+      payment_method:
+        | "pix"
+        | "debito"
+        | "credito"
+        | "transferencia"
+        | "dinheiro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -661,7 +666,7 @@ export const Constants = {
       ],
       entry_type: ["income", "expense"],
       fiado_status: ["open", "partial", "paid"],
-      payment_method: ["pix", "debito", "credito", "transferencia"],
+      payment_method: ["pix", "debito", "credito", "transferencia", "dinheiro"],
     },
   },
 } as const

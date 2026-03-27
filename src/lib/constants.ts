@@ -18,10 +18,11 @@ export function todayISO(): string {
 }
 
 export const PAYMENT_METHODS = [
+  { value: 'dinheiro', label: 'Dinheiro' },
   { value: 'pix', label: 'PIX' },
   { value: 'debito', label: 'Débito' },
   { value: 'credito', label: 'Crédito' },
-  { value: 'transferencia', label: 'Transferência' },
+  { value: 'transferencia', label: 'Transferência Bancária' },
 ] as const;
 
 export const DOCUMENT_TYPES = [

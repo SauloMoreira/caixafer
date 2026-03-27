@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency, todayISO, formatDate, formatDateTime } from '@/lib/constants';
+import { formatCurrency, todayISO, formatDate, formatDateTime, PAYMENT_METHODS } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,7 @@ export default function FechamentoPage() {
   const [countedBalance, setCountedBalance] = useState('');
   const [notes, setNotes] = useState('');
   const [stats, setStats] = useState({ sales: 0, income: 0, expense: 0 });
+  const [salesByMethod, setSalesByMethod] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
@@ -54,10 +55,18 @@ export default function FechamentoPage() {
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
     // Get stats
-    let salesQuery = supabase.from('sales').select('total_amount').eq('business_date', date);
+    let salesQuery = supabase.from('sales').select('total_amount, payment_method').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
     const sales = salesData?.reduce((s, r) => s + Number(r.total_amount), 0) || 0;
+
+    // Sales by payment method
+    const methodTotals: Record<string, number> = {};
+    salesData?.forEach(s => {
+      const key = s.payment_method as string;
+      methodTotals[key] = (methodTotals[key] || 0) + Number(s.total_amount);
+    });
+    setSalesByMethod(methodTotals);
 
     let entriesQuery = supabase.from('cash_entries').select('entry_type, amount').eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
@@ -236,6 +245,25 @@ export default function FechamentoPage() {
               <div className="stat-card"><p className="text-xs text-muted-foreground">Saídas</p><p className="financial-value financial-negative">{formatCurrency(stats.expense)}</p></div>
               <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
             </div>
+
+            {/* Sales by payment method */}
+            {Object.keys(salesByMethod).length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Vendas por Forma de Pagamento</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAYMENT_METHODS.map(pm => {
+                    const val = salesByMethod[pm.value] || 0;
+                    if (val === 0) return null;
+                    return (
+                      <div key={pm.value} className="stat-card">
+                        <p className="text-xs text-muted-foreground">{pm.label}</p>
+                        <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div>
               <Label>Saldo Contado (R$)</Label>
