@@ -17,6 +17,7 @@ export default function FechamentoPage() {
   const [countedBalance, setCountedBalance] = useState('');
   const [notes, setNotes] = useState('');
   const [stats, setStats] = useState({ sales: 0, income: 0, expense: 0 });
+  const [salesByMethod, setSalesByMethod] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
