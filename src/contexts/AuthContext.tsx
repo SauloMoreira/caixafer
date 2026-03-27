@@ -20,6 +20,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isCashier: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -71,6 +72,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const signUp = async (email: string, password: string, fullName: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    return { error: error as Error | null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -81,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session, user, profile, loading,
       isAdmin: profile?.role === 'admin',
       isCashier: profile?.role === 'cashier',
-      signIn, signOut,
+      signIn, signUp, signOut,
     }}>
       {children}
     </AuthContext.Provider>
