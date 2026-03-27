@@ -11,6 +11,7 @@ import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart } fro
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
+import QuickIncomeDialog, { QUICK_INCOME_CATEGORIES } from '@/components/QuickIncomeDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
