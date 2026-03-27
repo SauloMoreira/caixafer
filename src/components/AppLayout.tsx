@@ -208,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               Perfil
             </NavLink>
             <button
-              onClick={signOut}
+              onClick={() => signOut()}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" />

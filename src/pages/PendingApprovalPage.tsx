@@ -50,7 +50,7 @@ export default function PendingApprovalPage() {
             {icon}
             <h2 className="font-heading text-lg font-bold">{title}</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
-            <Button variant="outline" onClick={signOut} className="mt-2">
+            <Button variant="outline" onClick={() => signOut()} className="mt-2">
               Sair
             </Button>
           </CardContent>
