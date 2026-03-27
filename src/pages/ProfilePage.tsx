@@ -155,7 +155,7 @@ export default function ProfilePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
     // Reset input FIRST so same file can be re-selected on mobile
-    e.target.value = '';
+    if (e.target) e.target.value = '';
     if (!raw) return;
     if (raw.type && !raw.type.startsWith('image/') && raw.size > 0) {
       toast.error('Selecione uma imagem válida.');
@@ -171,6 +171,7 @@ export default function ProfilePage() {
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setAvatarUrl(null);
+    toast.success('Foto selecionada! Clique em "Salvar Perfil" para confirmar.');
   };
 
   const uploadAvatar = async (userId: string): Promise<string | null> => {
@@ -323,7 +324,15 @@ export default function ProfilePage() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 )}
+                {avatarFile && !uploading && (
+                  <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shadow-lg">
+                    ✓
+                  </div>
+                )}
               </div>
+              {avatarFile && (
+                <p className="text-xs text-primary font-medium animate-pulse">Nova foto selecionada — salve para confirmar</p>
+              )}
               <div className="flex gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} className="gap-1.5">
                   <Camera className="h-4 w-4" />Câmera
@@ -332,7 +341,7 @@ export default function ProfilePage() {
                   <Upload className="h-4 w-4" />Galeria
                 </Button>
               </div>
-              <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileSelect} className="hidden" />
+              <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} className="hidden" />
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
               {submitted && !showAvatar && <p className="text-xs text-destructive">A foto é obrigatória.</p>}
             </div>
