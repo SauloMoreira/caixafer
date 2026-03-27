@@ -317,6 +317,17 @@ export default function PDVPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+            {/* Manual item button */}
+            <button
+              onClick={() => setManualItemOpen(true)}
+              className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-muted-foreground/20"
+            >
+              <div className="flex items-center gap-1.5">
+                <PenLine className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-medium leading-tight text-muted-foreground">Item Avulso</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Sem cadastro</p>
+            </button>
             {filteredProducts.map(product => (
               <button
                 key={product.id}
