@@ -365,6 +365,23 @@ export default function FechamentoPage() {
       {/* No closing exists for this date */}
       {!closing && (
         <>
+          {existingOpenByOther && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2">
+              <div className="flex items-start gap-2">
+                <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+                <div className="space-y-1">
+                  <p className="font-semibold text-destructive">Caixa já aberto</p>
+                  <p className="text-sm text-destructive/90">
+                    Caixa já foi aberto por <strong>{existingOpenByOther.responsibleName}</strong>.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Se você precisa fazer o caixa, solicite a transferência da responsabilidade.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <Card>
             <CardContent className="flex flex-col items-center gap-4 py-8">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -374,16 +391,18 @@ export default function FechamentoPage() {
                 <h2 className="font-heading text-lg font-bold">Nenhum caixa para {formatDate(date)}</h2>
                 <p className="text-sm text-muted-foreground">Abra o caixa para iniciar as operações do dia.</p>
               </div>
-              <div className="w-full max-w-xs space-y-3">
-                <div>
-                  <Label>Saldo Inicial (R$)</Label>
-                  <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" />
+              {!existingOpenByOther && (
+                <div className="w-full max-w-xs space-y-3">
+                  <div>
+                    <Label>Saldo Inicial (R$)</Label>
+                    <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" />
+                  </div>
+                  <Button className="h-12 w-full" onClick={openCashRegister} disabled={!!pendingDate}>
+                    <Unlock className="mr-2 h-4 w-4" />
+                    Abrir Caixa
+                  </Button>
                 </div>
-                <Button className="h-12 w-full" onClick={openCashRegister} disabled={!!pendingDate}>
-                  <Unlock className="mr-2 h-4 w-4" />
-                  Abrir Caixa
-                </Button>
-              </div>
+              )}
             </CardContent>
           </Card>
         </>
