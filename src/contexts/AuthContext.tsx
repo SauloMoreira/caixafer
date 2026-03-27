@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mfaVerified, setMfaVerified] = useState(false);
   const [mfaLoading, setMfaLoading] = useState(true);
   const sessionCheckRef = useRef<ReturnType<typeof setInterval>>();
-  const currentSessionIdRef = useRef<string | null>(null);
+  
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
     const { data } = await supabase
