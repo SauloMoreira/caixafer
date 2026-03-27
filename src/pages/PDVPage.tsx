@@ -188,7 +188,7 @@ export default function PDVPage() {
   const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
 
-  const finalizeSale = async () => {
+  const doFinalizeSale = async () => {
     if (!profile || cart.length === 0) return;
     if (cashStatus !== 'open') {
       toast.error('Abra o caixa do dia antes de realizar vendas.');
