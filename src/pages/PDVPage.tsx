@@ -376,6 +376,9 @@ export default function PDVPage() {
 
       {/* Receipt Dialog */}
       <SaleReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+
+      {/* SPR Payment Dialog */}
+      <SPRPaymentDialog open={sprPaymentOpen} onOpenChange={setSprPaymentOpen} />
     </div>
   );
 }

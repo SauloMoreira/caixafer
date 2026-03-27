@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
+import FiadoChargeDialog from '@/components/FiadoChargeDialog';
 import { toast } from 'sonner';
 import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
