@@ -71,6 +71,12 @@ export default function PDVPage() {
   // Transfer state
   const [transferOpen, setTransferOpen] = useState(false);
 
+  // Override state
+  const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
+  const [overrideAction, setOverrideAction] = useState<(() => void) | null>(null);
+  const [overrideLabel, setOverrideLabel] = useState('');
+  const [sessionResponsibleName, setSessionResponsibleName] = useState<string | null>(null);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
