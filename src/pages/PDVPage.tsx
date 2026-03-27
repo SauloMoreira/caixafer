@@ -82,28 +82,36 @@ export default function PDVPage() {
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check if there's an open cash register for today where I am the current responsible
+    // Check for any open cash register today
     const { data: todayClosings } = await supabase
       .from('cash_closings')
       .select('id, status, user_id, current_responsible_id')
       .eq('business_date', today)
       .eq('status', 'open');
 
-    // Find a closing where I am the original user or the current responsible
-    const myClosing = todayClosings?.find(
-      (c: any) => c.user_id === profile.id || c.current_responsible_id === profile.id
-    );
+    const openSession = todayClosings?.[0];
 
-    if (myClosing) {
-      if ((myClosing as any).current_responsible_id === profile.id) {
+    if (openSession) {
+      const isCurrentResponsible = openSession.current_responsible_id === profile.id;
+
+      if (isCurrentResponsible || hasOperationalOverride) {
         setCashStatus('open');
-        setClosingId(myClosing.id);
-        setIsTransferredSession((myClosing as any).current_responsible_id !== myClosing.user_id);
+        setClosingId(openSession.id);
+        setIsTransferredSession(isCurrentResponsible && openSession.current_responsible_id !== openSession.user_id);
+        
+        // Get responsible name for override mode
+        if (!isCurrentResponsible && hasOperationalOverride) {
+          const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSession.current_responsible_id] });
+          setSessionResponsibleName(names?.[0]?.full_name || 'outro operador');
+        } else {
+          setSessionResponsibleName(null);
+        }
       } else {
-        // I opened it but it was transferred to someone else
+        // Session exists but user is not responsible and has no override
         setCashStatus('none');
         setClosingId(null);
         setIsTransferredSession(false);
+        setSessionResponsibleName(null);
       }
       setPendingDate(null);
     } else {
@@ -134,8 +142,9 @@ export default function PDVPage() {
       }
       setClosingId(null);
       setIsTransferredSession(false);
+      setSessionResponsibleName(null);
     }
-  }, [profile]);
+  }, [profile, hasOperationalOverride]);
 
   useEffect(() => {
     supabase.from('products').select('*').eq('is_active', true).order('name')
