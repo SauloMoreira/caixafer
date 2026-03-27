@@ -27,7 +27,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     const printWindow = window.open('', '_blank', 'width=400,height=700');
     if (!printWindow) return;
     printWindow.document.write(`
-      <html><head><title>Comprovante #${data.saleNumber}</title>
+      <html><head><title>Pedido #${data.saleNumber}</title>
       <style>
         body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
         @media print { body { padding: 5mm; } @page { size: 80mm auto; margin: 0; } }
