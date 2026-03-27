@@ -187,7 +187,7 @@ export default function MovimentosPage() {
                     {entry.entry_type === 'expense' ? '-' : '+'}{formatCurrency(Number(entry.amount))}
                   </p>
                   {canEdit(entry) && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(entry.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(entry)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
