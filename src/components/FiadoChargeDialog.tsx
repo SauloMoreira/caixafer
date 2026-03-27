@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, PenLine } from 'lucide-react';
+import ProductImage from '@/components/ProductImage';
 import ManualItemDialog from '@/components/ManualItemDialog';
 import type { ManualItem } from '@/components/ManualItemDialog';
 import type { Database } from '@/integrations/supabase/types';
