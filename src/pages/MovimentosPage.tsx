@@ -21,6 +21,7 @@ type DocumentType = Database['public']['Enums']['document_type'];
 
 export default function MovimentosPage() {
   const { profile, isAdmin } = useAuth();
+  const { loading: sessionLoading, sessionOpen, canOperate, responsibleName } = useCashSession();
   const [entries, setEntries] = useState<CashEntry[]>([]);
   const [filterDate, setFilterDate] = useState(todayISO());
   const [dialogOpen, setDialogOpen] = useState(false);
