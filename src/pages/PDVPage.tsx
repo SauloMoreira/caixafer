@@ -49,6 +49,8 @@ export default function PDVPage() {
   const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none'>('loading');
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const [isTransferredSession, setIsTransferredSession] = useState(false);
 
   // Receipt state
   const [receiptOpen, setReceiptOpen] = useState(false);
