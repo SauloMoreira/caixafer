@@ -109,25 +109,29 @@ export default function PDVPage() {
 
   const addToCart = (product: Product) => {
     setCart(prev => {
-      const existing = prev.find(i => i.product.id === product.id);
-      if (existing) return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product, quantity: 1 }];
+      const existing = prev.find(i => i.itemType === 'product' && i.product?.id === product.id);
+      if (existing) return prev.map(i => i.itemType === 'product' && i.product?.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
+      return [...prev, { product, quantity: 1, itemType: 'product' as const }];
     });
   };
 
-  const updateQuantity = (productId: string, delta: number) => {
+  const addManualToCart = (item: ManualItem) => {
+    setCart(prev => [...prev, { manualItem: item, quantity: item.quantity, itemType: 'manual' as const }]);
+  };
+
+  const updateQuantity = (id: string, delta: number) => {
     setCart(prev => prev.map(i => {
-      if (i.product.id !== productId) return i;
+      if (getCartItemId(i) !== id) return i;
       const newQty = i.quantity + delta;
       return newQty > 0 ? { ...i, quantity: newQty } : i;
     }).filter(i => i.quantity > 0));
   };
 
-  const removeItem = (productId: string) => {
-    setCart(prev => prev.filter(i => i.product.id !== productId));
+  const removeItem = (id: string) => {
+    setCart(prev => prev.filter(i => getCartItemId(i) !== id));
   };
 
-  const subtotal = cart.reduce((sum, i) => sum + Number(i.product.unit_price) * i.quantity, 0);
+  const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
 
   const finalizeSale = async () => {
