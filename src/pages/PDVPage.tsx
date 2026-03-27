@@ -15,6 +15,7 @@ import QuickIncomeDialog, { QUICK_INCOME_CATEGORIES } from '@/components/QuickIn
 import ProductImage from '@/components/ProductImage';
 import ManualItemDialog from '@/components/ManualItemDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
+import type { ManualItem } from '@/components/ManualItemDialog';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
