@@ -155,7 +155,7 @@ export default function ProfilePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0];
     // Reset input FIRST so same file can be re-selected on mobile
-    e.target.value = '';
+    if (e.target) e.target.value = '';
     if (!raw) return;
     if (raw.type && !raw.type.startsWith('image/') && raw.size > 0) {
       toast.error('Selecione uma imagem válida.');
@@ -171,6 +171,7 @@ export default function ProfilePage() {
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setAvatarUrl(null);
+    toast.success('Foto selecionada! Clique em "Salvar Perfil" para confirmar.');
   };
 
   const uploadAvatar = async (userId: string): Promise<string | null> => {
