@@ -76,8 +76,7 @@ export default function SPRPage() {
 
   const openEditVolunteer = (v: Volunteer) => {
     setEditingVol(v);
-    setVolName(v.full_name); setVolDoc(v.document_number || ''); setVolPhone(v.phone || '');
-    setVolNotes(v.notes || ''); setVolActive(v.is_active);
+    setVolName(v.full_name); setVolPhone(v.phone || ''); setVolActive(v.is_active);
     setVolAvatarFile(null); setVolPreviewUrl(v.avatar_url || null);
     setVolDialogOpen(true);
   };
