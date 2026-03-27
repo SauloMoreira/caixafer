@@ -1,0 +1,1 @@
+ALTER TABLE public.cash_closings ALTER COLUMN current_responsible_id SET DEFAULT auth.uid();
