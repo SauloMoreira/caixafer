@@ -198,6 +198,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-heading text-sm font-bold">Caixa da FER</span>
           </button>
+          {(isAdmin || isVolunteer) && <NotificationBell />}
         </header>
 
         <div className="page-container">
