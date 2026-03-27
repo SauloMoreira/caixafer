@@ -136,7 +136,9 @@ export default function ProfilePage() {
     if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('A imagem deve ter no máximo 5MB.'); return; }
     setAvatarFile(file);
+    if (previewUrl && previewUrl.startsWith('blob:')) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(file));
+    e.target.value = '';
   };
 
   const uploadAvatar = async (userId: string): Promise<string | null> => {
