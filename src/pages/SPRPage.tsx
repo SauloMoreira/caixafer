@@ -279,7 +279,7 @@ export default function SPRPage() {
 
             <div className="space-y-3">
               <div><Label>Nome Completo *</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
-              <div><Label>Documento</Label><Input value={volDoc} onChange={e => setVolDoc(e.target.value)} className="h-12" /></div>
+              
               <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" type="tel" /></div>
               <div><Label>Observações</Label><Textarea value={volNotes} onChange={e => setVolNotes(e.target.value)} rows={2} /></div>
               {editingVol && (
