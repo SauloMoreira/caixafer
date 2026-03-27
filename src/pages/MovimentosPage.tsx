@@ -166,6 +166,7 @@ export default function MovimentosPage() {
             </div>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} className="h-12 max-w-xs" />
