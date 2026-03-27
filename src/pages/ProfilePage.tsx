@@ -130,30 +130,73 @@ export default function ProfilePage() {
     }
   }, [cep]);
 
+  const normalizeFile = (file: File): File => {
+    // Mobile cameras may produce files with bad names/types (e.g. HEIC, no extension)
+    const type = file.type || 'image/jpeg';
+    const extMap: Record<string, string> = {
+      'image/jpeg': 'jpg', 'image/jpg': 'jpg', 'image/png': 'png',
+      'image/webp': 'webp', 'image/heic': 'jpg', 'image/heif': 'jpg',
+    };
+    const ext = extMap[type] || 'jpg';
+    const safeName = `avatar.${ext}`;
+    // Re-wrap as a clean File to avoid mobile blob quirks
+    return new File([file], safeName, { type: type === 'image/heic' || type === 'image/heif' ? 'image/jpeg' : type });
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.type && !file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error('A imagem deve ter no máximo 5MB.'); return; }
+    const raw = e.target.files?.[0];
+    // Reset input FIRST so same file can be re-selected on mobile
+    e.target.value = '';
+    if (!raw) return;
+    if (raw.type && !raw.type.startsWith('image/') && raw.size > 0) {
+      toast.error('Selecione uma imagem válida.');
+      return;
+    }
+    if (raw.size > 5 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 5MB.');
+      return;
+    }
+    const file = normalizeFile(raw);
     setAvatarFile(file);
-    // Use createObjectURL for instant, reliable preview on all devices
+    // Instant preview via object URL
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
-    setAvatarUrl(null); // clear old URL so preview takes priority
-    // Reset input so same file can be re-selected
-    e.target.value = '';
+    setAvatarUrl(null);
   };
 
   const uploadAvatar = async (userId: string): Promise<string | null> => {
     if (!avatarFile) return avatarUrl;
     setUploading(true);
-    const ext = avatarFile.name.split('.').pop() || 'jpg';
-    const filePath = `${userId}/avatar-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(filePath, avatarFile, { upsert: true, cacheControl: '0' });
-    if (error) { toast.error('Erro ao enviar foto: ' + error.message); setUploading(false); return null; }
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    setUploading(false);
-    return urlData.publicUrl + '?t=' + Date.now();
+    try {
+      const ext = avatarFile.name.split('.').pop() || 'jpg';
+      // Unique path: userId + timestamp + random UUID to guarantee no cache collision
+      const uniqueId = crypto.randomUUID();
+      const filePath = `${userId}/avatar-${Date.now()}-${uniqueId}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile, {
+          upsert: false,
+          cacheControl: '0',
+          contentType: avatarFile.type,
+        });
+
+      if (uploadError) {
+        toast.error('Erro ao enviar foto: ' + uploadError.message);
+        setUploading(false);
+        return null;
+      }
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      // Cache-bust query param to force browsers/CDNs to fetch fresh
+      const finalUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+      setUploading(false);
+      return finalUrl;
+    } catch (err: any) {
+      toast.error('Erro inesperado no upload: ' + (err?.message || 'Tente novamente'));
+      setUploading(false);
+      return null;
+    }
   };
 
   const handleSave = async () => {
@@ -168,12 +211,15 @@ export default function ProfilePage() {
 
     const targetId = isEditingOther ? editUserId! : user!.id;
     setSaving(true);
+
+    // 1. Upload avatar if changed
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
       finalAvatarUrl = await uploadAvatar(targetId);
       if (!finalAvatarUrl) { setSaving(false); return; }
     }
 
+    // 2. Update profile in database
     const { error } = await supabase.from('profiles').update({
       full_name: fullName.trim(),
       phone: phone.trim(),
@@ -191,18 +237,30 @@ export default function ProfilePage() {
 
     if (error) {
       toast.error('Erro ao salvar: ' + error.message);
-    } else {
-      toast.success('Perfil salvo com sucesso!');
-      setAvatarFile(null);
-      setSubmitted(false);
-      if (isEditingOther) {
-        navigate('/usuarios');
-      } else {
-        await refreshProfile();
-        navigate('/');
-      }
+      setSaving(false);
+      return;
     }
+
+    // 3. Update local state immediately with the final URL
+    setAvatarUrl(finalAvatarUrl);
+    setPreviewUrl(finalAvatarUrl);
+    setAvatarFile(null);
+    setSubmitted(false);
+
+    // 4. Refresh global profile state so header/sidebar/dashboard update
+    if (!isEditingOther) {
+      await refreshProfile();
+    }
+
+    toast.success('Perfil salvo com sucesso!');
     setSaving(false);
+
+    // 5. Navigate AFTER state is fully updated
+    if (isEditingOther) {
+      navigate('/usuarios');
+    } else {
+      navigate('/');
+    }
   };
 
   const showAvatar = previewUrl || avatarUrl;

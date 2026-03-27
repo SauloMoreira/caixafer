@@ -134,6 +134,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         >
           {profile?.avatar_url ? (
             <img
+              key={profile.avatar_url}
               src={profile.avatar_url}
               alt=""
               className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
@@ -253,7 +254,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {(isAdmin || isVolunteer) && <NotificationBell />}
             <NavLink to="/perfil" className="hidden md:flex h-9 w-9 items-center justify-center">
               {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-transparent hover:ring-primary/20 transition-all" />
+                <img key={profile.avatar_url} src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-transparent hover:ring-primary/20 transition-all" />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors">
                   <User className="h-4 w-4 text-muted-foreground" />
