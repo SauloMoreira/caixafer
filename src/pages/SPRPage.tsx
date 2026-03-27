@@ -33,7 +33,7 @@ export default function SPRPage() {
   const [volName, setVolName] = useState('');
   
   const [volPhone, setVolPhone] = useState('');
-  const [volNotes, setVolNotes] = useState('');
+  
   const [volActive, setVolActive] = useState(true);
   const [volAvatarFile, setVolAvatarFile] = useState<File | null>(null);
   const [volPreviewUrl, setVolPreviewUrl] = useState<string | null>(null);
