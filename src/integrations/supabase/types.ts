@@ -645,6 +645,206 @@ export type Database = {
           },
         ]
       }
+      security_alert_candidates: {
+        Row: {
+          actor_user_id: string | null
+          audit_log_id: string | null
+          business_date: string | null
+          candidate_score: number
+          context_json: Json | null
+          created_at: string
+          event_type: string
+          financial_delta: number | null
+          id: string
+          session_id: string | null
+          status: string
+          target_user_id: string | null
+        }
+        Insert: {
+          actor_user_id?: string | null
+          audit_log_id?: string | null
+          business_date?: string | null
+          candidate_score?: number
+          context_json?: Json | null
+          created_at?: string
+          event_type: string
+          financial_delta?: number | null
+          id?: string
+          session_id?: string | null
+          status?: string
+          target_user_id?: string | null
+        }
+        Update: {
+          actor_user_id?: string | null
+          audit_log_id?: string | null
+          business_date?: string | null
+          candidate_score?: number
+          context_json?: Json | null
+          created_at?: string
+          event_type?: string
+          financial_delta?: number | null
+          id?: string
+          session_id?: string | null
+          status?: string
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alert_candidates_audit_log_id_fkey"
+            columns: ["audit_log_id"]
+            isOneToOne: false
+            referencedRelation: "security_audit_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_alert_deliveries: {
+        Row: {
+          alert_id: string
+          channel: string
+          created_at: string
+          delivery_status: string
+          id: string
+          provider_response: string | null
+          recipient: string
+          retry_count: number
+          sent_at: string | null
+        }
+        Insert: {
+          alert_id: string
+          channel: string
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          provider_response?: string | null
+          recipient: string
+          retry_count?: number
+          sent_at?: string | null
+        }
+        Update: {
+          alert_id?: string
+          channel?: string
+          created_at?: string
+          delivery_status?: string
+          id?: string
+          provider_response?: string | null
+          recipient?: string
+          retry_count?: number
+          sent_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alert_deliveries_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "security_alerts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_alerts: {
+        Row: {
+          actor_user_id: string | null
+          audit_log_id: string | null
+          business_date: string | null
+          candidate_id: string | null
+          context_json: Json | null
+          created_at: string
+          event_type: string | null
+          fingerprint: string | null
+          id: string
+          is_deduplicated: boolean
+          is_read: boolean
+          is_sent: boolean
+          priority: string
+          read_at: string | null
+          recommended_action: string | null
+          requires_admin_review: boolean
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          session_id: string | null
+          severity: string
+          summary: string | null
+          target_user_id: string | null
+          title: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          audit_log_id?: string | null
+          business_date?: string | null
+          candidate_id?: string | null
+          context_json?: Json | null
+          created_at?: string
+          event_type?: string | null
+          fingerprint?: string | null
+          id?: string
+          is_deduplicated?: boolean
+          is_read?: boolean
+          is_sent?: boolean
+          priority?: string
+          read_at?: string | null
+          recommended_action?: string | null
+          requires_admin_review?: boolean
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id?: string | null
+          severity?: string
+          summary?: string | null
+          target_user_id?: string | null
+          title: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          audit_log_id?: string | null
+          business_date?: string | null
+          candidate_id?: string | null
+          context_json?: Json | null
+          created_at?: string
+          event_type?: string | null
+          fingerprint?: string | null
+          id?: string
+          is_deduplicated?: boolean
+          is_read?: boolean
+          is_sent?: boolean
+          priority?: string
+          read_at?: string | null
+          recommended_action?: string | null
+          requires_admin_review?: boolean
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id?: string | null
+          severity?: string
+          summary?: string | null
+          target_user_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_alerts_audit_log_id_fkey"
+            columns: ["audit_log_id"]
+            isOneToOne: false
+            referencedRelation: "security_audit_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_alerts_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "security_alert_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "security_alerts_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_audit_logs: {
         Row: {
           action: string
