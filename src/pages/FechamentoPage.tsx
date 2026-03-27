@@ -40,6 +40,7 @@ export default function FechamentoPage() {
   const [reopenCustomReason, setReopenCustomReason] = useState('');
   const [showHistory, setShowHistory] = useState(false);
   const [closingHistory, setClosingHistory] = useState<any[]>([]);
+  const [showCorrectionReview, setShowCorrectionReview] = useState(false);
 
   useEffect(() => { fetchData(); }, [date, profile]);
 
