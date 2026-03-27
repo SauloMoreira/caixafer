@@ -579,6 +579,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_spr_notifications: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "cashier" | "volunteer"
