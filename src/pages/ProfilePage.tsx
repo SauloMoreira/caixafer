@@ -240,7 +240,7 @@ export default function ProfilePage() {
             <div className="flex flex-col items-center gap-3">
               <div className="relative">
                 {showAvatar ? (
-                  <img src={showAvatar} alt="Avatar" className="h-28 w-28 rounded-full object-cover border-4 border-primary/20" />
+                  <img key={showAvatar} src={showAvatar} alt="Avatar" className="h-28 w-28 rounded-full object-cover border-4 border-primary/20" />
                 ) : (
                   <div className="flex h-28 w-28 items-center justify-center rounded-full bg-muted border-4 border-dashed border-muted-foreground/30">
                     <User className="h-12 w-12 text-muted-foreground" />
