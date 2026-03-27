@@ -22,8 +22,12 @@ export default function MfaSetupPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    enrollFactor();
-  }, []);
+    if (!loading && !session) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (session) enrollFactor();
+  }, [session, loading]);
 
   const enrollFactor = async () => {
     setEnrolling(true);

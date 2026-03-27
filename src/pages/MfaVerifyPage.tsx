@@ -19,8 +19,12 @@ export default function MfaVerifyPage() {
   const [loadingFactors, setLoadingFactors] = useState(true);
 
   useEffect(() => {
-    loadFactors();
-  }, []);
+    if (!authLoading && !session) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    if (session) loadFactors();
+  }, [session, authLoading]);
 
   const loadFactors = async () => {
     setLoadingFactors(true);
