@@ -50,7 +50,7 @@ export default function PDVPage() {
   const [showCart, setShowCart] = useState(false);
 
   // Cash register state
-  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none'>('loading');
+  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none' | 'blocked'>('loading');
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
   const [closingId, setClosingId] = useState<string | null>(null);
