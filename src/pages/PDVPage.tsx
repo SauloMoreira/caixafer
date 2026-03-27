@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, PAYMENT_METHODS, todayISO } from '@/lib/constants';
@@ -7,8 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock } from 'lucide-react';
+import CashOpeningDialog from '@/components/CashOpeningDialog';
+import SaleReceiptDialog from '@/components/SaleReceiptDialog';
+import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
+import { useNavigate } from 'react-router-dom';
 
 type Product = Database['public']['Tables']['products']['Row'];
 type PaymentMethod = Database['public']['Enums']['payment_method'];
@@ -20,6 +24,7 @@ interface CartItem {
 
 export default function PDVPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
@@ -29,10 +34,55 @@ export default function PDVPage() {
   const [loading, setLoading] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
+  // Cash register state
+  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none'>('loading');
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
+  const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
+
+  // Receipt state
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+
+  const checkCashRegister = useCallback(async () => {
+    if (!profile) return;
+    setCashStatus('loading');
+    const today = todayISO();
+
+    // Check if there's an open cash register for today
+    const { data: todayClosing } = await supabase
+      .from('cash_closings')
+      .select('id, status')
+      .eq('business_date', today)
+      .eq('user_id', profile.id)
+      .maybeSingle();
+
+    if (todayClosing) {
+      setCashStatus(todayClosing.status === 'open' ? 'open' : 'closed_today');
+      setPendingDate(null);
+    } else {
+      // Check for pending previous days (open closings before today)
+      const { data: pendingClosings } = await supabase
+        .from('cash_closings')
+        .select('business_date')
+        .eq('user_id', profile.id)
+        .eq('status', 'open')
+        .lt('business_date', today)
+        .order('business_date', { ascending: false })
+        .limit(1);
+
+      setPendingDate(pendingClosings?.[0]?.business_date || null);
+      setCashStatus('none');
+    }
+  }, [profile]);
+
   useEffect(() => {
     supabase.from('products').select('*').eq('is_active', true).order('name')
       .then(({ data }) => { if (data) setProducts(data); });
   }, []);
+
+  useEffect(() => {
+    checkCashRegister();
+  }, [checkCashRegister]);
 
   const filteredProducts = useMemo(() => {
     if (!search) return products;
@@ -65,6 +115,10 @@ export default function PDVPage() {
 
   const finalizeSale = async () => {
     if (!profile || cart.length === 0) return;
+    if (cashStatus !== 'open') {
+      toast.error('Abra o caixa do dia antes de realizar vendas.');
+      return;
+    }
     setLoading(true);
     try {
       const { data: sale, error: saleError } = await supabase.from('sales').insert({
@@ -90,6 +144,25 @@ export default function PDVPage() {
       const { error: itemsError } = await supabase.from('sale_items').insert(items);
       if (itemsError) throw itemsError;
 
+      // Show receipt
+      setReceiptData({
+        saleNumber: sale.sale_number,
+        createdAt: sale.created_at,
+        operatorName: profile.full_name,
+        items: cart.map(i => ({
+          name: i.product.name,
+          quantity: i.quantity,
+          unitPrice: Number(i.product.unit_price),
+          lineTotal: Number(i.product.unit_price) * i.quantity,
+        })),
+        subtotal,
+        discount,
+        total,
+        paymentMethod,
+        notes: notes || null,
+      });
+      setReceiptOpen(true);
+
       toast.success(`Venda #${sale.sale_number} registrada!`);
       setCart([]);
       setDiscount(0);
@@ -101,10 +174,72 @@ export default function PDVPage() {
     setLoading(false);
   };
 
+  // Loading state
+  if (cashStatus === 'loading') {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Cash register not open — show blocking screen
+  if (cashStatus !== 'open') {
+    return (
+      <div className="space-y-4">
+        <h1 className="page-title">PDV</h1>
+        <Card className="max-w-md mx-auto">
+          <CardContent className="flex flex-col items-center gap-4 py-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
+              <Lock className="h-8 w-8 text-warning" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="font-heading text-lg font-bold">Caixa Fechado</h2>
+              {cashStatus === 'closed_today' ? (
+                <p className="text-sm text-muted-foreground">O caixa de hoje já foi fechado. Não é possível realizar novas vendas.</p>
+              ) : pendingDate ? (
+                <p className="text-sm text-muted-foreground">
+                  Existe um caixa anterior em aberto. Feche o caixa antes de iniciar um novo dia.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Abra o caixa para começar a registrar vendas.</p>
+              )}
+            </div>
+            {pendingDate ? (
+              <Button className="h-12 w-full max-w-xs" onClick={() => navigate('/fechamento')}>
+                Ir para Fechamento
+              </Button>
+            ) : cashStatus !== 'closed_today' ? (
+              <Button className="h-12 w-full max-w-xs" onClick={() => setOpeningDialogOpen(true)}>
+                <Unlock className="mr-2 h-4 w-4" />
+                Abrir Caixa
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        {profile && (
+          <CashOpeningDialog
+            open={openingDialogOpen}
+            onOpenChange={setOpeningDialogOpen}
+            userId={profile.id}
+            pendingDate={pendingDate}
+            onOpened={checkCashRegister}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="page-title">PDV</h1>
+        <h1 className="page-title flex items-center gap-2">
+          PDV
+          <span className="inline-flex items-center gap-1 rounded-full bg-income/10 px-2 py-0.5 text-[10px] font-medium text-income">
+            <Unlock className="h-3 w-3" />Aberto
+          </span>
+        </h1>
         {cart.length > 0 && (
           <Button onClick={() => setShowCart(true)} className="md:hidden relative">
             <ShoppingCart className="h-5 w-5" />
@@ -143,7 +278,7 @@ export default function PDVPage() {
           </div>
         </div>
 
-        {/* Cart - Desktop always visible, Mobile overlay */}
+        {/* Cart */}
         <div className={`${showCart ? 'fixed inset-0 z-50 flex items-end md:relative md:inset-auto md:z-auto' : 'hidden md:block'} md:w-80`}>
           {showCart && <div className="absolute inset-0 bg-foreground/20 md:hidden" onClick={() => setShowCart(false)} />}
           <Card className={`${showCart ? 'relative w-full rounded-t-2xl md:rounded-xl' : ''} md:sticky md:top-4`}>
@@ -222,6 +357,9 @@ export default function PDVPage() {
           </Card>
         </div>
       </div>
+
+      {/* Receipt Dialog */}
+      <SaleReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
     </div>
   );
 }
