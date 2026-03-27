@@ -406,9 +406,21 @@ export default function FechamentoPage() {
 
               {/* Action buttons */}
               {closing.status !== 'closed' && (
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
-                  <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
+                    <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                  </div>
+                  {wasReopened && (
+                    <Button
+                      variant="outline"
+                      className="w-full h-11 border-primary/30 text-primary hover:bg-primary/5"
+                      onClick={() => setShowCorrectionReview(true)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Revisar Lançamentos
+                    </Button>
+                  )}
                 </div>
               )}
 
