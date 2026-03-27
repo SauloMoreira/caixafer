@@ -484,6 +484,22 @@ export default function SegurancaPage() {
           )}
           <LogList logs={getTabLogs('incidents')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
         </TabsContent>
+
+        {/* ═══ BLOQUEIOS ═══ */}
+        <TabsContent value="blocked" className="space-y-4 mt-4">
+          <FilterBar search={search} setSearch={setSearch} severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
+            entityFilter={entityFilter} setEntityFilter={setEntityFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
+          <LogList logs={getTabLogs('blocked')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
+        </TabsContent>
+
+        {/* ═══ OVERRIDES ═══ */}
+        <TabsContent value="overrides" className="space-y-4 mt-4">
+          <FilterBar search={search} setSearch={setSearch} severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
+            entityFilter={entityFilter} setEntityFilter={setEntityFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
+          <LogList logs={getTabLogs('overrides')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
+        </TabsContent>
       </Tabs>
 
       {/* ═══ Audit Detail Dialog ═══ */}
