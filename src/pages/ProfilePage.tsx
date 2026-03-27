@@ -127,6 +127,7 @@ export default function ProfilePage() {
         navigate('/usuarios');
       } else {
         await refreshProfile();
+        navigate('/');
       }
     }
     setSaving(false);
