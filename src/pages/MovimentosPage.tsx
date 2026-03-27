@@ -197,6 +197,21 @@ export default function MovimentosPage() {
           ))}
         </div>
       )}
+
+      <CriticalActionDialog
+        open={!!deleteTarget}
+        onOpenChange={open => { if (!open) setDeleteTarget(null); }}
+        title="Excluir Movimento"
+        description="Tem certeza que deseja excluir este movimento? Esta ação não pode ser desfeita."
+        details={deleteTarget ? [
+          { label: 'Tipo', value: deleteTarget.entry_type === 'income' ? 'Entrada' : 'Saída' },
+          { label: 'Categoria', value: deleteTarget.category },
+          { label: 'Valor', value: formatCurrency(Number(deleteTarget.amount)) },
+        ] : []}
+        severity="danger"
+        confirmLabel="Excluir"
+        onConfirm={doDelete}
+      />
     </div>
   );
 }
