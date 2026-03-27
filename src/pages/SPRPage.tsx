@@ -1,19 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, formatDate, todayISO, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import { Heart, Plus, Users, DollarSign, Search } from 'lucide-react';
+import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
-type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'];
+type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'] & { avatar_url?: string | null };
 type FiadoCharge = Database['public']['Tables']['spr_fiado_charges']['Row'];
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 type DocumentType = Database['public']['Enums']['document_type'];
@@ -27,9 +29,17 @@ export default function SPRPage() {
 
   // Volunteer form
   const [volDialogOpen, setVolDialogOpen] = useState(false);
+  const [editingVol, setEditingVol] = useState<Volunteer | null>(null);
   const [volName, setVolName] = useState('');
   const [volDoc, setVolDoc] = useState('');
   const [volPhone, setVolPhone] = useState('');
+  const [volNotes, setVolNotes] = useState('');
+  const [volActive, setVolActive] = useState(true);
+  const [volAvatarFile, setVolAvatarFile] = useState<File | null>(null);
+  const [volPreviewUrl, setVolPreviewUrl] = useState<string | null>(null);
+  const [volUploading, setVolUploading] = useState(false);
+  const volFileRef = useRef<HTMLInputElement>(null);
+  const volCameraRef = useRef<HTMLInputElement>(null);
 
   // Charge form
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
@@ -49,7 +59,7 @@ export default function SPRPage() {
 
   const fetchVolunteers = async () => {
     const { data } = await supabase.from('spr_volunteers').select('*').order('full_name');
-    if (data) setVolunteers(data);
+    if (data) setVolunteers(data as Volunteer[]);
   };
 
   const fetchCharges = async () => {
@@ -57,10 +67,70 @@ export default function SPRPage() {
     if (data) setCharges(data.map((c: any) => ({ ...c, volunteer_name: c.spr_volunteers?.full_name })));
   };
 
+  const openNewVolunteer = () => {
+    setEditingVol(null);
+    setVolName(''); setVolDoc(''); setVolPhone(''); setVolNotes(''); setVolActive(true);
+    setVolAvatarFile(null); setVolPreviewUrl(null);
+    setVolDialogOpen(true);
+  };
+
+  const openEditVolunteer = (v: Volunteer) => {
+    setEditingVol(v);
+    setVolName(v.full_name); setVolDoc(v.document_number || ''); setVolPhone(v.phone || '');
+    setVolNotes(v.notes || ''); setVolActive(v.is_active);
+    setVolAvatarFile(null); setVolPreviewUrl(v.avatar_url || null);
+    setVolDialogOpen(true);
+  };
+
+  const handleVolFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error('Máximo 5MB.'); return; }
+    setVolAvatarFile(file);
+    setVolPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const uploadVolAvatar = async (volunteerId: string): Promise<string | null> => {
+    if (!volAvatarFile) return editingVol?.avatar_url || null;
+    setVolUploading(true);
+    const ext = volAvatarFile.name.split('.').pop() || 'jpg';
+    const filePath = `volunteers/${volunteerId}.${ext}`;
+    const { error } = await supabase.storage.from('avatars').upload(filePath, volAvatarFile, { upsert: true });
+    if (error) { toast.error('Erro ao enviar foto.'); setVolUploading(false); return null; }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    setVolUploading(false);
+    return urlData.publicUrl + '?t=' + Date.now();
+  };
+
   const saveVolunteer = async () => {
-    const { error } = await supabase.from('spr_volunteers').insert({ full_name: volName, document_number: volDoc || null, phone: volPhone || null });
-    if (error) toast.error(error.message);
-    else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); setVolName(''); setVolDoc(''); setVolPhone(''); fetchVolunteers(); }
+    if (!volName.trim()) { toast.error('Nome é obrigatório.'); return; }
+
+    if (editingVol) {
+      let avatarUrl = editingVol.avatar_url;
+      if (volAvatarFile) {
+        avatarUrl = await uploadVolAvatar(editingVol.id);
+        if (volAvatarFile && !avatarUrl) return;
+      }
+      const { error } = await supabase.from('spr_volunteers').update({
+        full_name: volName, document_number: volDoc || null, phone: volPhone || null,
+        notes: volNotes || null, is_active: volActive, avatar_url: avatarUrl,
+      } as any).eq('id', editingVol.id);
+      if (error) toast.error(error.message);
+      else { toast.success('Voluntário atualizado!'); setVolDialogOpen(false); fetchVolunteers(); }
+    } else {
+      const tempId = crypto.randomUUID();
+      let avatarUrl: string | null = null;
+      if (volAvatarFile) {
+        avatarUrl = await uploadVolAvatar(tempId);
+      }
+      const { error } = await supabase.from('spr_volunteers').insert({
+        id: tempId, full_name: volName, document_number: volDoc || null,
+        phone: volPhone || null, notes: volNotes || null, avatar_url: avatarUrl,
+      } as any);
+      if (error) toast.error(error.message);
+      else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); fetchVolunteers(); }
+    }
   };
 
   const saveCharge = async () => {
@@ -120,19 +190,29 @@ export default function SPRPage() {
 
           <TabsContent value="volunteers" className="mt-0 space-y-2">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => setVolDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Voluntário</Button>
+              <Button size="sm" onClick={openNewVolunteer}><Plus className="mr-1 h-4 w-4" />Voluntário</Button>
             </div>
             {filteredVol.map(v => (
-              <Card key={v.id}>
+              <Card key={v.id} className="cursor-pointer hover:border-primary/30 transition-all" onClick={() => openEditVolunteer(v)}>
                 <CardContent className="flex items-center justify-between p-3">
-                  <div>
-                    <p className="text-sm font-medium">{v.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{v.phone || 'Sem telefone'}</p>
+                  <div className="flex items-center gap-3 min-w-0">
+                    {v.avatar_url ? (
+                      <img src={v.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{v.full_name}</p>
+                      <p className="text-xs text-muted-foreground">{v.phone || 'Sem telefone'}{!v.is_active ? ' • Inativo' : ''}</p>
+                    </div>
                   </div>
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Pencil className="h-4 w-4 text-muted-foreground shrink-0" />
                 </CardContent>
               </Card>
             ))}
+            {filteredVol.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>}
           </TabsContent>
 
           <TabsContent value="charges" className="mt-0 space-y-2">
@@ -160,19 +240,60 @@ export default function SPRPage() {
                 </CardContent>
               </Card>
             ))}
+            {filteredCharges.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum fiado encontrado.</p>}
           </TabsContent>
         </div>
       </Tabs>
 
       {/* Volunteer Dialog */}
       <Dialog open={volDialogOpen} onOpenChange={setVolDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Novo Voluntário</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Nome Completo</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
-            <div><Label>Documento</Label><Input value={volDoc} onChange={e => setVolDoc(e.target.value)} className="h-12" /></div>
-            <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" /></div>
-            <Button className="h-12 w-full" onClick={saveVolunteer}>Salvar</Button>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingVol ? 'Editar Voluntário' : 'Novo Voluntário'}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                {volPreviewUrl ? (
+                  <img src={volPreviewUrl} alt="Avatar" className="h-24 w-24 rounded-full object-cover border-4 border-primary/20" />
+                ) : (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted border-4 border-dashed border-muted-foreground/30">
+                    <User className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                )}
+                {volUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" size="sm" onClick={() => volCameraRef.current?.click()} className="gap-1.5">
+                  <Camera className="h-4 w-4" />Câmera
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => volFileRef.current?.click()} className="gap-1.5">
+                  <Upload className="h-4 w-4" />Galeria
+                </Button>
+              </div>
+              <input ref={volCameraRef} type="file" accept="image/*" capture="user" onChange={handleVolFileSelect} className="hidden" />
+              <input ref={volFileRef} type="file" accept="image/*" onChange={handleVolFileSelect} className="hidden" />
+            </div>
+
+            <div className="space-y-3">
+              <div><Label>Nome Completo *</Label><Input value={volName} onChange={e => setVolName(e.target.value)} className="h-12" /></div>
+              <div><Label>Documento</Label><Input value={volDoc} onChange={e => setVolDoc(e.target.value)} className="h-12" /></div>
+              <div><Label>Telefone</Label><Input value={volPhone} onChange={e => setVolPhone(e.target.value)} className="h-12" type="tel" /></div>
+              <div><Label>Observações</Label><Textarea value={volNotes} onChange={e => setVolNotes(e.target.value)} rows={2} /></div>
+              {editingVol && (
+                <div className="flex items-center justify-between">
+                  <Label>Ativo</Label>
+                  <Switch checked={volActive} onCheckedChange={setVolActive} />
+                </div>
+              )}
+            </div>
+
+            <Button className="h-12 w-full" onClick={saveVolunteer} disabled={volUploading}>
+              {volUploading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</> : 'Salvar'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
