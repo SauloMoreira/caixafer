@@ -400,6 +400,9 @@ export default function PDVPage() {
 
       {/* SPR Payment Dialog */}
       <SPRPaymentDialog open={sprPaymentOpen} onOpenChange={setSprPaymentOpen} />
+
+      {/* Quick Income Dialog */}
+      <QuickIncomeDialog open={quickIncomeOpen} onOpenChange={setQuickIncomeOpen} category={quickIncomeCategory} />
     </div>
   );
 }
