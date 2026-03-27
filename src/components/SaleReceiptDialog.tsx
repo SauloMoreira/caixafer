@@ -63,7 +63,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     const text = buildPlainText();
     if (navigator.share) {
       try {
-        await navigator.share({ title: `Comprovante #${data.saleNumber}`, text });
+        await navigator.share({ title: `Pedido #${data.saleNumber}`, text });
       } catch { /* user cancelled */ }
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
