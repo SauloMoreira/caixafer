@@ -404,7 +404,17 @@ export default function FechamentoPage() {
                 </div>
               )}
               <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
+            </CardContent>
+          </Card>
 
+          {/* Daily Operation Insights */}
+          <DailyOperationInsights
+            businessDate={date}
+            disabled={closing.status === 'closed' && !isAdmin}
+          />
+
+          <Card>
+            <CardContent className="space-y-4 pt-6">
               {/* Action buttons */}
               {closing.status !== 'closed' && (
                 <div className="space-y-2">
