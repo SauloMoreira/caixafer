@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp } from 'lucide-react';
-import { CriticalActionDialog } from '@/components/CriticalActionDialog';
+import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
