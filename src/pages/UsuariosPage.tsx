@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Shield, UserCheck, Clock, XCircle, UserX, Search, User } from 'lucide-react';
+import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil } from 'lucide-react';
 
 interface UserProfile {
   id: string;
@@ -34,6 +35,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 
 export default function UsuariosPage() {
   const { profile: currentUser } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -222,6 +224,9 @@ export default function UsuariosPage() {
               {/* Actions */}
               {selectedUser.id !== currentUser?.id && (
                 <div className="flex flex-wrap gap-2 pt-2">
+                  <Button size="sm" variant="outline" onClick={() => { setDialogOpen(false); navigate(`/perfil?user=${selectedUser.id}`); }} className="gap-1.5">
+                    <Pencil className="h-4 w-4" /> Editar Perfil
+                  </Button>
                   {selectedUser.approval_status === 'pending_approval' && (
                     <>
                       <Button size="sm" onClick={() => handleApprove(selectedUser.id)} className="gap-1.5">
