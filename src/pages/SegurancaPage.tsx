@@ -94,6 +94,8 @@ const PRIORITY_LABELS: Record<string, string> = { urgent: 'Urgente', high: 'Alta
 const TRANSFER_EVENTS = ['cash_transfer_requested', 'cash_transfer_accepted', 'cash_transfer_rejected', 'cash_transfer_cancelled', 'cash_responsibility_changed'];
 const CASH_CHANGE_EVENTS = ['cash_entry_created', 'cash_entry_updated', 'cash_entry_deleted', 'cash_opened', 'cash_closed', 'cash_reopened', 'cash_updated', 'sale_created', 'sale_updated', 'sale_deleted'];
 const INCIDENT_EVENTS = ['unauthorized_route_access', 'unauthorized_data_access_attempt', 'session_invalidated_by_new_login', 'admin_access_blocked_missing_mfa', 'mfa_login_failed', 'forced_reauthentication'];
+const BLOCKED_EVENTS = ['cash_open_blocked_existing_open_session', 'cash_operation_blocked_wrong_user', 'cash_close_blocked_wrong_user', 'spr_operation_blocked_wrong_user', 'admin_operational_action_blocked'];
+const OVERRIDE_EVENTS = ['primary_admin_override_used', 'primary_admin_cash_operation', 'primary_admin_cash_close', 'primary_admin_financial_override', 'primary_admin_spr_override', 'primary_admin_forced_correction'];
 
 function fmt(dateStr: string) { return format(new Date(dateStr), "dd/MM/yy HH:mm", { locale: ptBR }); }
 function fmtDate(dateStr: string) { try { return format(new Date(dateStr + 'T00:00:00'), "dd/MM/yyyy"); } catch { return dateStr; } }
