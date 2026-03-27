@@ -467,6 +467,92 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+const DATA_LABELS: Record<string, string> = {
+  id: 'ID', user_id: 'Usuário ID', status: 'Status', notes: 'Observações',
+  opening_balance: 'Saldo Inicial', sales_total: 'Total Vendas', income_total: 'Total Entradas',
+  expense_total: 'Total Saídas', expected_balance: 'Saldo Esperado', counted_balance: 'Saldo Contado',
+  difference_amount: 'Diferença', business_date: 'Data Operacional', closed_at: 'Fechado em',
+  created_at: 'Criado em', reopened_at: 'Reaberto em', reopened_by: 'Reaberto por',
+  reopen_reason: 'Motivo Reabertura', closing_version: 'Versão', is_latest_version: 'Versão Atual',
+  role: 'Papel', approval_status: 'Status Aprovação', is_active: 'Ativo', volunteer_id: 'Voluntário',
+  amount: 'Valor', total_amount: 'Total', payment_method: 'Forma Pgto', entry_type: 'Tipo',
+  category: 'Categoria', description: 'Descrição', discount_amount: 'Desconto', subtotal: 'Subtotal',
+  sale_number: 'Nº Venda', is_deleted: 'Excluído', deleted_at: 'Excluído em',
+  previous_closing_snapshot: 'Snapshot Anterior',
+};
+
+function formatDataValue(key: string, value: any): string {
+  if (value === null || value === undefined) return '—';
+  if (typeof value === 'boolean') return value ? 'Sim' : 'Não';
+  if (typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'number') {
+    if (key.includes('balance') || key.includes('total') || key.includes('amount') || key === 'subtotal')
+      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    return String(value);
+  }
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+    try { return format(new Date(value), "dd/MM/yy HH:mm", { locale: ptBR }); } catch { return value; }
+  }
+  if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    try { return format(new Date(value + 'T00:00:00'), "dd/MM/yyyy"); } catch { return value; }
+  }
+  return String(value);
+}
+
+function DetailRow({ label, value, children }: { label: string; value?: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-3 py-2">
+      <span className="text-muted-foreground text-xs shrink-0 pt-0.5">{label}</span>
+      {children || <span className="font-medium text-xs text-right break-all">{value}</span>}
+    </div>
+  );
+}
+
+function DataTable({ data }: { data: Record<string, any> }) {
+  const entries = Object.entries(data).filter(([k]) => k !== 'previous_closing_snapshot');
+  return (
+    <div className="rounded-lg border bg-muted/30 divide-y">
+      {entries.map(([key, val]) => (
+        <div key={key} className="flex items-start justify-between gap-3 px-3 py-2">
+          <span className="text-muted-foreground text-xs shrink-0 pt-0.5">{DATA_LABELS[key] || key}</span>
+          <span className="font-medium text-xs text-right break-all max-w-[60%]">{formatDataValue(key, val)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DiffView({ oldData, newData }: { oldData: Record<string, any>; newData: Record<string, any> }) {
+  const allKeys = [...new Set([...Object.keys(oldData), ...Object.keys(newData)])];
+  const changed = allKeys.filter(k => {
+    if (k === 'previous_closing_snapshot') return false;
+    return JSON.stringify(oldData[k]) !== JSON.stringify(newData[k]);
+  });
+
+  if (changed.length === 0) {
+    return <p className="text-xs text-muted-foreground italic">Nenhuma alteração detectada.</p>;
+  }
+
+  return (
+    <div className="rounded-lg border bg-muted/30 divide-y">
+      {changed.map(key => (
+        <div key={key} className="px-3 py-2 space-y-1">
+          <p className="text-xs font-medium">{DATA_LABELS[key] || key}</p>
+          <div className="flex items-center gap-2 text-xs">
+            <span className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 px-1.5 py-0.5 rounded break-all">
+              {formatDataValue(key, oldData[key])}
+            </span>
+            <span className="text-muted-foreground">→</span>
+            <span className="bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-1.5 py-0.5 rounded break-all">
+              {formatDataValue(key, newData[key])}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function MfaSettingsSection({ profiles, auditLogs }: { profiles: any[]; auditLogs: any[] }) {
   const adminProfiles = profiles.filter(p => p.role === 'admin' && p.is_active);
 
