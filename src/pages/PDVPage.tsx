@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine } from 'lucide-react';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
