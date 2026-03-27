@@ -58,8 +58,10 @@ export default function ProdutosPage() {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo 5MB.'); return; }
     setImageFile(file);
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(URL.createObjectURL(file));
     setRemoveImage(false);
+    e.target.value = '';
   };
 
   const clearImage = () => {
