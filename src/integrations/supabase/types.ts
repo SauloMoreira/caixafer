@@ -105,15 +105,21 @@ export type Database = {
           category: string
           created_at: string
           created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
           description: string | null
           document_reference: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
           entry_type: Database["public"]["Enums"]["entry_type"]
           id: string
+          is_deleted: boolean
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           source_id: string | null
           source_type: string | null
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
           amount: number
@@ -121,15 +127,21 @@ export type Database = {
           category: string
           created_at?: string
           created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           description?: string | null
           document_reference?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           entry_type: Database["public"]["Enums"]["entry_type"]
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           source_id?: string | null
           source_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           amount?: number
@@ -137,20 +149,40 @@ export type Database = {
           category?: string
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           description?: string | null
           document_reference?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           entry_type?: Database["public"]["Enums"]["entry_type"]
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           source_id?: string | null
           source_type?: string | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "cash_entries_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_entries_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_entries_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -396,42 +428,77 @@ export type Database = {
           business_date: string
           created_at: string
           created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
           discount_amount: number
           id: string
+          is_deleted: boolean
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           sale_number: number
+          status: string
           subtotal: number
           total_amount: number
+          updated_at: string
+          updated_by: string | null
         }
         Insert: {
           business_date?: string
           created_at?: string
           created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           discount_amount?: number
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_method: Database["public"]["Enums"]["payment_method"]
           sale_number?: number
+          status?: string
           subtotal?: number
           total_amount?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           business_date?: string
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           discount_amount?: number
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"]
           sale_number?: number
+          status?: string
           subtotal?: number
           total_amount?: number
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "sales_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_updated_by_fkey"
+            columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -661,39 +728,57 @@ export type Database = {
           amount_paid: number
           created_at: string
           created_by: string
+          deleted_at: string | null
+          deleted_by: string | null
+          deletion_reason: string | null
           document_reference: string | null
           document_type: Database["public"]["Enums"]["document_type"] | null
           fiado_charge_id: string
           id: string
+          is_deleted: boolean
           notes: string | null
           payment_date: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          updated_at: string
+          updated_by: string | null
           volunteer_id: string
         }
         Insert: {
           amount_paid: number
           created_at?: string
           created_by: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           document_reference?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           fiado_charge_id: string
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_date?: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+          updated_by?: string | null
           volunteer_id: string
         }
         Update: {
           amount_paid?: number
           created_at?: string
           created_by?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
+          deletion_reason?: string | null
           document_reference?: string | null
           document_type?: Database["public"]["Enums"]["document_type"] | null
           fiado_charge_id?: string
           id?: string
+          is_deleted?: boolean
           notes?: string | null
           payment_date?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+          updated_by?: string | null
           volunteer_id?: string
         }
         Relationships: [
@@ -705,10 +790,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "spr_fiado_payments_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "spr_fiado_payments_fiado_charge_id_fkey"
             columns: ["fiado_charge_id"]
             isOneToOne: false
             referencedRelation: "spr_fiado_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spr_fiado_payments_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -777,7 +876,7 @@ export type Database = {
         | "sem_documento"
       entry_type: "income" | "expense"
       fiado_status: "open" | "partial" | "paid"
-      notification_type: "spr_over_30_days"
+      notification_type: "spr_over_30_days" | "cash_correction"
       payment_method:
         | "pix"
         | "debito"
@@ -921,7 +1020,7 @@ export const Constants = {
       ],
       entry_type: ["income", "expense"],
       fiado_status: ["open", "partial", "paid"],
-      notification_type: ["spr_over_30_days"],
+      notification_type: ["spr_over_30_days", "cash_correction"],
       payment_method: ["pix", "debito", "credito", "transferencia", "dinheiro"],
     },
   },
