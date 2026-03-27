@@ -252,6 +252,16 @@ export default function PDVPage() {
     setLoading(false);
   };
 
+  const finalizeSale = () => {
+    if (sessionResponsibleName && hasOperationalOverride) {
+      setOverrideLabel('Finalizar venda no PDV');
+      setOverrideAction(() => () => doFinalizeSale());
+      setOverrideDialogOpen(true);
+    } else {
+      doFinalizeSale();
+    }
+  };
+
   // Loading state
   if (cashStatus === 'loading') {
     return (
