@@ -122,7 +122,7 @@ export default function SegurancaPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, role, is_active, approval_status, created_at, updated_at');
+        .select('id, full_name, role, is_active, approval_status, created_at, updated_at, last_login_at, active_session_id');
       if (error) throw error;
       return data;
     },
