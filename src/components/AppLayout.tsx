@@ -62,14 +62,6 @@ const cashierSections: NavSection[] = [
       { to: '/', icon: LayoutDashboard, label: 'Início' },
     ],
   },
-  {
-    title: 'Caixa',
-    items: [
-      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
-      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
-      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-    ],
-  },
 ];
 
 const volunteerSections: NavSection[] = [
