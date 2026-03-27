@@ -294,6 +294,12 @@ export default function FechamentoPage() {
       <h1 className="page-title">Fechamento de Caixa</h1>
       <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-12" />
 
+      {/* Pending transfer banner */}
+      <PendingTransferBanner
+        onTransferAccepted={fetchData}
+        onTransferStatusChanged={fetchData}
+      />
+
       {/* Warning for pending previous day */}
       {pendingDate && date !== pendingDate && (
         <div className="flex items-start gap-2 rounded-lg bg-warning/10 border border-warning/20 p-3 text-warning text-sm">
