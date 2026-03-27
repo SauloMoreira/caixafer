@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock, Unlock,
-  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell
+  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,7 @@ const allNavItems = [
   { to: '/spr', icon: Heart, label: 'SPR Ramatis', roles: ['admin', 'cashier'] },
   { to: '/notificacoes', icon: Bell, label: 'Acompanhamento SPR', roles: ['admin'] },
   { to: '/usuarios', icon: Users, label: 'Usuários', roles: ['admin'] },
+  { to: '/seguranca', icon: Shield, label: 'Segurança', roles: ['admin'] },
   // Volunteer-only
   { to: '/', icon: LayoutDashboard, label: 'Início', roles: ['volunteer'] },
   { to: '/meu-spr', icon: Heart, label: 'Meu SPR', roles: ['volunteer'] },
@@ -35,6 +36,7 @@ const pageTitles: Record<string, string> = {
   '/spr': 'SPR Ramatis',
   '/notificacoes': 'Acompanhamento SPR',
   '/usuarios': 'Usuários',
+  '/seguranca': 'Segurança',
   '/meu-spr': 'Meu SPR',
   '/perfil': 'Meu Perfil',
 };

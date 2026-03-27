@@ -1,5 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { logSecurityIncident } from '@/lib/security';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,6 +11,26 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: ProtectedRouteProps) {
   const { session, loading, isAdmin, isApproved, isProfileComplete, profile } = useAuth();
+  const loggedRef = useRef(false);
+
+  // Log unauthorized access attempts once per mount
+  useEffect(() => {
+    if (loading || !session || !profile || loggedRef.current) return;
+
+    const role = profile.role;
+    const denied =
+      (adminOnly && !isAdmin) ||
+      (allowedRoles && !allowedRoles.includes(role));
+
+    if (denied) {
+      loggedRef.current = true;
+      logSecurityIncident({
+        incident_type: 'unauthorized_route_access',
+        context: { role, adminOnly, allowedRoles },
+        severity: 'medium',
+      });
+    }
+  }, [loading, session, profile, adminOnly, allowedRoles, isAdmin]);
 
   if (loading) {
     return (
