@@ -79,7 +79,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">Comprovante de Venda</DialogTitle>
+          <DialogTitle className="text-center">Pedido</DialogTitle>
         </DialogHeader>
 
         <div className="overflow-x-auto">

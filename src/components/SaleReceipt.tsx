@@ -31,7 +31,7 @@ const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData }>(({ data },
       {/* Sale info */}
       <div className="mb-3 space-y-0.5">
         <div className="flex justify-between">
-          <span>Venda:</span>
+          <span>Pedido:</span>
           <span className="font-bold">#{data.saleNumber}</span>
         </div>
         <div className="flex justify-between">
