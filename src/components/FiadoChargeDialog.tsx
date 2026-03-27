@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, PenLine } from 'lucide-react';
+import ProductImage from '@/components/ProductImage';
 import ManualItemDialog from '@/components/ManualItemDialog';
 import type { ManualItem } from '@/components/ManualItemDialog';
 import type { Database } from '@/integrations/supabase/types';
@@ -242,11 +243,11 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
                 <button
                   key={product.id}
                   onClick={() => addToCart(product)}
-                  className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 p-2"
+                  className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 flex flex-col items-center gap-1 p-2"
                 >
-                  <p className="text-xs font-medium leading-tight truncate">{product.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{product.category}</p>
-                  <p className="mt-0.5 financial-value text-sm text-primary">{formatCurrency(Number(product.unit_price))}</p>
+                  <ProductImage src={(product as any).image_url} size="sm" alt={product.name} />
+                  <p className="text-xs font-medium leading-tight truncate text-center w-full">{product.name}</p>
+                  <p className="financial-value text-xs text-primary">{formatCurrency(Number(product.unit_price))}</p>
                 </button>
               ))}
             </div>
@@ -259,7 +260,14 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
                   {cart.map(item => {
                     const id = getItemId(item);
                     return (
-                    <div key={id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
+                    <div key={id} className="flex items-center gap-2 rounded-lg bg-muted/50 p-2">
+                      <ProductImage
+                        src={item.itemType === 'product' ? (item.product as any)?.image_url : null}
+                        itemType={item.itemType}
+                        size="sm"
+                        alt={getItemName(item)}
+                        className="h-6 w-6"
+                      />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium truncate">
                           {getItemName(item)}
