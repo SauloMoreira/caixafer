@@ -124,7 +124,7 @@ export default function DashboardPage() {
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {profile?.role === 'admin' ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+            {profile?.role === 'admin' ? 'Administrador' : profile?.role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'} • Resumo do dia
           </p>
         </div>
       </div>
