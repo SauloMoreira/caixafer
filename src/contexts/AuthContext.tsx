@@ -28,6 +28,8 @@ interface AuthContextType {
   profile: Profile | null;
   loading: boolean;
   isAdmin: boolean;
+  isPrimaryAdmin: boolean;
+  hasOperationalOverride: boolean;
   isCashier: boolean;
   isVolunteer: boolean;
   isApproved: boolean;
