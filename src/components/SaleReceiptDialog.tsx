@@ -43,7 +43,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       '      CANTINA DA FER',
       '=============================',
       '',
-      `Venda: #${data.saleNumber}`,
+      `Pedido: #${data.saleNumber}`,
       `Data: ${formatDateTime(data.createdAt)}`,
       `Operador: ${data.operatorName}`,
       '-----------------------------',
