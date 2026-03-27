@@ -112,8 +112,8 @@ export default function SPRPage() {
         if (volAvatarFile && !avatarUrl) return;
       }
       const { error } = await supabase.from('spr_volunteers').update({
-        full_name: volName, document_number: volDoc || null, phone: volPhone || null,
-        notes: volNotes || null, is_active: volActive, avatar_url: avatarUrl,
+        full_name: volName, phone: volPhone || null,
+        is_active: volActive, avatar_url: avatarUrl,
       } as any).eq('id', editingVol.id);
       if (error) toast.error(error.message);
       else { toast.success('Voluntário atualizado!'); setVolDialogOpen(false); fetchVolunteers(); }
