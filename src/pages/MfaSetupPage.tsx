@@ -20,6 +20,7 @@ export default function MfaSetupPage() {
   const [loading, setLoading] = useState(false);
   const [enrolling, setEnrolling] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     if (!authLoading && !session) {
