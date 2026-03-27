@@ -44,11 +44,8 @@ export default function SPRPage() {
   const volFileRef = useRef<HTMLInputElement>(null);
   const volCameraRef = useRef<HTMLInputElement>(null);
 
-  // Charge form
+  // Charge form (PDV-style dialog)
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
-  const [chargeVolunteerId, setChargeVolunteerId] = useState('');
-  const [chargeDesc, setChargeDesc] = useState('');
-  const [chargeAmount, setChargeAmount] = useState('');
 
   // Payment form
   const [payDialogOpen, setPayDialogOpen] = useState(false);
