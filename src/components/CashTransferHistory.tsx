@@ -48,11 +48,9 @@ export default function CashTransferHistory({ closingId }: Props) {
       data.forEach((t: any) => { userIds.add(t.from_user_id); userIds.add(t.to_user_id); });
 
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', Array.from(userIds));
+        .rpc('get_user_names', { _user_ids: Array.from(userIds) });
 
-      const nameMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name]));
+      const nameMap = Object.fromEntries((profiles || []).map((p: { id: string; full_name: string }) => [p.id, p.full_name]));
 
       setTransfers(data.map((t: any) => ({
         ...t,
