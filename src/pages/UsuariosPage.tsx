@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart } from 'lucide-react';
+import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 interface UserProfile {
   id: string;
@@ -55,6 +56,12 @@ export default function UsuariosPage() {
   const [filterRole, setFilterRole] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [criticalAction, setCriticalAction] = useState<{
+    type: 'deactivate' | 'reject' | 'role_change';
+    userId: string;
+    userName: string;
+    newRole?: string;
+  } | null>(null);
 
   useEffect(() => { fetchUsers(); fetchVolunteers(); }, []);
 
@@ -81,6 +88,11 @@ export default function UsuariosPage() {
   };
 
   const handleReject = async (userId: string) => {
+    const u = users.find(u => u.id === userId);
+    setCriticalAction({ type: 'reject', userId, userName: u?.full_name || '' });
+  };
+
+  const doReject = async (userId: string) => {
     const { error } = await supabase.from('profiles').update({
       approval_status: 'rejected',
       is_active: false,
@@ -91,6 +103,16 @@ export default function UsuariosPage() {
   };
 
   const handleToggleActive = async (userId: string, active: boolean) => {
+    if (!active) {
+      // Requires confirmation for deactivation
+      const u = users.find(u => u.id === userId);
+      setCriticalAction({ type: 'deactivate', userId, userName: u?.full_name || '' });
+      return;
+    }
+    await doToggleActive(userId, active);
+  };
+
+  const doToggleActive = async (userId: string, active: boolean) => {
     const { error } = await supabase.from('profiles').update({
       is_active: active,
       updated_at: new Date().toISOString(),
@@ -100,8 +122,12 @@ export default function UsuariosPage() {
   };
 
   const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'volunteer') => {
+    const u = users.find(u => u.id === userId);
+    setCriticalAction({ type: 'role_change', userId, userName: u?.full_name || '', newRole: role });
+  };
+
+  const doChangeRole = async (userId: string, role: string) => {
     const updateData: any = { role, updated_at: new Date().toISOString() };
-    // Clear volunteer_id if changing away from volunteer
     if (role !== 'volunteer') {
       updateData.volunteer_id = null;
     }
@@ -110,9 +136,8 @@ export default function UsuariosPage() {
     else {
       toast.success('Perfil atualizado!');
       fetchUsers();
-      // Update selectedUser in dialog
       if (selectedUser?.id === userId) {
-        setSelectedUser(prev => prev ? { ...prev, role, volunteer_id: role !== 'volunteer' ? null : prev.volunteer_id } : null);
+        setSelectedUser(prev => prev ? { ...prev, role: role as any, volunteer_id: role !== 'volunteer' ? null : prev.volunteer_id } : null);
       }
     }
   };
@@ -334,6 +359,46 @@ export default function UsuariosPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Critical action confirmation */}
+      <CriticalActionDialog
+        open={!!criticalAction}
+        onOpenChange={open => { if (!open) setCriticalAction(null); }}
+        title={
+          criticalAction?.type === 'deactivate' ? 'Desativar Usuário' :
+          criticalAction?.type === 'reject' ? 'Rejeitar Usuário' :
+          'Alterar Papel do Usuário'
+        }
+        description={
+          criticalAction?.type === 'deactivate'
+            ? `Tem certeza que deseja desativar "${criticalAction.userName}"? O usuário perderá o acesso ao sistema imediatamente.`
+            : criticalAction?.type === 'reject'
+            ? `Tem certeza que deseja rejeitar "${criticalAction?.userName}"? O acesso será bloqueado.`
+            : `Tem certeza que deseja alterar o papel de "${criticalAction?.userName}" para ${
+                criticalAction?.newRole === 'admin' ? 'Administrador' : criticalAction?.newRole === 'cashier' ? 'Caixa' : 'Voluntário'
+              }?`
+        }
+        details={[
+          { label: 'Usuário', value: criticalAction?.userName || '' },
+          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: criticalAction.newRole === 'admin' ? 'Admin' : criticalAction.newRole === 'cashier' ? 'Caixa' : 'Voluntário' }] : []),
+        ]}
+        severity={criticalAction?.type === 'role_change' && criticalAction.newRole === 'admin' ? 'danger' : criticalAction?.type === 'deactivate' || criticalAction?.type === 'reject' ? 'danger' : 'warning'}
+        confirmLabel={
+          criticalAction?.type === 'deactivate' ? 'Desativar' :
+          criticalAction?.type === 'reject' ? 'Rejeitar' : 'Alterar Papel'
+        }
+        onConfirm={async () => {
+          if (!criticalAction) return;
+          if (criticalAction.type === 'deactivate') {
+            await doToggleActive(criticalAction.userId, false);
+          } else if (criticalAction.type === 'reject') {
+            await doReject(criticalAction.userId);
+          } else if (criticalAction.type === 'role_change' && criticalAction.newRole) {
+            await doChangeRole(criticalAction.userId, criticalAction.newRole);
+          }
+          setCriticalAction(null);
+        }}
+      />
     </div>
   );
 }

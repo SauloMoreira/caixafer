@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 import { Plus, TrendingUp, TrendingDown, Trash2, Edit } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 type CashEntry = Database['public']['Tables']['cash_entries']['Row'];
 type EntryType = Database['public']['Enums']['entry_type'];
@@ -70,10 +71,18 @@ export default function MovimentosPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('cash_entries').delete().eq('id', id);
-    if (error) toast.error('Erro: ' + error.message);
+  const [deleteTarget, setDeleteTarget] = useState<CashEntry | null>(null);
+
+  const handleDelete = async (entry: CashEntry) => {
+    setDeleteTarget(entry);
+  };
+
+  const doDelete = async () => {
+    if (!deleteTarget) return;
+    const { error } = await supabase.from('cash_entries').delete().eq('id', deleteTarget.id);
+    if (error) toast.error('Erro ao remover.');
     else { toast.success('Removido!'); fetchEntries(); }
+    setDeleteTarget(null);
   };
 
   const resetForm = () => {
@@ -178,7 +187,7 @@ export default function MovimentosPage() {
                     {entry.entry_type === 'expense' ? '-' : '+'}{formatCurrency(Number(entry.amount))}
                   </p>
                   {canEdit(entry) && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(entry.id)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(entry)}>
                       <Trash2 className="h-3 w-3" />
                     </Button>
                   )}
@@ -188,6 +197,21 @@ export default function MovimentosPage() {
           ))}
         </div>
       )}
+
+      <CriticalActionDialog
+        open={!!deleteTarget}
+        onOpenChange={open => { if (!open) setDeleteTarget(null); }}
+        title="Excluir Movimento"
+        description="Tem certeza que deseja excluir este movimento? Esta ação não pode ser desfeita."
+        details={deleteTarget ? [
+          { label: 'Tipo', value: deleteTarget.entry_type === 'income' ? 'Entrada' : 'Saída' },
+          { label: 'Categoria', value: deleteTarget.category },
+          { label: 'Valor', value: formatCurrency(Number(deleteTarget.amount)) },
+        ] : []}
+        severity="danger"
+        confirmLabel="Excluir"
+        onConfirm={doDelete}
+      />
     </div>
   );
 }
