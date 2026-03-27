@@ -44,7 +44,7 @@ export default function MfaSetupPage() {
 
       // Check if user already has a TOTP factor enrolled (unverified)
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
-      const existingUnverified = factorsData?.totp?.find(f => f.status === 'unverified');
+      const existingUnverified = factorsData?.totp?.find(f => (f.status as string) === 'unverified');
       
       if (existingUnverified) {
         // Unenroll stale unverified factor before re-enrolling
