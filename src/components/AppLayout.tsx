@@ -91,7 +91,7 @@ const pageTitles: Record<string, string> = {
   '/notificacoes': 'Pendências',
   '/usuarios': 'Usuários',
   '/seguranca': 'Segurança',
-  '/meu-spr': 'Meu SPR',
+  '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
 };
 

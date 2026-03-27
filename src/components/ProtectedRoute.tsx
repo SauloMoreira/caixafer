@@ -87,7 +87,7 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
 
   // Volunteer: redirect to meu-spr if trying to access non-allowed routes
   if (profile?.role === 'volunteer' && allowedRoles && !allowedRoles.includes('volunteer')) {
-    return <Navigate to="/meu-spr" replace />;
+    return <Navigate to="/meu-consumo" replace />;
   }
 
   if (adminOnly && !isAdmin) return <Navigate to="/" replace />;
