@@ -21,12 +21,14 @@ export type Database = {
           closing_version: number
           counted_balance: number | null
           created_at: string
+          current_responsible_id: string
           difference_amount: number | null
           expected_balance: number
           expense_total: number
           id: string
           income_total: number
           is_latest_version: boolean
+          last_transfer_id: string | null
           notes: string | null
           opening_balance: number
           previous_closing_snapshot: Json | null
@@ -35,6 +37,7 @@ export type Database = {
           reopened_by: string | null
           sales_total: number
           status: Database["public"]["Enums"]["closing_status"]
+          transfer_count: number
           user_id: string
         }
         Insert: {
@@ -43,12 +46,14 @@ export type Database = {
           closing_version?: number
           counted_balance?: number | null
           created_at?: string
+          current_responsible_id?: string
           difference_amount?: number | null
           expected_balance?: number
           expense_total?: number
           id?: string
           income_total?: number
           is_latest_version?: boolean
+          last_transfer_id?: string | null
           notes?: string | null
           opening_balance?: number
           previous_closing_snapshot?: Json | null
@@ -57,6 +62,7 @@ export type Database = {
           reopened_by?: string | null
           sales_total?: number
           status?: Database["public"]["Enums"]["closing_status"]
+          transfer_count?: number
           user_id: string
         }
         Update: {
@@ -65,12 +71,14 @@ export type Database = {
           closing_version?: number
           counted_balance?: number | null
           created_at?: string
+          current_responsible_id?: string
           difference_amount?: number | null
           expected_balance?: number
           expense_total?: number
           id?: string
           income_total?: number
           is_latest_version?: boolean
+          last_transfer_id?: string | null
           notes?: string | null
           opening_balance?: number
           previous_closing_snapshot?: Json | null
@@ -79,9 +87,24 @@ export type Database = {
           reopened_by?: string | null
           sales_total?: number
           status?: Database["public"]["Enums"]["closing_status"]
+          transfer_count?: number
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cash_closings_current_responsible_id_fkey"
+            columns: ["current_responsible_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_closings_last_transfer_id_fkey"
+            columns: ["last_transfer_id"]
+            isOneToOne: false
+            referencedRelation: "cash_session_transfers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cash_closings_reopened_by_fkey"
             columns: ["reopened_by"]
@@ -183,6 +206,70 @@ export type Database = {
           {
             foreignKeyName: "cash_entries_updated_by_fkey"
             columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_session_transfers: {
+        Row: {
+          accepted_at: string | null
+          business_date: string
+          cash_closing_id: string
+          created_at: string
+          from_user_id: string
+          id: string
+          notes: string | null
+          requested_at: string
+          status: Database["public"]["Enums"]["transfer_status"]
+          to_user_id: string
+          transfer_reason: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          business_date: string
+          cash_closing_id: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_user_id: string
+          transfer_reason: string
+        }
+        Update: {
+          accepted_at?: string | null
+          business_date?: string
+          cash_closing_id?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          status?: Database["public"]["Enums"]["transfer_status"]
+          to_user_id?: string
+          transfer_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_session_transfers_cash_closing_id_fkey"
+            columns: ["cash_closing_id"]
+            isOneToOne: false
+            referencedRelation: "cash_closings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_transfers_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_transfers_to_user_id_fkey"
+            columns: ["to_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -929,13 +1016,17 @@ export type Database = {
         | "sem_documento"
       entry_type: "income" | "expense"
       fiado_status: "open" | "partial" | "paid"
-      notification_type: "spr_over_30_days" | "cash_correction"
+      notification_type:
+        | "spr_over_30_days"
+        | "cash_correction"
+        | "cash_transfer"
       payment_method:
         | "pix"
         | "debito"
         | "credito"
         | "transferencia"
         | "dinheiro"
+      transfer_status: "pending" | "accepted" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1073,8 +1164,13 @@ export const Constants = {
       ],
       entry_type: ["income", "expense"],
       fiado_status: ["open", "partial", "paid"],
-      notification_type: ["spr_over_30_days", "cash_correction"],
+      notification_type: [
+        "spr_over_30_days",
+        "cash_correction",
+        "cash_transfer",
+      ],
       payment_method: ["pix", "debito", "credito", "transferencia", "dinheiro"],
+      transfer_status: ["pending", "accepted", "rejected", "cancelled"],
     },
   },
 } as const
