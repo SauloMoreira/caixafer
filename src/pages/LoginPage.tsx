@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import EmailInput from '@/components/EmailInput';
 import { toast } from 'sonner';
 import { Store, ArrowLeft } from 'lucide-react';
+import { isValidEmail, normalizeEmail } from '@/lib/masks';
 
 type View = 'login' | 'signup' | 'forgot';
 
@@ -18,6 +20,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   if (authLoading) return null;
   if (session) return <Navigate to="/" replace />;
@@ -26,24 +29,42 @@ export default function LoginPage() {
     setEmail('');
     setPassword('');
     setFullName('');
+    setSubmitted(false);
+  };
+
+  const validateEmail = (): boolean => {
+    if (!email.trim()) {
+      toast.error('Informe o e-mail.');
+      return false;
+    }
+    if (!isValidEmail(email)) {
+      toast.error('E-mail inválido. Verifique o formato.');
+      return false;
+    }
+    return true;
   };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    if (!validateEmail()) return;
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { error } = await signIn(normalizeEmail(email), password);
     if (error) toast.error('Falha no login. Verifique suas credenciais.');
     setLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    if (!fullName.trim()) { toast.error('Informe o nome completo.'); return; }
+    if (!validateEmail()) return;
     if (password.length < 6) {
       toast.error('A senha deve ter pelo menos 6 caracteres.');
       return;
     }
     setLoading(true);
-    const { error } = await signUp(email, password, fullName);
+    const { error } = await signUp(normalizeEmail(email), password, fullName);
     if (error) {
       toast.error(error.message || 'Erro ao criar conta.');
     } else {
@@ -56,8 +77,10 @@ export default function LoginPage() {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitted(true);
+    if (!validateEmail()) return;
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizeEmail(email), {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) {
@@ -102,12 +125,12 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">E-mail</Label>
-                  <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12" />
+                  <EmailInput value={email} onChange={setEmail} placeholder="seu@email.com" className="h-12" showError={submitted && email.length > 0 ? !isValidEmail(email) : undefined} />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">Senha</Label>
-                    <button type="button" onClick={() => setView('forgot')} className="text-xs text-primary hover:underline">
+                    <button type="button" onClick={() => { setView('forgot'); setSubmitted(false); }} className="text-xs text-primary hover:underline">
                       Esqueceu a senha?
                     </button>
                   </div>
@@ -131,10 +154,11 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nome completo</Label>
                   <Input id="fullName" type="text" placeholder="Seu nome" value={fullName} onChange={(e) => setFullName(e.target.value)} required className="h-12" />
+                  {submitted && !fullName.trim() && <p className="text-xs text-destructive">Nome é obrigatório.</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signupEmail">E-mail</Label>
-                  <Input id="signupEmail" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12" />
+                  <EmailInput value={email} onChange={setEmail} placeholder="seu@email.com" className="h-12" showError={submitted && email.length > 0 ? !isValidEmail(email) : undefined} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signupPassword">Senha</Label>
@@ -157,7 +181,7 @@ export default function LoginPage() {
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="forgotEmail">E-mail</Label>
-                  <Input id="forgotEmail" type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-12" />
+                  <EmailInput value={email} onChange={setEmail} placeholder="seu@email.com" className="h-12" showError={submitted && email.length > 0 ? !isValidEmail(email) : undefined} />
                 </div>
                 <Button type="submit" className="h-12 w-full text-base" disabled={loading}>
                   {loading ? 'Enviando...' : 'Enviar link de recuperação'}
