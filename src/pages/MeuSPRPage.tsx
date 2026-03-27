@@ -208,7 +208,7 @@ export default function MeuSPRPage() {
           <p className="text-base md:text-lg font-semibold text-foreground truncate">
             {getGreeting(displayName)}
           </p>
-          <p className="text-xs text-muted-foreground">Meu Consumo • SPR Ramatis</p>
+          <p className="text-xs text-muted-foreground">Meu Consumo</p>
         </div>
       </div>
 

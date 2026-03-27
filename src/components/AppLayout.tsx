@@ -73,16 +73,9 @@ const cashierSections: NavSection[] = [
 
 const volunteerSections: NavSection[] = [
   {
-    title: 'Início',
+    title: 'Menu',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Início' },
-    ],
-  },
-  {
-    title: 'SPR',
-    items: [
-      { to: '/meu-spr', icon: Heart, label: 'Meu SPR' },
-      { to: '/notificacoes', icon: AlertTriangle, label: 'Pendências' },
+      { to: '/meu-consumo', icon: Heart, label: 'Meu Consumo' },
     ],
   },
 ];
@@ -98,7 +91,7 @@ const pageTitles: Record<string, string> = {
   '/notificacoes': 'Pendências',
   '/usuarios': 'Usuários',
   '/seguranca': 'Segurança',
-  '/meu-spr': 'Meu SPR',
+  '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
 };
 

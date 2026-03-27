@@ -59,7 +59,7 @@ const App = () => (
             <Route path="/insights" element={<ProtectedRoute adminOnly><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/inteligencia" element={<ProtectedRoute adminOnly><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/notificacoes" element={<ProtectedRoute adminOnly><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/meu-spr" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/meu-consumo" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

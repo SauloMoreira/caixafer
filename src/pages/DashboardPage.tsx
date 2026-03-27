@@ -37,7 +37,7 @@ export default function DashboardPage() {
   useEffect(() => { if (!isVolunteer) fetchStats(); }, [profile, isVolunteer]);
 
   if (isVolunteer) {
-    return <Navigate to="/meu-spr" replace />;
+    return <Navigate to="/meu-consumo" replace />;
   }
 
   const fetchStats = async () => {
