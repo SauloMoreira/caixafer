@@ -27,7 +27,7 @@ const REOPEN_REASONS = [
 ];
 
 export default function FechamentoPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, hasOperationalOverride } = useAuth();
   const [date, setDate] = useState(todayISO());
   const [closing, setClosing] = useState<any>(null);
   const [openingBalance, setOpeningBalance] = useState('0');
