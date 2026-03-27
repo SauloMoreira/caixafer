@@ -62,9 +62,11 @@ export default function MeuSPRPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [volunteerName, setVolunteerName] = useState('');
 
+  const volunteerId = profile?.volunteer_id;
+
   useEffect(() => {
-    if (profile?.volunteer_id) fetchData();
-  }, [profile]);
+    if (volunteerId) fetchData();
+  }, [volunteerId]);
 
   const fetchData = async () => {
     if (!profile?.volunteer_id) return;
