@@ -98,6 +98,16 @@ export default function UsuariosPage() {
   };
 
   const handleToggleActive = async (userId: string, active: boolean) => {
+    if (!active) {
+      // Requires confirmation for deactivation
+      const u = users.find(u => u.id === userId);
+      setCriticalAction({ type: 'deactivate', userId, userName: u?.full_name || '' });
+      return;
+    }
+    await doToggleActive(userId, active);
+  };
+
+  const doToggleActive = async (userId: string, active: boolean) => {
     const { error } = await supabase.from('profiles').update({
       is_active: active,
       updated_at: new Date().toISOString(),
