@@ -34,13 +34,7 @@ export default function DashboardPage() {
   const [salesByMethod, setSalesByMethod] = useState<{ name: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Chart state
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('week');
-  const [chartData, setChartData] = useState<{ label: string; saldo: number }[]>([]);
-  const [chartLoading, setChartLoading] = useState(false);
-
   useEffect(() => { if (!isVolunteer) fetchStats(); }, [profile, isVolunteer]);
-  useEffect(() => { if (!isVolunteer && profile) fetchChartData(); }, [chartPeriod, profile, isVolunteer]);
 
   if (isVolunteer) {
     return <Navigate to="/meu-spr" replace />;
