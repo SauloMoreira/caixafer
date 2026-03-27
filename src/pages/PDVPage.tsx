@@ -500,6 +500,19 @@ export default function PDVPage() {
 
       {/* Manual Item Dialog */}
       <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
+
+      {/* Cash Transfer Dialog */}
+      {closingId && (
+        <CashTransferDialog
+          open={transferOpen}
+          onOpenChange={setTransferOpen}
+          closingId={closingId}
+          businessDate={todayISO()}
+          currentStats={{ sales: subtotal, income: 0, expense: 0 }}
+          openingBalance={0}
+          onTransferred={checkCashRegister}
+        />
+      )}
     </div>
   );
 }
