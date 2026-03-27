@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign, ShoppingCart, Heart, Wallet, ArrowUpDown, Lock, ChevronRight } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import BalanceEvolutionChart from '@/components/BalanceEvolutionChart';
+import PendingTransferBanner from '@/components/PendingTransferBanner';
 
 interface DayStats {
   salesToday: number;
