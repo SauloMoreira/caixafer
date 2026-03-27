@@ -54,23 +54,29 @@ export default function MfaSetupPage() {
 
       // Check if user already has TOTP factors
       const { data: factorsData } = await supabase.auth.mfa.listFactors();
-      console.log('MFA factors:', JSON.stringify(factorsData));
       
-      const existingVerified = factorsData?.totp?.find(f => f.status === 'verified');
+      // Factors may be in .totp or .all (depending on SDK version)
+      const allFactors = factorsData?.all?.filter((f: any) => f.factor_type === 'totp') 
+        || factorsData?.totp || [];
+      
+      const existingVerified = allFactors.find((f: any) => f.status === 'verified');
       if (existingVerified) {
-        // Already enrolled, redirect
         navigate('/', { replace: true });
         return;
       }
       
-      // Unenroll ALL existing TOTP factors (stale verified or unverified)
-      const allTotpFactors = factorsData?.totp || [];
-      for (const f of allTotpFactors) {
-        await supabase.auth.mfa.unenroll({ factorId: f.id });
+      // Unenroll ALL existing unverified TOTP factors
+      for (const f of allFactors) {
+        try {
+          await supabase.auth.mfa.unenroll({ factorId: f.id });
+        } catch (e) {
+          console.warn('Failed to unenroll factor', f.id, e);
+        }
       }
 
       const { data, error } = await supabase.auth.mfa.enroll({
         factorType: 'totp',
+        friendlyName: `totp-${Date.now()}`,
       });
       if (error) {
         console.error('MFA enroll error:', error);
