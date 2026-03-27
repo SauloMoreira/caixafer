@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle
+  Package, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -46,6 +46,7 @@ const adminSections: NavSection[] = [
     items: [
       { to: '/produtos', icon: Package, label: 'Produtos' },
       { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
+      { to: '/insights', icon: Lightbulb, label: 'Insights' },
       { to: '/usuarios', icon: Users, label: 'Usuários' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
     ],
