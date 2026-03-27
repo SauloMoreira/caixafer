@@ -69,30 +69,58 @@ export default function PDVPage() {
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check if there's an open cash register for today
-    const { data: todayClosing } = await supabase
+    // Check if there's an open cash register for today where I am the current responsible
+    const { data: todayClosings } = await supabase
       .from('cash_closings')
-      .select('id, status')
+      .select('id, status, user_id, current_responsible_id')
       .eq('business_date', today)
-      .eq('user_id', profile.id)
-      .maybeSingle();
+      .eq('status', 'open');
 
-    if (todayClosing) {
-      setCashStatus(todayClosing.status === 'open' ? 'open' : 'closed_today');
+    // Find a closing where I am the original user or the current responsible
+    const myClosing = todayClosings?.find(
+      (c: any) => c.user_id === profile.id || c.current_responsible_id === profile.id
+    );
+
+    if (myClosing) {
+      if ((myClosing as any).current_responsible_id === profile.id) {
+        setCashStatus('open');
+        setClosingId(myClosing.id);
+        setIsTransferredSession((myClosing as any).current_responsible_id !== myClosing.user_id);
+      } else {
+        // I opened it but it was transferred to someone else
+        setCashStatus('none');
+        setClosingId(null);
+        setIsTransferredSession(false);
+      }
       setPendingDate(null);
     } else {
-      // Check for pending previous days (open closings before today)
-      const { data: pendingClosings } = await supabase
+      // Check for closed today
+      const { data: closedToday } = await supabase
         .from('cash_closings')
-        .select('business_date')
+        .select('id')
+        .eq('business_date', today)
         .eq('user_id', profile.id)
-        .eq('status', 'open')
-        .lt('business_date', today)
-        .order('business_date', { ascending: false })
+        .eq('status', 'closed')
         .limit(1);
 
-      setPendingDate(pendingClosings?.[0]?.business_date || null);
-      setCashStatus('none');
+      if (closedToday && closedToday.length > 0) {
+        setCashStatus('closed_today');
+      } else {
+        // Check for pending previous days
+        const { data: pendingClosings } = await supabase
+          .from('cash_closings')
+          .select('business_date')
+          .eq('user_id', profile.id)
+          .eq('status', 'open')
+          .lt('business_date', today)
+          .order('business_date', { ascending: false })
+          .limit(1);
+
+        setPendingDate(pendingClosings?.[0]?.business_date || null);
+        setCashStatus('none');
+      }
+      setClosingId(null);
+      setIsTransferredSession(false);
     }
   }, [profile]);
 
