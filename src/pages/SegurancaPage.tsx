@@ -40,6 +40,19 @@ const EVENT_LABELS: Record<string, string> = {
   mfa_login_verified: 'MFA: verificado', mfa_login_failed: 'MFA: falha login',
   admin_access_blocked_missing_mfa: 'Bloqueado (sem MFA)',
   session_invalidated_by_new_login: 'Sessão invalidada', forced_reauthentication: 'Reautenticação',
+  // Blocked operations
+  cash_open_blocked_existing_open_session: 'Abertura bloqueada',
+  cash_operation_blocked_wrong_user: 'Operação bloqueada',
+  cash_close_blocked_wrong_user: 'Fechamento bloqueado',
+  spr_operation_blocked_wrong_user: 'SPR bloqueado',
+  admin_operational_action_blocked: 'Admin operação bloqueada',
+  // Primary admin override
+  primary_admin_override_used: 'Override admin principal',
+  primary_admin_cash_operation: 'Override: operação caixa',
+  primary_admin_cash_close: 'Override: fechamento',
+  primary_admin_financial_override: 'Override: financeiro',
+  primary_admin_spr_override: 'Override: SPR',
+  primary_admin_forced_correction: 'Override: correção',
 };
 
 const SEVERITY_STYLES: Record<string, string> = {
@@ -81,6 +94,8 @@ const PRIORITY_LABELS: Record<string, string> = { urgent: 'Urgente', high: 'Alta
 const TRANSFER_EVENTS = ['cash_transfer_requested', 'cash_transfer_accepted', 'cash_transfer_rejected', 'cash_transfer_cancelled', 'cash_responsibility_changed'];
 const CASH_CHANGE_EVENTS = ['cash_entry_created', 'cash_entry_updated', 'cash_entry_deleted', 'cash_opened', 'cash_closed', 'cash_reopened', 'cash_updated', 'sale_created', 'sale_updated', 'sale_deleted'];
 const INCIDENT_EVENTS = ['unauthorized_route_access', 'unauthorized_data_access_attempt', 'session_invalidated_by_new_login', 'admin_access_blocked_missing_mfa', 'mfa_login_failed', 'forced_reauthentication'];
+const BLOCKED_EVENTS = ['cash_open_blocked_existing_open_session', 'cash_operation_blocked_wrong_user', 'cash_close_blocked_wrong_user', 'spr_operation_blocked_wrong_user', 'admin_operational_action_blocked'];
+const OVERRIDE_EVENTS = ['primary_admin_override_used', 'primary_admin_cash_operation', 'primary_admin_cash_close', 'primary_admin_financial_override', 'primary_admin_spr_override', 'primary_admin_forced_correction'];
 
 function fmt(dateStr: string) { return format(new Date(dateStr), "dd/MM/yy HH:mm", { locale: ptBR }); }
 function fmtDate(dateStr: string) { try { return format(new Date(dateStr + 'T00:00:00'), "dd/MM/yyyy"); } catch { return dateStr; } }
@@ -240,6 +255,8 @@ export default function SegurancaPage() {
   const unreadAlerts = alerts.filter((a: any) => !a.is_read).length;
   const pendingReview = alerts.filter((a: any) => a.requires_admin_review && !a.reviewed_by).length;
   const criticalAlerts = alerts.filter((a: any) => a.severity === 'critical' && !a.is_read).length;
+  const blockedToday = todayLogs.filter(l => BLOCKED_EVENTS.includes(l.event_type)).length;
+  const overridesToday = todayLogs.filter(l => OVERRIDE_EVENTS.includes(l.event_type)).length;
 
   // ─── Filtering ───
   const getTabLogs = (tabName: string) => {
@@ -247,6 +264,8 @@ export default function SegurancaPage() {
     if (tabName === 'transfers') base = auditLogs.filter(l => TRANSFER_EVENTS.includes(l.event_type));
     if (tabName === 'changes') base = auditLogs.filter(l => CASH_CHANGE_EVENTS.includes(l.event_type));
     if (tabName === 'incidents') base = auditLogs.filter(l => INCIDENT_EVENTS.includes(l.event_type));
+    if (tabName === 'blocked') base = auditLogs.filter(l => BLOCKED_EVENTS.includes(l.event_type));
+    if (tabName === 'overrides') base = auditLogs.filter(l => OVERRIDE_EVENTS.includes(l.event_type));
     return applyFilters(base);
   };
 
@@ -317,14 +336,22 @@ export default function SegurancaPage() {
       )}
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full grid grid-cols-5 h-auto">
+        <TabsList className="w-full grid grid-cols-7 h-auto">
           <TabsTrigger value="alerts" className="text-xs px-1 py-2 relative">
             Alertas
             {unreadAlerts > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{unreadAlerts}</span>}
           </TabsTrigger>
-          <TabsTrigger value="overview" className="text-xs px-1 py-2">Visão Geral</TabsTrigger>
+          <TabsTrigger value="overview" className="text-xs px-1 py-2">Geral</TabsTrigger>
           <TabsTrigger value="transfers" className="text-xs px-1 py-2">Transf.</TabsTrigger>
           <TabsTrigger value="changes" className="text-xs px-1 py-2">Alterações</TabsTrigger>
+          <TabsTrigger value="blocked" className="text-xs px-1 py-2 relative">
+            Bloqueios
+            {blockedToday > 0 && <span className="absolute -top-1 -right-1 bg-warning text-warning-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{blockedToday}</span>}
+          </TabsTrigger>
+          <TabsTrigger value="overrides" className="text-xs px-1 py-2 relative">
+            Override
+            {overridesToday > 0 && <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[9px] rounded-full h-4 w-4 flex items-center justify-center">{overridesToday}</span>}
+          </TabsTrigger>
           <TabsTrigger value="incidents" className="text-xs px-1 py-2">Incidentes</TabsTrigger>
         </TabsList>
 
@@ -456,6 +483,22 @@ export default function SegurancaPage() {
             </Card>
           )}
           <LogList logs={getTabLogs('incidents')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
+        </TabsContent>
+
+        {/* ═══ BLOQUEIOS ═══ */}
+        <TabsContent value="blocked" className="space-y-4 mt-4">
+          <FilterBar search={search} setSearch={setSearch} severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
+            entityFilter={entityFilter} setEntityFilter={setEntityFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
+          <LogList logs={getTabLogs('blocked')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
+        </TabsContent>
+
+        {/* ═══ OVERRIDES ═══ */}
+        <TabsContent value="overrides" className="space-y-4 mt-4">
+          <FilterBar search={search} setSearch={setSearch} severityFilter={severityFilter} setSeverityFilter={setSeverityFilter}
+            entityFilter={entityFilter} setEntityFilter={setEntityFilter} statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            reviewFilter={reviewFilter} setReviewFilter={setReviewFilter} />
+          <LogList logs={getTabLogs('overrides')} loading={loadingAudit} getName={getName} onDetail={setDetailLog} />
         </TabsContent>
       </Tabs>
 

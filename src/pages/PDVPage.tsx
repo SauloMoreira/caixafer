@@ -17,6 +17,8 @@ import ManualItemDialog from '@/components/ManualItemDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
 import type { ManualItem } from '@/components/ManualItemDialog';
 import CashTransferDialog from '@/components/CashTransferDialog';
+import OverrideConfirmDialog from '@/components/OverrideConfirmDialog';
+import { logOverrideAction } from '@/hooks/useCashSession';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
@@ -36,7 +38,7 @@ const getCartItemName = (item: CartItem) => item.itemType === 'product' ? item.p
 const getCartItemPrice = (item: CartItem) => item.itemType === 'product' ? Number(item.product!.unit_price) : item.manualItem!.unitPrice;
 
 export default function PDVPage() {
-  const { profile } = useAuth();
+  const { profile, hasOperationalOverride } = useAuth();
   const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -69,33 +71,47 @@ export default function PDVPage() {
   // Transfer state
   const [transferOpen, setTransferOpen] = useState(false);
 
+  // Override state
+  const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
+  const [overrideAction, setOverrideAction] = useState<(() => void) | null>(null);
+  const [overrideLabel, setOverrideLabel] = useState('');
+  const [sessionResponsibleName, setSessionResponsibleName] = useState<string | null>(null);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
     const today = todayISO();
 
-    // Check if there's an open cash register for today where I am the current responsible
+    // Check for any open cash register today
     const { data: todayClosings } = await supabase
       .from('cash_closings')
       .select('id, status, user_id, current_responsible_id')
       .eq('business_date', today)
       .eq('status', 'open');
 
-    // Find a closing where I am the original user or the current responsible
-    const myClosing = todayClosings?.find(
-      (c: any) => c.user_id === profile.id || c.current_responsible_id === profile.id
-    );
+    const openSession = todayClosings?.[0];
 
-    if (myClosing) {
-      if ((myClosing as any).current_responsible_id === profile.id) {
+    if (openSession) {
+      const isCurrentResponsible = openSession.current_responsible_id === profile.id;
+
+      if (isCurrentResponsible || hasOperationalOverride) {
         setCashStatus('open');
-        setClosingId(myClosing.id);
-        setIsTransferredSession((myClosing as any).current_responsible_id !== myClosing.user_id);
+        setClosingId(openSession.id);
+        setIsTransferredSession(isCurrentResponsible && openSession.current_responsible_id !== openSession.user_id);
+        
+        // Get responsible name for override mode
+        if (!isCurrentResponsible && hasOperationalOverride) {
+          const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSession.current_responsible_id] });
+          setSessionResponsibleName(names?.[0]?.full_name || 'outro operador');
+        } else {
+          setSessionResponsibleName(null);
+        }
       } else {
-        // I opened it but it was transferred to someone else
+        // Session exists but user is not responsible and has no override
         setCashStatus('none');
         setClosingId(null);
         setIsTransferredSession(false);
+        setSessionResponsibleName(null);
       }
       setPendingDate(null);
     } else {
@@ -126,8 +142,9 @@ export default function PDVPage() {
       }
       setClosingId(null);
       setIsTransferredSession(false);
+      setSessionResponsibleName(null);
     }
-  }, [profile]);
+  }, [profile, hasOperationalOverride]);
 
   useEffect(() => {
     supabase.from('products').select('*').eq('is_active', true).order('name')
@@ -171,7 +188,7 @@ export default function PDVPage() {
   const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
 
-  const finalizeSale = async () => {
+  const doFinalizeSale = async () => {
     if (!profile || cart.length === 0) return;
     if (cashStatus !== 'open') {
       toast.error('Abra o caixa do dia antes de realizar vendas.');
@@ -233,6 +250,16 @@ export default function PDVPage() {
       toast.error('Erro ao registrar venda: ' + err.message);
     }
     setLoading(false);
+  };
+
+  const finalizeSale = () => {
+    if (sessionResponsibleName && hasOperationalOverride) {
+      setOverrideLabel('Finalizar venda no PDV');
+      setOverrideAction(() => () => doFinalizeSale());
+      setOverrideDialogOpen(true);
+    } else {
+      doFinalizeSale();
+    }
   };
 
   // Loading state
@@ -304,6 +331,19 @@ export default function PDVPage() {
         onTransferStatusChanged={checkCashRegister}
       />
 
+      {/* Override mode banner */}
+      {sessionResponsibleName && hasOperationalOverride && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm flex items-start gap-2">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+          <div>
+            <p className="font-semibold text-destructive">Modo Override Ativo</p>
+            <p className="text-muted-foreground text-xs">
+              Responsável atual: <strong>{sessionResponsibleName}</strong>. Suas ações serão auditadas como override do administrador principal.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2">
           PDV
@@ -313,6 +353,11 @@ export default function PDVPage() {
           {isTransferredSession && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
               Transferido
+            </span>
+          )}
+          {sessionResponsibleName && hasOperationalOverride && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
+              Override
             </span>
           )}
         </h1>
@@ -517,6 +562,23 @@ export default function PDVPage() {
           onTransferred={checkCashRegister}
         />
       )}
+
+      {/* Override Confirm Dialog */}
+      <OverrideConfirmDialog
+        open={overrideDialogOpen}
+        onOpenChange={setOverrideDialogOpen}
+        actionLabel={overrideLabel}
+        responsibleName={sessionResponsibleName}
+        onConfirm={(reason) => {
+          logOverrideAction({
+            action_type: 'primary_admin_cash_operation',
+            reason,
+            responsible_id: null,
+            session_id: closingId,
+          });
+          overrideAction?.();
+        }}
+      />
     </div>
   );
 }

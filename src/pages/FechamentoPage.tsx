@@ -27,7 +27,7 @@ const REOPEN_REASONS = [
 ];
 
 export default function FechamentoPage() {
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, hasOperationalOverride } = useAuth();
   const [date, setDate] = useState(todayISO());
   const [closing, setClosing] = useState<any>(null);
   const [openingBalance, setOpeningBalance] = useState('0');
@@ -58,7 +58,7 @@ export default function FechamentoPage() {
 
     // Get closing for selected date (latest version)
     let closingQuery = supabase.from('cash_closings').select('*').eq('business_date', date);
-    if (!isAdmin) closingQuery = closingQuery.or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`);
+    if (!isAdmin && !hasOperationalOverride) closingQuery = closingQuery.or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`);
     closingQuery = closingQuery.eq('is_latest_version', true);
     const { data: closingData } = await closingQuery.maybeSingle();
     setClosing(closingData);
@@ -72,7 +72,7 @@ export default function FechamentoPage() {
       setNotes('');
 
       // Check if another user already has an open cash session for this date
-      if (!isAdmin) {
+      if (!hasOperationalOverride) {
         const { data: openSessions } = await supabase
           .from('cash_closings')
           .select('current_responsible_id')
@@ -80,7 +80,7 @@ export default function FechamentoPage() {
           .eq('status', 'open')
           .eq('is_latest_version', true)
           .limit(1);
-        if (openSessions && openSessions.length > 0) {
+        if (openSessions && openSessions.length > 0 && openSessions[0].current_responsible_id !== profile.id) {
           const { data: names } = await supabase.rpc('get_user_names', { _user_ids: [openSessions[0].current_responsible_id] });
           setExistingOpenByOther({ responsibleName: names?.[0]?.full_name || 'outro operador' });
         }

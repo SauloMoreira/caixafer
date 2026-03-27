@@ -438,8 +438,10 @@ export type Database = {
           created_at: string
           email: string | null
           full_name: string
+          has_operational_override: boolean
           id: string
           is_active: boolean
+          is_primary_admin: boolean
           last_login_at: string | null
           neighborhood: string | null
           phone: string | null
@@ -461,8 +463,10 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name: string
+          has_operational_override?: boolean
           id: string
           is_active?: boolean
+          is_primary_admin?: boolean
           last_login_at?: string | null
           neighborhood?: string | null
           phone?: string | null
@@ -484,8 +488,10 @@ export type Database = {
           created_at?: string
           email?: string | null
           full_name?: string
+          has_operational_override?: boolean
           id?: string
           is_active?: boolean
+          is_primary_admin?: boolean
           last_login_at?: string | null
           neighborhood?: string | null
           phone?: string | null
