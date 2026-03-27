@@ -54,8 +54,13 @@ export default function UsuariosPage() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterRole, setFilterRole] = useState<string>('all');
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [criticalAction, setCriticalAction] = useState<{
+    type: 'deactivate' | 'reject' | 'role_change';
+    userId: string;
+    userName: string;
+    newRole?: string;
+  } | null>(null);
 
   useEffect(() => { fetchUsers(); fetchVolunteers(); }, []);
 
