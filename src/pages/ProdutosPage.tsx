@@ -76,9 +76,9 @@ export default function ProdutosPage() {
     const ext = imageFile.name.split('.').pop() || 'jpg';
     const userId = (await supabase.auth.getUser()).data.user?.id;
     if (!userId) { setUploading(false); return null; }
-    const path = `${userId}/${productId}.${ext}`;
+    const path = `${userId}/${productId}-${Date.now()}.${ext}`;
 
-    const { error } = await supabase.storage.from('product-images').upload(path, imageFile, { upsert: true });
+    const { error } = await supabase.storage.from('product-images').upload(path, imageFile, { upsert: true, cacheControl: '0' });
     setUploading(false);
     if (error) { toast.error('Erro no upload: ' + error.message); return null; }
 

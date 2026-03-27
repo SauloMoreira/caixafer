@@ -145,8 +145,8 @@ export default function ProfilePage() {
     if (!avatarFile) return avatarUrl;
     setUploading(true);
     const ext = avatarFile.name.split('.').pop() || 'jpg';
-    const filePath = `${userId}/avatar.${ext}`;
-    const { error } = await supabase.storage.from('avatars').upload(filePath, avatarFile, { upsert: true });
+    const filePath = `${userId}/avatar-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('avatars').upload(filePath, avatarFile, { upsert: true, cacheControl: '0' });
     if (error) { toast.error('Erro ao enviar foto: ' + error.message); setUploading(false); return null; }
     const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
     setUploading(false);
