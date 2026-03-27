@@ -56,7 +56,7 @@ export default function FechamentoPage() {
 
     // Get closing for selected date (latest version)
     let closingQuery = supabase.from('cash_closings').select('*').eq('business_date', date);
-    if (!isAdmin) closingQuery = closingQuery.eq('user_id', profile.id);
+    if (!isAdmin) closingQuery = closingQuery.or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`);
     closingQuery = closingQuery.eq('is_latest_version', true);
     const { data: closingData } = await closingQuery.maybeSingle();
     setClosing(closingData);
@@ -74,7 +74,7 @@ export default function FechamentoPage() {
     const { data: pendingClosings } = await supabase
       .from('cash_closings')
       .select('business_date')
-      .eq('user_id', profile.id)
+      .or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`)
       .eq('status', 'open')
       .lt('business_date', date)
       .order('business_date', { ascending: true })
