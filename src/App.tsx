@@ -7,6 +7,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import LoginPage from "@/pages/LoginPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
+import ProfilePage from "@/pages/ProfilePage";
+import PendingApprovalPage from "@/pages/PendingApprovalPage";
 import DashboardPage from "@/pages/DashboardPage";
 import PDVPage from "@/pages/PDVPage";
 import MovimentosPage from "@/pages/MovimentosPage";
@@ -15,7 +18,6 @@ import ProdutosPage from "@/pages/ProdutosPage";
 import RelatoriosPage from "@/pages/RelatoriosPage";
 import SPRPage from "@/pages/SPRPage";
 import UsuariosPage from "@/pages/UsuariosPage";
-import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/pending-approval" element={<PendingApprovalPage />} />
+            <Route path="/perfil" element={<ProfilePage />} />
             <Route path="/" element={<ProtectedRoute><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/pdv" element={<ProtectedRoute><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/movimentos" element={<ProtectedRoute><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
