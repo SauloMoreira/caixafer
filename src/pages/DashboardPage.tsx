@@ -181,7 +181,7 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
             Acesso Rápido
           </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {QUICK_ACTIONS.map(action => (
               <button
                 key={action.to}
