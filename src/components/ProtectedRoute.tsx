@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { logSecurityIncident } from '@/lib/security';
+import { logSecurityIncident, logSecurityEvent } from '@/lib/security';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,8 +10,12 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: ProtectedRouteProps) {
-  const { session, loading, isAdmin, isApproved, isProfileComplete, profile } = useAuth();
+  const {
+    session, loading, isAdmin, isApproved, isProfileComplete, profile,
+    mfaEnrolled, mfaVerified, mfaLoading,
+  } = useAuth();
   const loggedRef = useRef(false);
+  const location = useLocation();
 
   // Log unauthorized access attempts once per mount
   useEffect(() => {
@@ -32,7 +36,7 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
     }
   }, [loading, session, profile, adminOnly, allowedRoles, isAdmin]);
 
-  if (loading) {
+  if (loading || mfaLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -50,6 +54,30 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
   // Check if active
   if (profile && !profile.is_active) {
     return <Navigate to="/pending-approval" replace />;
+  }
+
+  // ─── MFA enforcement for admins ───
+  if (profile?.role === 'admin') {
+    if (!mfaEnrolled) {
+      // Admin has no MFA set up → force enrollment
+      if (location.pathname !== '/mfa-setup') {
+        return <Navigate to="/mfa-setup" replace />;
+      }
+    } else if (!mfaVerified) {
+      // Admin has MFA but hasn't verified this session → force challenge
+      if (location.pathname !== '/mfa-verify') {
+        // Log blocked access
+        logSecurityEvent({
+          event_type: 'admin_access_blocked_missing_mfa',
+          entity_type: 'auth',
+          action: 'MFA_REQUIRED',
+          severity: 'high',
+          route: location.pathname,
+          notes: 'Admin tentou acessar rota protegida sem MFA verificado',
+        });
+        return <Navigate to="/mfa-verify" replace />;
+      }
+    }
   }
 
   // Check profile completion

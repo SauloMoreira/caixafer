@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User, AuthenticatorAssuranceLevels } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -30,15 +29,21 @@ interface AuthContextType {
   isVolunteer: boolean;
   isApproved: boolean;
   isProfileComplete: boolean;
+  /** Admin has at least one verified TOTP factor enrolled */
+  mfaEnrolled: boolean;
+  /** Current session AAL level is aal2 (MFA verified this session) */
+  mfaVerified: boolean;
+  /** True while MFA status is being checked */
+  mfaLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshMfaStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Session revalidation interval (5 minutes)
 const SESSION_CHECK_INTERVAL = 5 * 60 * 1000;
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -46,6 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
+  const [mfaVerified, setMfaVerified] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(true);
   const sessionCheckRef = useRef<ReturnType<typeof setInterval>>();
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
@@ -63,26 +71,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
-  // Secure logout: clear all local state and caches
+  const checkMfaStatus = useCallback(async () => {
+    setMfaLoading(true);
+    try {
+      const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (error) {
+        setMfaEnrolled(false);
+        setMfaVerified(false);
+        setMfaLoading(false);
+        return;
+      }
+      // currentLevel is 'aal1' or 'aal2'
+      // nextLevel tells what the user CAN reach
+      setMfaVerified(data.currentLevel === 'aal2');
+      setMfaEnrolled(data.nextLevel === 'aal2' || data.currentLevel === 'aal2');
+    } catch {
+      setMfaEnrolled(false);
+      setMfaVerified(false);
+    }
+    setMfaLoading(false);
+  }, []);
+
+  const refreshMfaStatus = useCallback(async () => {
+    await checkMfaStatus();
+  }, [checkMfaStatus]);
+
   const secureSignOut = useCallback(async () => {
-    // Clear interval
     if (sessionCheckRef.current) {
       clearInterval(sessionCheckRef.current);
       sessionCheckRef.current = undefined;
     }
-
-    // Sign out from Supabase
     await supabase.auth.signOut();
-
-    // Clear all state
     setSession(null);
     setUser(null);
     setProfile(null);
-
-    // Clear any cached query data
-    // (QueryClient is external, but localStorage cleanup helps)
+    setMfaEnrolled(false);
+    setMfaVerified(false);
     try {
-      // Remove any app-specific localStorage items
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -92,54 +117,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       keysToRemove.forEach(k => localStorage.removeItem(k));
       sessionStorage.clear();
-    } catch {
-      // Fail silently
-    }
+    } catch {}
   }, []);
 
-  // Periodic session & profile revalidation
   const startSessionCheck = useCallback((userId: string) => {
     if (sessionCheckRef.current) clearInterval(sessionCheckRef.current);
-
     sessionCheckRef.current = setInterval(async () => {
-      // Check if session is still valid
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       if (!currentSession) {
         await secureSignOut();
         return;
       }
-
-      // Revalidate profile status (could have been deactivated/blocked)
       const { data: freshProfile } = await supabase
         .from('profiles')
         .select('is_active, approval_status, role')
         .eq('id', userId)
         .single();
-
       if (freshProfile && (!freshProfile.is_active || freshProfile.approval_status !== 'approved')) {
         await secureSignOut();
       } else if (freshProfile) {
-        // Update role in case it changed
         setProfile(prev => prev ? { ...prev, role: freshProfile.role as any, is_active: freshProfile.is_active, approval_status: freshProfile.approval_status } : prev);
       }
     }, SESSION_CHECK_INTERVAL);
   }, [secureSignOut]);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-
         if (session?.user) {
-          // Use setTimeout to avoid Supabase auth deadlock
           setTimeout(() => {
             fetchProfile(session.user.id);
             startSessionCheck(session.user.id);
+            checkMfaStatus();
           }, 0);
         } else {
           setProfile(null);
+          setMfaEnrolled(false);
+          setMfaVerified(false);
+          setMfaLoading(false);
           if (sessionCheckRef.current) {
             clearInterval(sessionCheckRef.current);
             sessionCheckRef.current = undefined;
@@ -149,13 +166,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     );
 
-    // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
         startSessionCheck(session.user.id);
+        checkMfaStatus();
+      } else {
+        setMfaLoading(false);
       }
       setLoading(false);
     });
@@ -164,14 +183,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
       if (sessionCheckRef.current) clearInterval(sessionCheckRef.current);
     };
-  }, [fetchProfile, startSessionCheck]);
+  }, [fetchProfile, startSessionCheck, checkMfaStatus]);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error) return { error: error as Error | null };
-
-    // After successful auth, check profile status
     if (data.user) {
       const p = await fetchProfile(data.user.id);
       if (p && !p.is_active) {
@@ -182,10 +198,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut();
         return { error: new Error('Sua conta foi recusada. Entre em contato com o administrador.') };
       }
+      // Check MFA after login
+      await checkMfaStatus();
     }
-
     return { error: null };
-  }, [fetchProfile]);
+  }, [fetchProfile, checkMfaStatus]);
 
   const signUp = useCallback(async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -200,11 +217,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isVolunteer = profile?.role === 'volunteer';
-
   const isProfileComplete = isVolunteer
     ? !!(profile && profile.full_name && profile.phone && profile.email)
     : !!(profile && profile.full_name && profile.phone && profile.email && profile.avatar_url);
-
   const isApproved = profile?.approval_status === 'approved' && profile?.is_active === true;
 
   return (
@@ -215,7 +230,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isVolunteer,
       isApproved,
       isProfileComplete,
-      signIn, signUp, signOut: secureSignOut, refreshProfile,
+      mfaEnrolled,
+      mfaVerified,
+      mfaLoading,
+      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus,
     }}>
       {children}
     </AuthContext.Provider>
