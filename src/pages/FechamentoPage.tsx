@@ -76,23 +76,25 @@ export default function FechamentoPage() {
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
     // Get stats
-    let salesQuery = supabase.from('sales').select('total_amount, payment_method').eq('business_date', date);
+    let salesQuery = supabase.from('sales').select('total_amount, payment_method, is_deleted').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
-    const sales = salesData?.reduce((s, r) => s + Number(r.total_amount), 0) || 0;
+    const activeSales = salesData?.filter((s: any) => !s.is_deleted) || [];
+    const sales = activeSales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
 
     const methodTotals: Record<string, number> = {};
-    salesData?.forEach(s => {
+    activeSales.forEach((s: any) => {
       const key = s.payment_method as string;
       methodTotals[key] = (methodTotals[key] || 0) + Number(s.total_amount);
     });
     setSalesByMethod(methodTotals);
 
-    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount').eq('business_date', date);
+    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount, is_deleted').eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
     const { data: entriesData } = await entriesQuery;
-    const income = entriesData?.filter(e => e.entry_type === 'income').reduce((s, e) => s + Number(e.amount), 0) || 0;
-    const expense = entriesData?.filter(e => e.entry_type === 'expense').reduce((s, e) => s + Number(e.amount), 0) || 0;
+    const activeEntries = entriesData?.filter((e: any) => !e.is_deleted) || [];
+    const income = activeEntries.filter((e: any) => e.entry_type === 'income').reduce((s: number, e: any) => s + Number(e.amount), 0);
+    const expense = activeEntries.filter((e: any) => e.entry_type === 'expense').reduce((s: number, e: any) => s + Number(e.amount), 0);
 
     setStats({ sales, income, expense });
     setLoading(false);
