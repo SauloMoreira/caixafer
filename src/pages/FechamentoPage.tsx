@@ -304,17 +304,17 @@ export default function FechamentoPage() {
         </div>
       )}
 
+      {/* AI Recommendations - always visible */}
+      {profile && (
+        <AIRecommendations
+          businessDate={date}
+          userId={profile.id}
+        />
+      )}
+
       {/* No closing exists for this date */}
       {!closing && (
         <>
-          {/* AI Recommendations */}
-          {profile && (
-            <AIRecommendations
-              businessDate={date}
-              userId={profile.id}
-            />
-          )}
-
           <Card>
             <CardContent className="flex flex-col items-center gap-4 py-8">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
