@@ -215,11 +215,9 @@ export default function ProfilePage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-md animate-slide-up">
-        {isEditingOther && (
-          <button onClick={() => navigate('/usuarios')} className="mb-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="h-4 w-4" /> Voltar para Usuários
-          </button>
-        )}
+        <button onClick={() => navigate(-1)} className="mb-4 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </button>
 
         {showIncompleteWarning && (
           <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4 text-center">
