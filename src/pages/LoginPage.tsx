@@ -12,7 +12,11 @@ import { Store, ArrowLeft } from 'lucide-react';
 type View = 'login' | 'signup' | 'forgot';
 
 export default function LoginPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, session, loading } = useAuth();
+
+  if (loading) return null;
+  if (session) return <Navigate to="/" replace />;
+
   const [view, setView] = useState<View>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
