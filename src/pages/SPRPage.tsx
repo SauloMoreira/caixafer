@@ -143,6 +143,10 @@ export default function SPRPage() {
 
   const savePayment = async () => {
     if (!profile || !payCharge) return;
+    if (isBlockedToday) {
+      toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
+      return;
+    }
     const { error } = await supabase.from('spr_fiado_payments').insert({
       fiado_charge_id: payCharge.id, volunteer_id: payCharge.volunteer_id,
       payment_date: todayISO(), amount_paid: Number(payAmount),
