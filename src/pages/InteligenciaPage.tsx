@@ -17,6 +17,7 @@ import {
   Package, DollarSign, Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import PurchaseIntelligenceSection from '@/components/PurchaseIntelligenceSection';
 
 const PERIOD_OPTIONS = [
   { value: '30', label: 'Últimos 30 dias' },
