@@ -17,6 +17,8 @@ import type { Database } from '@/integrations/supabase/types';
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function ProdutosPage() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -24,6 +26,7 @@ export default function ProdutosPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [internalCode, setInternalCode] = useState('');
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
