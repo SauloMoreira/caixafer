@@ -181,24 +181,22 @@ export default function DashboardPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
             Acesso Rápido
           </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-4 gap-3">
             {QUICK_ACTIONS.map(action => (
               <button
                 key={action.to}
                 onClick={() => navigate(action.to)}
-                className={`group relative overflow-hidden rounded-2xl border-2 ${action.borderColor} bg-gradient-to-br ${action.gradient} p-5 text-left transition-all duration-200 active:scale-[0.97] hover:shadow-lg`}
+                className={`group relative overflow-hidden rounded-2xl border-2 ${action.borderColor} bg-gradient-to-br ${action.gradient} px-4 py-4 text-left transition-all duration-200 active:scale-[0.97] hover:shadow-lg`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-background/80 shadow-sm ${action.iconColor}`}>
-                      <action.icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-foreground">{action.label}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{action.subtitle}</p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background/80 shadow-sm ${action.iconColor}`}>
+                    <action.icon className="h-5 w-5" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-foreground leading-tight">{action.label}</p>
+                    <p className="text-[11px] leading-snug text-muted-foreground mt-0.5">{action.subtitle}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
                 </div>
               </button>
             ))}
