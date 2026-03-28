@@ -16,7 +16,7 @@ import CriticalActionDialog from '@/components/CriticalActionDialog';
 interface UserProfile {
   id: string;
   full_name: string;
-  role: 'admin' | 'cashier' | 'volunteer';
+  role: 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer';
   phone: string | null;
   address: string | null;
   email: string | null;
@@ -43,6 +43,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
   cashier: 'Caixa',
+  cash_coordinator: 'Coordenador de Caixa',
   volunteer: 'Voluntário',
 };
 
@@ -121,7 +122,7 @@ export default function UsuariosPage() {
     else { toast.success(active ? 'Usuário reativado!' : 'Usuário desativado.'); fetchUsers(); setDialogOpen(false); }
   };
 
-  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'volunteer') => {
+  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer') => {
     const u = users.find(u => u.id === userId);
     setCriticalAction({ type: 'role_change', userId, userName: u?.full_name || '', newRole: role });
   };
@@ -282,11 +283,12 @@ export default function UsuariosPage() {
                 <div>
                   <span className="text-muted-foreground">Perfil:</span>
                   {selectedUser.id !== currentUser?.id ? (
-                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier' | 'volunteer')}>
+                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer')}>
                       <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="cashier">Caixa</SelectItem>
+                        <SelectItem value="cash_coordinator">Coordenador de Caixa</SelectItem>
                         <SelectItem value="volunteer">Voluntário</SelectItem>
                       </SelectContent>
                     </Select>

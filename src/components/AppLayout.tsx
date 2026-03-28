@@ -66,6 +66,39 @@ const cashierSections: NavSection[] = [
   },
 ];
 
+const coordinatorSections: NavSection[] = [
+  {
+    title: 'Início',
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Início' },
+    ],
+  },
+  {
+    title: 'Caixa',
+    items: [
+      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
+      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
+      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
+    ],
+  },
+  {
+    title: 'SPR',
+    items: [
+      { to: '/spr', icon: Heart, label: 'SPR' },
+    ],
+  },
+  {
+    title: 'Gestão',
+    items: [
+      { to: '/produtos', icon: Package, label: 'Produtos' },
+      { to: '/categorias', icon: Tag, label: 'Categorias' },
+      { to: '/estoque', icon: Boxes, label: 'Estoque' },
+      { to: '/insights', icon: Lightbulb, label: 'Insights' },
+      { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
+    ],
+  },
+];
+
 const volunteerSections: NavSection[] = [
   {
     title: 'Menu',
@@ -93,6 +126,7 @@ const pageTitles: Record<string, string> = {
 function getSections(role: string): NavSection[] {
   switch (role) {
     case 'admin': return adminSections;
+    case 'cash_coordinator': return coordinatorSections;
     case 'volunteer': return volunteerSections;
     default: return cashierSections;
   }
@@ -151,7 +185,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{profile?.full_name}</p>
             <p className="text-[10px] text-muted-foreground">
-              {role === 'admin' ? 'Administrador' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
+              {role === 'admin' ? 'Administrador' : role === 'cash_coordinator' ? 'Coordenador de Caixa' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
             </p>
           </div>
         </NavLink>
@@ -253,7 +287,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <h1 className="font-heading text-base font-bold truncate">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-2">
-            {(isAdmin || isVolunteer) && <NotificationBell />}
+            {(isAdmin || isVolunteer || profile?.role === 'cash_coordinator') && <NotificationBell />}
             <NavLink to="/perfil" className="hidden md:flex h-9 w-9 items-center justify-center">
               {profile?.avatar_url ? (
                 <img key={profile.avatar_url} src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-transparent hover:ring-primary/20 transition-all" />

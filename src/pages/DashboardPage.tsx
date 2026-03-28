@@ -65,7 +65,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function DashboardPage() {
-  const { profile, isAdmin, isVolunteer, isCashier } = useAuth();
+  const { profile, isAdmin, isVolunteer, isCashier, isCashCoordinator } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DayStats>({
     salesToday: 0, incomeToday: 0, expenseToday: 0,
@@ -120,7 +120,7 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
-  const statCards = isCashier
+  const statCards = (isCashier && !isCashCoordinator)
     ? [
         { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
         { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
@@ -162,13 +162,13 @@ export default function DashboardPage() {
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {isAdmin ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+            {isAdmin ? 'Administrador' : isCashCoordinator ? 'Coordenador de Caixa' : 'Operador de Caixa'} • Resumo do dia
           </p>
         </div>
       </div>
 
       {/* ═══ PENDING TRANSFER BANNER ═══ */}
-      {(isCashier || isAdmin) && (
+      {(isCashier || isAdmin || isCashCoordinator) && (
         <PendingTransferBanner
           onTransferAccepted={() => window.location.reload()}
           onTransferStatusChanged={() => window.location.reload()}
@@ -176,7 +176,7 @@ export default function DashboardPage() {
       )}
 
       {/* ═══ CASHIER QUICK ACTIONS ═══ */}
-      {isCashier && (
+      {(isCashier && !isCashCoordinator) && (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
             Acesso Rápido

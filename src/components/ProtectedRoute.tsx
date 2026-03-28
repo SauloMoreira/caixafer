@@ -6,7 +6,7 @@ import { logSecurityIncident, logSecurityEvent } from '@/lib/security';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   adminOnly?: boolean;
-  allowedRoles?: Array<'admin' | 'cashier' | 'volunteer'>;
+  allowedRoles?: Array<'admin' | 'cashier' | 'cash_coordinator' | 'volunteer'>;
 }
 
 export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: ProtectedRouteProps) {

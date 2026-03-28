@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 interface Profile {
   id: string;
   full_name: string;
-  role: 'admin' | 'cashier' | 'volunteer';
+  role: 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer';
   phone: string | null;
   address: string | null;
   email: string | null;
@@ -31,6 +31,7 @@ interface AuthContextType {
   isPrimaryAdmin: boolean;
   hasOperationalOverride: boolean;
   isCashier: boolean;
+  isCashCoordinator: boolean;
   isVolunteer: boolean;
   isApproved: boolean;
   isProfileComplete: boolean;
@@ -266,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isVolunteer = profile?.role === 'volunteer';
+  const isCashCoordinator = profile?.role === 'cash_coordinator';
   const isPrimaryAdmin = !!(profile as any)?.is_primary_admin;
   const hasOperationalOverride = !!(profile as any)?.has_operational_override;
   const isProfileComplete = isVolunteer
@@ -279,7 +281,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin: profile?.role === 'admin',
       isPrimaryAdmin,
       hasOperationalOverride,
-      isCashier: profile?.role === 'cashier',
+      isCashier: profile?.role === 'cashier' || profile?.role === 'cash_coordinator',
+      isCashCoordinator,
       isVolunteer,
       isApproved,
       isProfileComplete,
