@@ -1382,7 +1382,7 @@ export type Database = {
       refresh_spr_notifications: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "cashier" | "volunteer"
+      app_role: "admin" | "cashier" | "volunteer" | "cash_coordinator"
       closing_status: "open" | "closed"
       document_type:
         | "recibo"
@@ -1530,7 +1530,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "cashier", "volunteer"],
+      app_role: ["admin", "cashier", "volunteer", "cash_coordinator"],
       closing_status: ["open", "closed"],
       document_type: [
         "recibo",
