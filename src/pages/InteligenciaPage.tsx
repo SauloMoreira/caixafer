@@ -151,20 +151,22 @@ export default function InteligenciaPage() {
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] text-muted-foreground">Faturamento</span>
-                </div>
-                <p className="text-lg font-bold text-primary">{formatCurrency(kpis.total_revenue)}</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <TrendIcon value={kpis.revenue_change_pct} />
-                  <span className="text-[10px] text-muted-foreground">{kpis.revenue_change_pct > 0 ? '+' : ''}{kpis.revenue_change_pct.toFixed(1)}% vs anterior</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className={`grid grid-cols-2 gap-3 ${isCoordinator ? 'md:grid-cols-2' : 'md:grid-cols-4'}`}>
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <DollarSign className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground">Faturamento</span>
+                  </div>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(kpis.total_revenue)}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <TrendIcon value={kpis.revenue_change_pct} />
+                    <span className="text-[10px] text-muted-foreground">{kpis.revenue_change_pct > 0 ? '+' : ''}{kpis.revenue_change_pct.toFixed(1)}% vs anterior</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -178,26 +180,42 @@ export default function InteligenciaPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Ticket Médio</span>
-                </div>
-                <p className="text-lg font-bold">{formatCurrency(kpis.avg_ticket)}</p>
-                <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Méd. Diária</span>
-                </div>
-                <p className="text-lg font-bold">{formatCurrency(kpis.avg_daily_revenue)}</p>
-                <span className="text-[10px] text-muted-foreground">por dia ativo</span>
-              </CardContent>
-            </Card>
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Ticket Médio</span>
+                  </div>
+                  <p className="text-lg font-bold">{formatCurrency(kpis.avg_ticket)}</p>
+                  <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
+                </CardContent>
+              </Card>
+            )}
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Méd. Diária</span>
+                  </div>
+                  <p className="text-lg font-bold">{formatCurrency(kpis.avg_daily_revenue)}</p>
+                  <span className="text-[10px] text-muted-foreground">por dia ativo</span>
+                </CardContent>
+              </Card>
+            )}
+            {isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Total Itens</span>
+                  </div>
+                  <p className="text-lg font-bold">{kpis.total_items_sold ?? '—'}</p>
+                  <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Champion Cards */}
