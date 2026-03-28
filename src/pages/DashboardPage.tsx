@@ -168,7 +168,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ═══ PENDING TRANSFER BANNER ═══ */}
-      {(isCashier || isAdmin) && (
+      {(isCashier || isAdmin || isCashCoordinator) && (
         <PendingTransferBanner
           onTransferAccepted={() => window.location.reload()}
           onTransferStatusChanged={() => window.location.reload()}
