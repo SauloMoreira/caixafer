@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCashSession } from '@/hooks/useCashSession';
 import { formatCurrency, formatDate, todayISO, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
 import FiadoChargeDialog from '@/components/FiadoChargeDialog';
 import { toast } from 'sonner';
-import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
+import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2, Lock } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -25,6 +26,8 @@ type DocumentType = Database['public']['Enums']['document_type'];
 
 export default function SPRPage() {
   const { profile } = useAuth();
+  const { sessionOpen, canOperate, responsibleName } = useCashSession();
+  const isBlockedToday = sessionOpen && !canOperate;
   const [tab, setTab] = useState('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
@@ -140,6 +143,10 @@ export default function SPRPage() {
 
   const savePayment = async () => {
     if (!profile || !payCharge) return;
+    if (isBlockedToday) {
+      toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
+      return;
+    }
     const { error } = await supabase.from('spr_fiado_payments').insert({
       fiado_charge_id: payCharge.id, volunteer_id: payCharge.volunteer_id,
       payment_date: todayISO(), amount_paid: Number(payAmount),
@@ -161,6 +168,23 @@ export default function SPRPage() {
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2"><Heart className="h-5 w-5 text-primary" />SPR Ramatis</h1>
       </div>
+
+      {isBlockedToday && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2">
+          <div className="flex items-start gap-2">
+            <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+            <div className="space-y-1">
+              <p className="font-semibold text-destructive">Operação bloqueada</p>
+              <p className="text-sm text-destructive/90">
+                O caixa está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Somente o responsável atual pode registrar fiados e pagamentos SPR. Se você precisa assumir a operação, solicite a transferência do caixa.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card className="stat-card">
         <CardContent className="p-0">
@@ -210,7 +234,7 @@ export default function SPRPage() {
 
           <TabsContent value="charges" className="mt-0 space-y-2">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => setChargeDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
+              <Button size="sm" onClick={() => setChargeDialogOpen(true)} disabled={isBlockedToday}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
             </div>
             {filteredCharges.map(c => (
               <Card key={c.id}>
@@ -225,7 +249,7 @@ export default function SPRPage() {
                   <div className="text-right">
                     <p className="financial-value text-sm">{formatCurrency(Number(c.amount))}</p>
                     {c.status !== 'paid' && (
-                      <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)}>
+                      <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)} disabled={isBlockedToday}>
                         <DollarSign className="mr-1 h-3 w-3" />Pagar
                       </Button>
                     )}
