@@ -44,6 +44,8 @@ const PIE_COLORS = [
 ];
 
 export default function InteligenciaPage() {
+  const { profile } = useAuth();
+  const isCoordinator = profile?.role === 'cash_coordinator';
   const [period, setPeriod] = useState('90');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -54,7 +56,7 @@ export default function InteligenciaPage() {
     setError(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('sales-intelligence', {
-        body: { period_days: Number(period) },
+        body: { period_days: Number(period), role: profile?.role },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
