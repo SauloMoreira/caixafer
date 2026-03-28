@@ -275,7 +275,22 @@ export default function ProdutosPage() {
             <div><Label>Categoria</Label><Input value={category} onChange={e => setCategory(e.target.value)} className="h-12" placeholder="geral" /></div>
             <div><Label>Preço de Venda (R$) *</Label><CurrencyInput value={unitPrice} onValueChange={setUnitPrice} className="h-12" placeholder="0,00" /></div>
             <div><Label>Preço de Custo (R$)</Label><CurrencyInput value={costPrice} onValueChange={setCostPrice} className="h-12" placeholder="0,00" /></div>
-            <div><Label>Código Interno</Label><Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12" /></div>
+            <div>
+              <Label>Código Interno</Label>
+              <div className="flex gap-2">
+                <Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12 flex-1" placeholder="Digite ou escaneie" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 shrink-0"
+                  onClick={() => setScannerOpen(true)}
+                  title="Escanear código"
+                >
+                  <ScanLine className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
             <div className="flex items-center justify-between">
               <Label>Ativo</Label>
