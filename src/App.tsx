@@ -15,6 +15,7 @@ import PDVPage from "@/pages/PDVPage";
 import MovimentosPage from "@/pages/MovimentosPage";
 import FechamentoPage from "@/pages/FechamentoPage";
 import ProdutosPage from "@/pages/ProdutosPage";
+import CategoriasPage from "@/pages/CategoriasPage";
 import RelatoriosPage from "@/pages/RelatoriosPage";
 import SPRPage from "@/pages/SPRPage";
 import UsuariosPage from "@/pages/UsuariosPage";
