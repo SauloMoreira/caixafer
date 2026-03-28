@@ -283,11 +283,12 @@ export default function UsuariosPage() {
                 <div>
                   <span className="text-muted-foreground">Perfil:</span>
                   {selectedUser.id !== currentUser?.id ? (
-                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier' | 'volunteer')}>
+                    <Select value={selectedUser.role} onValueChange={v => handleChangeRole(selectedUser.id, v as 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer')}>
                       <SelectTrigger className="h-8 mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Admin</SelectItem>
                         <SelectItem value="cashier">Caixa</SelectItem>
+                        <SelectItem value="cash_coordinator">Coordenador de Caixa</SelectItem>
                         <SelectItem value="volunteer">Voluntário</SelectItem>
                       </SelectContent>
                     </Select>
