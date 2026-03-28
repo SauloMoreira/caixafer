@@ -36,6 +36,10 @@ export default function ProdutosPage() {
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [stockAdjustOpen, setStockAdjustOpen] = useState(false);
+  const [stockAdjustProduct, setStockAdjustProduct] = useState<{ id: string; name: string; quantity_in_stock: number } | null>(null);
+  const [quantityInStock, setQuantityInStock] = useState('0');
+  const [minimumStockLevel, setMinimumStockLevel] = useState('');
 
   // Categories
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
