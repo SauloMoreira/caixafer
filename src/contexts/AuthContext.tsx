@@ -31,6 +31,7 @@ interface AuthContextType {
   isPrimaryAdmin: boolean;
   hasOperationalOverride: boolean;
   isCashier: boolean;
+  isCashCoordinator: boolean;
   isVolunteer: boolean;
   isApproved: boolean;
   isProfileComplete: boolean;
