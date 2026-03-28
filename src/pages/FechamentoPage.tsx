@@ -230,9 +230,7 @@ export default function FechamentoPage() {
       toast.error('Informe o saldo contado antes de fechar o caixa.');
       return;
     }
-    const data = {
-      business_date: date,
-      user_id: profile.id,
+    const updateData = {
       opening_balance: Number(openingBalance),
       sales_total: stats.sales,
       income_total: stats.income,
@@ -243,6 +241,11 @@ export default function FechamentoPage() {
       notes: notes || null,
       status: close ? 'closed' as const : 'open' as const,
       closed_at: close ? new Date().toISOString() : null,
+    };
+    const insertData = {
+      ...updateData,
+      business_date: date,
+      user_id: profile.id,
     };
 
     let error;
