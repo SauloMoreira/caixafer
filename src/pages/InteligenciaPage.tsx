@@ -225,14 +225,19 @@ export default function InteligenciaPage() {
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Calendar className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[10px] font-medium text-primary">Melhor Dia</span>
+                    <span className="text-[10px] font-medium text-primary">{isCoordinator ? 'Dia com Maior Volume' : 'Melhor Dia'}</span>
                   </div>
                   <p className="font-heading font-bold text-sm">{d.best_day.day}</p>
-                  <p className="text-[10px] text-muted-foreground">Méd. {formatCurrency(d.best_day.avg_revenue)}/dia</p>
+                  {!isCoordinator && (
+                    <p className="text-[10px] text-muted-foreground">Méd. {formatCurrency(d.best_day.avg_revenue)}/dia</p>
+                  )}
+                  {isCoordinator && d.best_day.avg_sales && (
+                    <p className="text-[10px] text-muted-foreground">Méd. {d.best_day.avg_sales} vendas/dia</p>
+                  )}
                 </CardContent>
               </Card>
             )}
-            {d.best_period && (
+            {!isCoordinator && d.best_period && (
               <Card className="border-primary/10">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -244,7 +249,19 @@ export default function InteligenciaPage() {
                 </CardContent>
               </Card>
             )}
-            {d.champion_revenue && (
+            {d.champion_quantity && (
+              <Card className="border-primary/10">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Trophy className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] font-medium text-primary">Campeão Quantidade</span>
+                  </div>
+                  <p className="font-heading font-bold text-sm truncate">{d.champion_quantity.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{d.champion_quantity.quantity_sold} un vendidas</p>
+                </CardContent>
+              </Card>
+            )}
+            {!isCoordinator && d.champion_revenue && (
               <Card className="border-primary/10">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -258,13 +275,13 @@ export default function InteligenciaPage() {
             )}
           </div>
 
-          {/* Faturamento por dia da semana */}
+          {/* Day of week chart */}
           {d.day_of_week?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Faturamento por Dia da Semana
+                  {isCoordinator ? 'Vendas por Dia da Semana' : 'Faturamento por Dia da Semana'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -272,9 +289,9 @@ export default function InteligenciaPage() {
                   <BarChart data={d.day_of_week}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${v}`} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => isCoordinator ? `${v}` : `R$${v}`} />
                     <Tooltip
-                      formatter={(v: number) => formatCurrency(v)}
+                      formatter={(v: number) => isCoordinator ? `${v} vendas` : formatCurrency(v)}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
@@ -282,7 +299,7 @@ export default function InteligenciaPage() {
                         fontSize: '12px',
                       }}
                     />
-                    <Bar dataKey="avg_revenue" fill="hsl(var(--primary))" name="Méd. Faturamento" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={isCoordinator ? 'avg_sales' : 'avg_revenue'} fill="hsl(var(--primary))" name={isCoordinator ? 'Méd. Vendas' : 'Méd. Faturamento'} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -293,7 +310,7 @@ export default function InteligenciaPage() {
           {d.categories?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento por Categoria</CardTitle>
+                <CardTitle className="text-sm font-medium">{isCoordinator ? 'Quantidade por Categoria' : 'Faturamento por Categoria'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col md:flex-row items-center gap-4">
@@ -301,7 +318,7 @@ export default function InteligenciaPage() {
                     <PieChart>
                       <Pie
                         data={d.categories}
-                        dataKey="revenue"
+                        dataKey={isCoordinator ? 'quantity' : 'revenue'}
                         nameKey="category"
                         cx="50%"
                         cy="50%"
@@ -314,7 +331,7 @@ export default function InteligenciaPage() {
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <Tooltip formatter={(v: number) => isCoordinator ? `${v} un` : formatCurrency(v)} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
