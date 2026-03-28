@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles, ArrowRightLeft } from 'lucide-react';
+import BluetoothPrintButton from '@/components/BluetoothPrintButton';
+import { printClosing } from '@/lib/bluetooth-printer';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
 import DailyOperationInsights from '@/components/DailyOperationInsights';
