@@ -35,6 +35,9 @@ export default function ProdutosPage() {
   const [isActive, setIsActive] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
 
+  // Categories
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -44,11 +47,16 @@ export default function ProdutosPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); fetchCategories(); }, []);
 
   const fetchProducts = async () => {
     const { data } = await supabase.from('products').select('*').order('name');
     if (data) setProducts(data as any);
+  };
+
+  const fetchCategories = async () => {
+    const { data } = await supabase.from('categories').select('id, name').eq('is_active', true).order('sort_order').order('name');
+    if (data) setCategories(data as any);
   };
 
   const openNew = () => {
