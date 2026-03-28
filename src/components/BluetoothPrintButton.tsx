@@ -62,7 +62,7 @@ export default function BluetoothPrintButton({ onPrint, label = 'Bluetooth', cla
       {printing ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : connected ? (
-        <Check className="h-4 w-4 text-green-500" />
+        <Check className="h-4 w-4 text-income" />
       ) : (
         <Bluetooth className="h-4 w-4" />
       )}
