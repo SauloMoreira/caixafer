@@ -164,6 +164,9 @@ export default function ProdutosPage() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="financial-value text-primary">{formatCurrency(Number(p.unit_price))}</p>
+                  {isAdmin && p.cost_price != null && (
+                    <p className="text-[10px] text-muted-foreground">Custo: {formatCurrency(Number(p.cost_price))}</p>
+                  )}
                   {!p.is_active && <span className="text-[10px] text-muted-foreground">Inativo</span>}
                 </div>
               </CardContent>
