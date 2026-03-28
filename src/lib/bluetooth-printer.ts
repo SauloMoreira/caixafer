@@ -20,8 +20,10 @@ const PRINTER_CHAR_UUIDS = [
   '49535343-8841-43f4-a8d4-ecbe34729bb3', // ISSC transparent UART TX
 ];
 
-let cachedDevice: BluetoothDevice | null = null;
-let cachedCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedDevice: any = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedCharacteristic: any = null;
 
 export function isBluetoothSupported(): boolean {
   return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
