@@ -122,7 +122,7 @@ export default function UsuariosPage() {
     else { toast.success(active ? 'Usuário reativado!' : 'Usuário desativado.'); fetchUsers(); setDialogOpen(false); }
   };
 
-  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'volunteer') => {
+  const handleChangeRole = async (userId: string, role: 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer') => {
     const u = users.find(u => u.id === userId);
     setCriticalAction({ type: 'role_change', userId, userName: u?.full_name || '', newRole: role });
   };
