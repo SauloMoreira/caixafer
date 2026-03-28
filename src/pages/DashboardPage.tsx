@@ -120,7 +120,7 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
-  const statCards = isCashier
+  const statCards = (isCashier && !isCashCoordinator)
     ? [
         { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
         { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
