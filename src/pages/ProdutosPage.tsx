@@ -39,6 +39,7 @@ export default function ProdutosPage() {
   const [uploading, setUploading] = useState(false);
   const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchProducts(); }, []);
 
