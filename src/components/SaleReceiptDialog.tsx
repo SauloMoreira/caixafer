@@ -88,7 +88,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
           <SaleReceipt ref={receiptRef} data={data} />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mt-4">
+        <div className="grid grid-cols-4 gap-2 mt-4">
           <Button variant="outline" onClick={handlePrint} className="h-12 flex-col gap-1">
             <Printer className="h-4 w-4" />
             <span className="text-[10px]">Imprimir</span>
@@ -101,6 +101,21 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
             <Share2 className="h-4 w-4" />
             <span className="text-[10px]">Compartilhar</span>
           </Button>
+          <BluetoothPrintButton
+            onPrint={async () => {
+              await printReceipt({
+                saleNumber: data.saleNumber,
+                createdAt: data.createdAt,
+                operatorName: data.operatorName,
+                items: data.items,
+                subtotal: data.subtotal,
+                discount: data.discount,
+                total: data.total,
+                paymentMethod: data.paymentMethod,
+                paymentLabel: paymentLabel(data.paymentMethod),
+              });
+            }}
+          />
         </div>
 
         <Button variant="default" className="h-12 w-full mt-2" onClick={() => onOpenChange(false)}>
