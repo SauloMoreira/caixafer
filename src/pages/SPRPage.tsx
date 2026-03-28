@@ -245,7 +245,7 @@ export default function SPRPage() {
                   <div className="text-right">
                     <p className="financial-value text-sm">{formatCurrency(Number(c.amount))}</p>
                     {c.status !== 'paid' && (
-                      <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)}>
+                      <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)} disabled={isBlockedToday}>
                         <DollarSign className="mr-1 h-3 w-3" />Pagar
                       </Button>
                     )}
