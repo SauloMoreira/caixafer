@@ -66,7 +66,7 @@ export default function ProdutosPage() {
   };
 
   const openEdit = (p: Product) => {
-    setEditing(p); setName(p.name); setCategory(p.category); setUnitPrice(String(p.unit_price)); setCostPrice(p.cost_price != null ? String(p.cost_price) : ''); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
+    setEditing(p); setName(p.name); setCategoryId(p.category_id || ''); setUnitPrice(String(p.unit_price)); setCostPrice(p.cost_price != null ? String(p.cost_price) : ''); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
     setImageFile(null); setImagePreview(null); setExistingImageUrl((p as any).image_url || null); setRemoveImage(false);
     setDialogOpen(true);
   };
