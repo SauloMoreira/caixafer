@@ -54,7 +54,7 @@ export async function connectPrinter(): Promise<string> {
   }
 
   // Request device – accept any device with known printer services or by name prefix
-  const device = await navigator.bluetooth.requestDevice({
+  const device = await bt.requestDevice({
     filters: [
       { namePrefix: 'Printer' },
       { namePrefix: 'BlueTooth' },
