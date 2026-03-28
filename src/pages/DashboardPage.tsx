@@ -65,7 +65,7 @@ const QUICK_ACTIONS = [
 ];
 
 export default function DashboardPage() {
-  const { profile, isAdmin, isVolunteer, isCashier } = useAuth();
+  const { profile, isAdmin, isVolunteer, isCashier, isCashCoordinator } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<DayStats>({
     salesToday: 0, incomeToday: 0, expenseToday: 0,
