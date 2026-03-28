@@ -162,7 +162,7 @@ export default function DashboardPage() {
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
           <p className="text-xs text-muted-foreground">
-            {isAdmin ? 'Administrador' : 'Operador de Caixa'} • Resumo do dia
+            {isAdmin ? 'Administrador' : isCashCoordinator ? 'Coordenador de Caixa' : 'Operador de Caixa'} • Resumo do dia
           </p>
         </div>
       </div>
