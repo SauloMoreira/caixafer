@@ -43,6 +43,7 @@ const statusConfig: Record<string, { label: string; variant: 'default' | 'second
 const roleLabels: Record<string, string> = {
   admin: 'Admin',
   cashier: 'Caixa',
+  cash_coordinator: 'Coordenador de Caixa',
   volunteer: 'Voluntário',
 };
 
