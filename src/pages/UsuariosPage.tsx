@@ -16,7 +16,7 @@ import CriticalActionDialog from '@/components/CriticalActionDialog';
 interface UserProfile {
   id: string;
   full_name: string;
-  role: 'admin' | 'cashier' | 'volunteer';
+  role: 'admin' | 'cashier' | 'cash_coordinator' | 'volunteer';
   phone: string | null;
   address: string | null;
   email: string | null;
