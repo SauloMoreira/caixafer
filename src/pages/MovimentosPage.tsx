@@ -111,13 +111,18 @@ export default function MovimentosPage() {
     <div className="space-y-4">
       {/* Blocked banner */}
       {isBlockedToday && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm flex items-start gap-2">
-          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
-          <div>
-            <p className="font-semibold text-destructive">Operação bloqueada</p>
-            <p className="text-muted-foreground text-xs">
-              O caixa de hoje está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>. Você não pode inserir movimentos.
-            </p>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2">
+          <div className="flex items-start gap-2">
+            <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+            <div className="space-y-1">
+              <p className="font-semibold text-destructive">Movimento bloqueado</p>
+              <p className="text-sm text-destructive/90">
+                Este caixa está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Somente o responsável atual pode incluir movimentos. Se você precisa assumir a operação, solicite a transferência do caixa.
+              </p>
+            </div>
           </div>
         </div>
       )}
