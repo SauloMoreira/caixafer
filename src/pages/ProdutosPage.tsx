@@ -144,9 +144,13 @@ export default function ProdutosPage() {
     if (imageFile && productId) {
       const url = await uploadImage(productId);
       if (url) {
-        await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
+        const { error: imgErr } = await supabase.from('products').update({ image_url: url }).eq('id', productId);
+        if (imgErr) { toast.error('Produto salvo, mas erro ao vincular imagem.'); }
       }
     }
+
+    // Cleanup preview blob URL
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
 
     toast.success(editing ? 'Produto atualizado!' : 'Produto criado!');
     setDialogOpen(false);
