@@ -131,8 +131,14 @@ export default function ProdutosPage() {
     if (!name.trim()) { toast.error('Informe o nome do produto.'); return; }
     if (!unitPrice || Number(unitPrice) <= 0) { toast.error('Informe um preço válido.'); return; }
 
+    if (!categoryId) { toast.error('Selecione uma categoria.'); return; }
+
+    // Find category name for dual-write
+    const selectedCat = categories.find(c => c.id === categoryId);
+    const categoryName = selectedCat?.name || 'Geral';
+
     const baseData: any = {
-      name, category: category || 'geral', unit_price: Number(unitPrice),
+      name, category: categoryName, category_id: categoryId, unit_price: Number(unitPrice),
       cost_price: costPrice ? Number(costPrice) : null,
       internal_code: internalCode || null, notes: productNotes || null, is_active: isActive,
     };
