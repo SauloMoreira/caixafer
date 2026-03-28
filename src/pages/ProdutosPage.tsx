@@ -32,6 +32,7 @@ export default function ProdutosPage() {
   const [internalCode, setInternalCode] = useState('');
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
