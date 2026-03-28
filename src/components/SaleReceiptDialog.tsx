@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import SaleReceipt, { type ReceiptData } from './SaleReceipt';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/constants';
-import { Printer, FileText, Share2, X } from 'lucide-react';
+import { Printer, FileText, Share2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
+import BluetoothPrintButton from './BluetoothPrintButton';
+import { printReceipt } from '@/lib/bluetooth-printer';
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
