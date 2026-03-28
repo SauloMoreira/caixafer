@@ -276,6 +276,39 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_operation_insights: {
         Row: {
           business_date: string
@@ -402,6 +435,7 @@ export type Database = {
       products: {
         Row: {
           category: string
+          category_id: string | null
           cost_price: number | null
           created_at: string
           id: string
@@ -414,6 +448,7 @@ export type Database = {
         }
         Insert: {
           category?: string
+          category_id?: string | null
           cost_price?: number | null
           created_at?: string
           id?: string
@@ -426,6 +461,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          category_id?: string | null
           cost_price?: number | null
           created_at?: string
           id?: string
@@ -436,7 +472,15 @@ export type Database = {
           notes?: string | null
           unit_price?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
