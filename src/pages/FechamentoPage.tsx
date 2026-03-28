@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles, ArrowRightLeft } from 'lucide-react';
+import BluetoothPrintButton from '@/components/BluetoothPrintButton';
+import { printClosing } from '@/lib/bluetooth-printer';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
 import DailyOperationInsights from '@/components/DailyOperationInsights';
@@ -532,10 +534,34 @@ export default function FechamentoPage() {
                 </Button>
               )}
 
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={handlePrint}><Printer className="mr-1 h-4 w-4" />Imprimir</Button>
-                <Button variant="outline" className="flex-1" onClick={handlePrint}><FileText className="mr-1 h-4 w-4" />PDF</Button>
-                <Button variant="outline" className="flex-1" onClick={handleShare}><Share2 className="mr-1 h-4 w-4" />Compartilhar</Button>
+              <div className="grid grid-cols-4 gap-2">
+                <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><Printer className="h-4 w-4" /><span className="text-[10px]">Imprimir</span></Button>
+                <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><FileText className="h-4 w-4" /><span className="text-[10px]">PDF</span></Button>
+                <Button variant="outline" className="h-12 flex-col gap-1" onClick={handleShare}><Share2 className="h-4 w-4" /><span className="text-[10px]">Compartilhar</span></Button>
+                <BluetoothPrintButton
+                  onPrint={async () => {
+                    const methodMap: Record<string, { label: string; value: number }> = {};
+                    PAYMENT_METHODS.forEach(pm => {
+                      const val = salesByMethod[pm.value] || 0;
+                      if (val > 0) methodMap[pm.value] = { label: pm.label, value: val };
+                    });
+                    await printClosing({
+                      date,
+                      operatorName: profile?.full_name || '',
+                      openingBalance: Number(openingBalance),
+                      sales: stats.sales,
+                      income: stats.income,
+                      expense: stats.expense,
+                      expectedBalance,
+                      countedBalance: countedBalance ? Number(countedBalance) : null,
+                      difference,
+                      salesByMethod: methodMap,
+                      notes,
+                      version: closing?.closing_version,
+                      status: closing?.status || 'open',
+                    });
+                  }}
+                />
               </div>
 
               {/* History toggle for admin */}
