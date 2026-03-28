@@ -506,6 +506,9 @@ export default function InteligenciaPage() {
           )}
         </>
       )}
+
+      {/* Purchase Intelligence - always visible */}
+      <PurchaseIntelligenceSection />
     </div>
   );
 }
