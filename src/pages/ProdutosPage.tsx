@@ -9,7 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Search, Package, Camera, ImagePlus, X, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Camera, ImagePlus, X, Loader2, ScanLine } from 'lucide-react';
+import BarcodeScannerDialog from '@/components/BarcodeScannerDialog';
 import ProductImage from '@/components/ProductImage';
 import CurrencyInput from '@/components/CurrencyInput';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,6 +32,7 @@ export default function ProdutosPage() {
   const [internalCode, setInternalCode] = useState('');
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -273,7 +275,22 @@ export default function ProdutosPage() {
             <div><Label>Categoria</Label><Input value={category} onChange={e => setCategory(e.target.value)} className="h-12" placeholder="geral" /></div>
             <div><Label>Preço de Venda (R$) *</Label><CurrencyInput value={unitPrice} onValueChange={setUnitPrice} className="h-12" placeholder="0,00" /></div>
             <div><Label>Preço de Custo (R$)</Label><CurrencyInput value={costPrice} onValueChange={setCostPrice} className="h-12" placeholder="0,00" /></div>
-            <div><Label>Código Interno</Label><Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12" /></div>
+            <div>
+              <Label>Código Interno</Label>
+              <div className="flex gap-2">
+                <Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12 flex-1" placeholder="Digite ou escaneie" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-12 w-12 shrink-0"
+                  onClick={() => setScannerOpen(true)}
+                  title="Escanear código"
+                >
+                  <ScanLine className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
             <div className="flex items-center justify-between">
               <Label>Ativo</Label>
@@ -285,6 +302,12 @@ export default function ProdutosPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={(value) => setInternalCode(value)}
+      />
     </div>
   );
 }
