@@ -187,7 +187,8 @@ export default function InsightsPage() {
         </Card>
       ) : (
         <>
-          {/* KPI Cards */}
+          {/* Stock Insights */}
+          <StockInsightsSection />
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Card className="border-primary/20">
               <CardContent className="p-4">
