@@ -49,20 +49,20 @@ const App = () => (
             <Route path="/perfil" element={<ProfilePage />} />
             <Route path="/mfa-setup" element={<MfaSetupPage />} />
             <Route path="/mfa-verify" element={<MfaVerifyPage />} />
-            <Route path="/" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'volunteer']}><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/pdv" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/movimentos" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/fechamento" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/produtos" element={<ProtectedRoute adminOnly><LayoutWrapper><ProdutosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/categorias" element={<ProtectedRoute adminOnly><LayoutWrapper><CategoriasPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator', 'volunteer']}><LayoutWrapper><DashboardPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/pdv" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><PDVPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/movimentos" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/fechamento" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/produtos" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><ProdutosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/categorias" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><CategoriasPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/insights" element={<ProtectedRoute adminOnly><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/estoque" element={<ProtectedRoute adminOnly><LayoutWrapper><EstoquePage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/inteligencia" element={<ProtectedRoute adminOnly><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />
-            <Route path="/notificacoes" element={<ProtectedRoute adminOnly><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/insights" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/estoque" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><EstoquePage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/inteligencia" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/notificacoes" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/meu-consumo" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

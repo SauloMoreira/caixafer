@@ -176,7 +176,7 @@ export default function DashboardPage() {
       )}
 
       {/* ═══ CASHIER QUICK ACTIONS ═══ */}
-      {isCashier && (
+      {(isCashier && !isCashCoordinator) && (
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
             Acesso Rápido
