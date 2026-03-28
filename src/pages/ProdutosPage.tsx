@@ -10,11 +10,15 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Search, Package, Camera, X, Loader2 } from 'lucide-react';
 import ProductImage from '@/components/ProductImage';
+import CurrencyInput from '@/components/CurrencyInput';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
 
 export default function ProdutosPage() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -22,6 +26,7 @@ export default function ProdutosPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [unitPrice, setUnitPrice] = useState('');
+  const [costPrice, setCostPrice] = useState('');
   const [internalCode, setInternalCode] = useState('');
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
@@ -42,13 +47,13 @@ export default function ProdutosPage() {
   };
 
   const openNew = () => {
-    setEditing(null); setName(''); setCategory(''); setUnitPrice(''); setInternalCode(''); setProductNotes(''); setIsActive(true);
+    setEditing(null); setName(''); setCategory(''); setUnitPrice(''); setCostPrice(''); setInternalCode(''); setProductNotes(''); setIsActive(true);
     setImageFile(null); setImagePreview(null); setExistingImageUrl(null); setRemoveImage(false);
     setDialogOpen(true);
   };
 
   const openEdit = (p: Product) => {
-    setEditing(p); setName(p.name); setCategory(p.category); setUnitPrice(String(p.unit_price)); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
+    setEditing(p); setName(p.name); setCategory(p.category); setUnitPrice(String(p.unit_price)); setCostPrice(p.cost_price != null ? String(p.cost_price) : ''); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
     setImageFile(null); setImagePreview(null); setExistingImageUrl((p as any).image_url || null); setRemoveImage(false);
     setDialogOpen(true);
   };
@@ -95,6 +100,7 @@ export default function ProdutosPage() {
 
     const baseData: any = {
       name, category: category || 'geral', unit_price: Number(unitPrice),
+      cost_price: costPrice ? Number(costPrice) : null,
       internal_code: internalCode || null, notes: productNotes || null, is_active: isActive,
     };
 
@@ -158,6 +164,9 @@ export default function ProdutosPage() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="financial-value text-primary">{formatCurrency(Number(p.unit_price))}</p>
+                  {isAdmin && p.cost_price != null && (
+                    <p className="text-[10px] text-muted-foreground">Custo: {formatCurrency(Number(p.cost_price))}</p>
+                  )}
                   {!p.is_active && <span className="text-[10px] text-muted-foreground">Inativo</span>}
                 </div>
               </CardContent>
@@ -215,7 +224,8 @@ export default function ProdutosPage() {
 
             <div><Label>Nome *</Label><Input value={name} onChange={e => setName(e.target.value)} className="h-12" /></div>
             <div><Label>Categoria</Label><Input value={category} onChange={e => setCategory(e.target.value)} className="h-12" placeholder="geral" /></div>
-            <div><Label>Preço (R$) *</Label><Input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} className="h-12" /></div>
+            <div><Label>Preço de Venda (R$) *</Label><CurrencyInput value={unitPrice} onValueChange={setUnitPrice} className="h-12" placeholder="0,00" /></div>
+            <div><Label>Preço de Custo (R$)</Label><CurrencyInput value={costPrice} onValueChange={setCostPrice} className="h-12" placeholder="0,00" /></div>
             <div><Label>Código Interno</Label><Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12" /></div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
             <div className="flex items-center justify-between">
