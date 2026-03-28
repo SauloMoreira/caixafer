@@ -234,8 +234,56 @@ serve(async (req) => {
       month_period_ranking: periodData,
     };
 
-    // AI prompt
-    const prompt = `Você é um analista inteligente de vendas da Cantina da FER (cantina escolar).
+    // AI prompt - different for coordinator (operational only) vs admin (full financial)
+    const prompt = isCoordinator
+      ? `Você é um analista operacional da Cantina da FER (cantina escolar).
+
+Analise os dados abaixo e gere insights e sugestões EXCLUSIVAMENTE OPERACIONAIS. 
+NUNCA mencione faturamento, receita, ticket médio em R$, valores monetários ou desempenho financeiro.
+Foque em: quantidade vendida, giro de produtos, estoque, reposição, exposição, ruptura e consumo.
+
+DADOS DO PERÍODO (${period_days} dias):
+${JSON.stringify({
+  period: dataSummary.period,
+  period_days: dataSummary.period_days,
+  total_sales: dataSummary.total_sales,
+  active_days: dataSummary.active_days,
+  sales_change_pct: dataSummary.sales_change_pct,
+  best_day_of_week: dataSummary.best_day_of_week ? { day: dataSummary.best_day_of_week.day, avg_sales: dataSummary.best_day_of_week.avg_sales } : null,
+  top_5_by_quantity: dataSummary.top_5_by_quantity.map((p: any) => ({ name: p.name, qty: p.qty })),
+  bottom_5_by_quantity: dataSummary.bottom_5_by_quantity.map((p: any) => ({ name: p.name, qty: p.qty })),
+  low_turnover: dataSummary.low_turnover.map((p: any) => ({ name: p.name, avg_daily: p.avg_daily })),
+  categories: dataSummary.categories.map((c: any) => ({ category: c.category, quantity: c.quantity })),
+}, null, 2)}
+
+REGRAS:
+- PROIBIDO mencionar faturamento, receita, R$, ticket médio, valores monetários.
+- Gere sugestões baseadas em quantidade, giro, consumo, estoque e operação.
+- Cada sugestão deve ter: insight, oportunidade, sugestão prática e prioridade (alta/media/baixa).
+- Use linguagem operacional: "maior saída", "menor giro", "reposição", "exposição".
+- Máximo 8 sugestões.
+
+FORMATO DE RESPOSTA (JSON puro, sem markdown):
+{
+  "summary": "Resumo operacional em 2-3 frases, sem valores financeiros.",
+  "suggestions": [
+    {
+      "insight": "O que os dados operacionais mostram",
+      "opportunity": "Qual oportunidade operacional isso representa",
+      "action": "O que fazer na prática",
+      "priority": "alta",
+      "basis": "Baseado em quê (ex: volume de vendas dos últimos 90 dias)"
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Título curto da oportunidade operacional",
+      "description": "Descrição clara sem valores financeiros",
+      "impact": "alto"
+    }
+  ]
+}`
+      : `Você é um analista inteligente de vendas da Cantina da FER (cantina escolar).
 
 Analise os dados abaixo e gere insights e sugestões práticas para o administrador melhorar vendas e faturamento.
 
