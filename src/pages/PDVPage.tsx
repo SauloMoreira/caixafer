@@ -456,17 +456,27 @@ export default function PDVPage() {
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">Sem cadastro</p>
             </button>
-            {filteredProducts.map(product => (
-              <button
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 flex flex-col items-center gap-1 p-2"
-              >
-                <ProductImage src={(product as any).image_url} size="md" alt={product.name} />
-                <p className="text-xs font-medium leading-tight text-center w-full truncate">{product.name}</p>
-                <p className="financial-value text-sm text-primary">{formatCurrency(Number(product.unit_price))}</p>
-              </button>
-            ))}
+            {filteredProducts.map(product => {
+              const stock = product.quantity_in_stock ?? 0;
+              const minLevel = product.minimum_stock_level;
+              const isZero = stock <= 0;
+              const isLow = !isZero && minLevel != null && stock <= minLevel;
+              const stockColor = isZero ? 'text-destructive' : isLow ? 'text-warning' : 'text-income';
+              return (
+                <button
+                  key={product.id}
+                  onClick={() => addToCart(product)}
+                  className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 flex flex-col items-center gap-1 p-2"
+                >
+                  <ProductImage src={(product as any).image_url} size="md" alt={product.name} />
+                  <p className="text-xs font-medium leading-tight text-center w-full truncate">{product.name}</p>
+                  <p className="financial-value text-sm text-primary">{formatCurrency(Number(product.unit_price))}</p>
+                  <span className={`text-[10px] font-medium ${stockColor}`}>
+                    {isZero ? 'Sem estoque' : `${stock} un.`}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
