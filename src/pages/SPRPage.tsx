@@ -28,6 +28,7 @@ export default function SPRPage() {
   const { profile } = useAuth();
   const { sessionOpen, canOperate, responsibleName } = useCashSession();
   const isBlockedToday = sessionOpen && !canOperate;
+  const [tab, setTab] = useState('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
   const [search, setSearch] = useState('');
