@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,6 +44,8 @@ const PIE_COLORS = [
 ];
 
 export default function InteligenciaPage() {
+  const { profile } = useAuth();
+  const isCoordinator = profile?.role === 'cash_coordinator';
   const [period, setPeriod] = useState('90');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -53,7 +56,7 @@ export default function InteligenciaPage() {
     setError(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke('sales-intelligence', {
-        body: { period_days: Number(period) },
+        body: { period_days: Number(period), role: profile?.role },
       });
       if (fnError) throw fnError;
       if (data?.error) throw new Error(data.error);
@@ -148,20 +151,22 @@ export default function InteligenciaPage() {
           )}
 
           {/* KPI Cards */}
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <DollarSign className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] text-muted-foreground">Faturamento</span>
-                </div>
-                <p className="text-lg font-bold text-primary">{formatCurrency(kpis.total_revenue)}</p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <TrendIcon value={kpis.revenue_change_pct} />
-                  <span className="text-[10px] text-muted-foreground">{kpis.revenue_change_pct > 0 ? '+' : ''}{kpis.revenue_change_pct.toFixed(1)}% vs anterior</span>
-                </div>
-              </CardContent>
-            </Card>
+          <div className={`grid grid-cols-2 gap-3 ${isCoordinator ? 'md:grid-cols-2' : 'md:grid-cols-4'}`}>
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <DollarSign className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground">Faturamento</span>
+                  </div>
+                  <p className="text-lg font-bold text-primary">{formatCurrency(kpis.total_revenue)}</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <TrendIcon value={kpis.revenue_change_pct} />
+                    <span className="text-[10px] text-muted-foreground">{kpis.revenue_change_pct > 0 ? '+' : ''}{kpis.revenue_change_pct.toFixed(1)}% vs anterior</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card>
               <CardContent className="p-3">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -175,26 +180,42 @@ export default function InteligenciaPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Target className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Ticket Médio</span>
-                </div>
-                <p className="text-lg font-bold">{formatCurrency(kpis.avg_ticket)}</p>
-                <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">Méd. Diária</span>
-                </div>
-                <p className="text-lg font-bold">{formatCurrency(kpis.avg_daily_revenue)}</p>
-                <span className="text-[10px] text-muted-foreground">por dia ativo</span>
-              </CardContent>
-            </Card>
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Ticket Médio</span>
+                  </div>
+                  <p className="text-lg font-bold">{formatCurrency(kpis.avg_ticket)}</p>
+                  <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
+                </CardContent>
+              </Card>
+            )}
+            {!isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Méd. Diária</span>
+                  </div>
+                  <p className="text-lg font-bold">{formatCurrency(kpis.avg_daily_revenue)}</p>
+                  <span className="text-[10px] text-muted-foreground">por dia ativo</span>
+                </CardContent>
+              </Card>
+            )}
+            {isCoordinator && (
+              <Card>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] text-muted-foreground">Total Itens</span>
+                  </div>
+                  <p className="text-lg font-bold">{kpis.total_items_sold ?? '—'}</p>
+                  <span className="text-[10px] text-muted-foreground">{kpis.active_days} dias ativos</span>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Champion Cards */}
@@ -204,14 +225,19 @@ export default function InteligenciaPage() {
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Calendar className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-[10px] font-medium text-primary">Melhor Dia</span>
+                    <span className="text-[10px] font-medium text-primary">{isCoordinator ? 'Dia com Maior Volume' : 'Melhor Dia'}</span>
                   </div>
                   <p className="font-heading font-bold text-sm">{d.best_day.day}</p>
-                  <p className="text-[10px] text-muted-foreground">Méd. {formatCurrency(d.best_day.avg_revenue)}/dia</p>
+                  {!isCoordinator && (
+                    <p className="text-[10px] text-muted-foreground">Méd. {formatCurrency(d.best_day.avg_revenue)}/dia</p>
+                  )}
+                  {isCoordinator && d.best_day.avg_sales && (
+                    <p className="text-[10px] text-muted-foreground">Méd. {d.best_day.avg_sales} vendas/dia</p>
+                  )}
                 </CardContent>
               </Card>
             )}
-            {d.best_period && (
+            {!isCoordinator && d.best_period && (
               <Card className="border-primary/10">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -223,7 +249,19 @@ export default function InteligenciaPage() {
                 </CardContent>
               </Card>
             )}
-            {d.champion_revenue && (
+            {d.champion_quantity && (
+              <Card className="border-primary/10">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Trophy className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] font-medium text-primary">Campeão Quantidade</span>
+                  </div>
+                  <p className="font-heading font-bold text-sm truncate">{d.champion_quantity.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{d.champion_quantity.quantity_sold} un vendidas</p>
+                </CardContent>
+              </Card>
+            )}
+            {!isCoordinator && d.champion_revenue && (
               <Card className="border-primary/10">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -237,13 +275,13 @@ export default function InteligenciaPage() {
             )}
           </div>
 
-          {/* Faturamento por dia da semana */}
+          {/* Day of week chart */}
           {d.day_of_week?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  Faturamento por Dia da Semana
+                  {isCoordinator ? 'Vendas por Dia da Semana' : 'Faturamento por Dia da Semana'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -251,9 +289,9 @@ export default function InteligenciaPage() {
                   <BarChart data={d.day_of_week}>
                     <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                     <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => `R$${v}`} />
+                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => isCoordinator ? `${v}` : `R$${v}`} />
                     <Tooltip
-                      formatter={(v: number) => formatCurrency(v)}
+                      formatter={(v: number) => isCoordinator ? `${v} vendas` : formatCurrency(v)}
                       contentStyle={{
                         backgroundColor: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--border))',
@@ -261,7 +299,7 @@ export default function InteligenciaPage() {
                         fontSize: '12px',
                       }}
                     />
-                    <Bar dataKey="avg_revenue" fill="hsl(var(--primary))" name="Méd. Faturamento" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={isCoordinator ? 'avg_sales' : 'avg_revenue'} fill="hsl(var(--primary))" name={isCoordinator ? 'Méd. Vendas' : 'Méd. Faturamento'} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -272,7 +310,7 @@ export default function InteligenciaPage() {
           {d.categories?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Faturamento por Categoria</CardTitle>
+                <CardTitle className="text-sm font-medium">{isCoordinator ? 'Quantidade por Categoria' : 'Faturamento por Categoria'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col md:flex-row items-center gap-4">
@@ -280,7 +318,7 @@ export default function InteligenciaPage() {
                     <PieChart>
                       <Pie
                         data={d.categories}
-                        dataKey="revenue"
+                        dataKey={isCoordinator ? 'quantity' : 'revenue'}
                         nameKey="category"
                         cx="50%"
                         cy="50%"
@@ -293,7 +331,7 @@ export default function InteligenciaPage() {
                           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <Tooltip formatter={(v: number) => isCoordinator ? `${v} un` : formatCurrency(v)} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -324,7 +362,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold">{p.quantity_sold} un</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -332,34 +372,36 @@ export default function InteligenciaPage() {
               </CardContent>
             </Card>
 
-            {/* Top by revenue */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  Maior Faturamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border">
-                  {d.top_by_revenue?.slice(0, 7).map((p: any, i: number) => (
-                    <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}º</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{p.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{p.category}</p>
+            {/* Top by revenue - admin only */}
+            {!isCoordinator && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    Maior Faturamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {d.top_by_revenue?.slice(0, 7).map((p: any, i: number) => (
+                      <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}º</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{p.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-primary">{formatCurrency(p.total_revenue)}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.quantity_sold} un</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-primary">{formatCurrency(p.total_revenue)}</p>
-                        <p className="text-[10px] text-muted-foreground">{p.quantity_sold} un</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Least sold */}
             <Card>
@@ -382,7 +424,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-warning">{p.quantity_sold} un</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -410,7 +454,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-destructive">{p.avg_daily_qty}/dia</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -424,7 +470,7 @@ export default function InteligenciaPage() {
             <>
               <div className="flex items-center gap-2 mt-2">
                 <Zap className="h-5 w-5 text-primary" />
-                <h2 className="font-heading text-sm font-bold">Sugestões da IA</h2>
+                <h2 className="font-heading text-sm font-bold">{isCoordinator ? 'Sugestões Operacionais' : 'Sugestões da IA'}</h2>
               </div>
               <div className="space-y-3">
                 {ai.suggestions.map((s: any, i: number) => {
@@ -466,7 +512,7 @@ export default function InteligenciaPage() {
             <>
               <div className="flex items-center gap-2 mt-2">
                 <Star className="h-5 w-5 text-warning" />
-                <h2 className="font-heading text-sm font-bold">Oportunidades de Melhoria</h2>
+                <h2 className="font-heading text-sm font-bold">{isCoordinator ? 'Oportunidades Operacionais' : 'Oportunidades de Melhoria'}</h2>
               </div>
               <div className="space-y-2">
                 {ai.opportunities.map((o: any, i: number) => (
@@ -486,8 +532,8 @@ export default function InteligenciaPage() {
             </>
           )}
 
-          {/* Trend */}
-          {ai?.trends && (
+          {/* Trend - admin only */}
+          {!isCoordinator && ai?.trends && (
             <Card className="border-muted">
               <CardContent className="p-4 flex items-center gap-3">
                 {ai.trends.revenue_trend === 'alta' ? (

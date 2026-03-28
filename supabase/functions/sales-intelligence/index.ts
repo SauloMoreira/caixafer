@@ -10,7 +10,8 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { period_days = 90, category_filter, product_filter } = await req.json();
+    const { period_days = 90, category_filter, product_filter, role } = await req.json();
+    const isCoordinator = role === 'cash_coordinator';
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -233,8 +234,56 @@ serve(async (req) => {
       month_period_ranking: periodData,
     };
 
-    // AI prompt
-    const prompt = `Você é um analista inteligente de vendas da Cantina da FER (cantina escolar).
+    // AI prompt - different for coordinator (operational only) vs admin (full financial)
+    const prompt = isCoordinator
+      ? `Você é um analista operacional da Cantina da FER (cantina escolar).
+
+Analise os dados abaixo e gere insights e sugestões EXCLUSIVAMENTE OPERACIONAIS. 
+NUNCA mencione faturamento, receita, ticket médio em R$, valores monetários ou desempenho financeiro.
+Foque em: quantidade vendida, giro de produtos, estoque, reposição, exposição, ruptura e consumo.
+
+DADOS DO PERÍODO (${period_days} dias):
+${JSON.stringify({
+  period: dataSummary.period,
+  period_days: dataSummary.period_days,
+  total_sales: dataSummary.total_sales,
+  active_days: dataSummary.active_days,
+  sales_change_pct: dataSummary.sales_change_pct,
+  best_day_of_week: dataSummary.best_day_of_week ? { day: dataSummary.best_day_of_week.day, avg_sales: dataSummary.best_day_of_week.avg_sales } : null,
+  top_5_by_quantity: dataSummary.top_5_by_quantity.map((p: any) => ({ name: p.name, qty: p.qty })),
+  bottom_5_by_quantity: dataSummary.bottom_5_by_quantity.map((p: any) => ({ name: p.name, qty: p.qty })),
+  low_turnover: dataSummary.low_turnover.map((p: any) => ({ name: p.name, avg_daily: p.avg_daily })),
+  categories: dataSummary.categories.map((c: any) => ({ category: c.category, quantity: c.quantity })),
+}, null, 2)}
+
+REGRAS:
+- PROIBIDO mencionar faturamento, receita, R$, ticket médio, valores monetários.
+- Gere sugestões baseadas em quantidade, giro, consumo, estoque e operação.
+- Cada sugestão deve ter: insight, oportunidade, sugestão prática e prioridade (alta/media/baixa).
+- Use linguagem operacional: "maior saída", "menor giro", "reposição", "exposição".
+- Máximo 8 sugestões.
+
+FORMATO DE RESPOSTA (JSON puro, sem markdown):
+{
+  "summary": "Resumo operacional em 2-3 frases, sem valores financeiros.",
+  "suggestions": [
+    {
+      "insight": "O que os dados operacionais mostram",
+      "opportunity": "Qual oportunidade operacional isso representa",
+      "action": "O que fazer na prática",
+      "priority": "alta",
+      "basis": "Baseado em quê (ex: volume de vendas dos últimos 90 dias)"
+    }
+  ],
+  "opportunities": [
+    {
+      "title": "Título curto da oportunidade operacional",
+      "description": "Descrição clara sem valores financeiros",
+      "impact": "alto"
+    }
+  ]
+}`
+      : `Você é um analista inteligente de vendas da Cantina da FER (cantina escolar).
 
 Analise os dados abaixo e gere insights e sugestões práticas para o administrador melhorar vendas e faturamento.
 
@@ -286,7 +335,9 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "Você é um analista de vendas de cantina. Responda APENAS com JSON válido, sem markdown." },
+          { role: "system", content: isCoordinator 
+            ? "Você é um analista operacional de cantina. Responda APENAS com JSON válido, sem markdown. NUNCA mencione faturamento, receita, R$, ticket médio ou valores monetários."
+            : "Você é um analista de vendas de cantina. Responda APENAS com JSON válido, sem markdown." },
           { role: "user", content: prompt },
         ],
       }),
@@ -321,6 +372,39 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       aiParsed = { summary: "Não foi possível gerar análise.", suggestions: [], opportunities: [] };
     }
 
+    // Strip financial data for coordinator
+    const stripRevenue = (items: any[]) => items.map((p: any) => {
+      const { total_revenue, revenue, revenue_per_unit, ...rest } = p;
+      return rest;
+    });
+
+    const totalItemsSold = saleItems.reduce((s: number, item: any) => s + (item.quantity || 0), 0);
+
+    if (isCoordinator) {
+      // Return operational-only data
+      return new Response(JSON.stringify({
+        ai: aiParsed,
+        data: {
+          kpis: {
+            total_sales: totalSalesCount,
+            active_days: activeDays,
+            sales_change_pct: Math.round(salesChange * 10) / 10,
+            total_items_sold: totalItemsSold,
+          },
+          best_day: bestDay ? { day: bestDay.day, avg_sales: bestDay.avg_sales, total_sales: bestDay.total_sales } : null,
+          top_by_quantity: stripRevenue(topByQuantity),
+          bottom_by_quantity: stripRevenue(bottomByQuantity),
+          low_turnover: stripRevenue(lowTurnover),
+          categories: categoryList.map((c: any) => ({ category: c.category, quantity: c.quantity })),
+          day_of_week: dayOfWeekData.map((d: any) => ({ day: d.day, day_index: d.day_index, total_sales: d.total_sales, avg_sales: d.avg_sales })),
+          champion_quantity: topByQuantity[0] ? { name: topByQuantity[0].name, quantity_sold: topByQuantity[0].quantity_sold } : null,
+        },
+        period: { start: startISO, end: endISO, days: period_days },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({
       ai: aiParsed,
       data: {
@@ -332,6 +416,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
           avg_daily_revenue: Math.round(avgDailyRevenue * 100) / 100,
           revenue_change_pct: Math.round(revenueChange * 10) / 10,
           sales_change_pct: Math.round(salesChange * 10) / 10,
+          total_items_sold: totalItemsSold,
         },
         best_day: bestDay,
         best_period: bestPeriod,
