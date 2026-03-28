@@ -150,6 +150,8 @@ export default function ProdutosPage() {
       name, category: categoryName, category_id: categoryId, unit_price: Number(unitPrice),
       cost_price: costPrice ? Number(costPrice) : null,
       internal_code: internalCode || null, notes: productNotes || null, is_active: isActive,
+      quantity_in_stock: parseInt(quantityInStock) || 0,
+      minimum_stock_level: minimumStockLevel ? parseInt(minimumStockLevel) : null,
     };
 
     let error;
