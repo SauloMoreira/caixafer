@@ -287,7 +287,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <h1 className="font-heading text-base font-bold truncate">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-2">
-            {(isAdmin || isVolunteer) && <NotificationBell />}
+            {(isAdmin || isVolunteer || profile?.role === 'cash_coordinator') && <NotificationBell />}
             <NavLink to="/perfil" className="hidden md:flex h-9 w-9 items-center justify-center">
               {profile?.avatar_url ? (
                 <img key={profile.avatar_url} src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-transparent hover:ring-primary/20 transition-all" />
