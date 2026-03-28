@@ -362,7 +362,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold">{p.quantity_sold} un</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -370,34 +372,36 @@ export default function InteligenciaPage() {
               </CardContent>
             </Card>
 
-            {/* Top by revenue */}
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  Maior Faturamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="divide-y divide-border">
-                  {d.top_by_revenue?.slice(0, 7).map((p: any, i: number) => (
-                    <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}º</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{p.name}</p>
-                          <p className="text-[10px] text-muted-foreground">{p.category}</p>
+            {/* Top by revenue - admin only */}
+            {!isCoordinator && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-primary" />
+                    Maior Faturamento
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border">
+                    {d.top_by_revenue?.slice(0, 7).map((p: any, i: number) => (
+                      <div key={p.id} className="flex items-center justify-between px-4 py-2.5">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-xs font-bold text-muted-foreground w-5">{i + 1}º</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{p.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{p.category}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-primary">{formatCurrency(p.total_revenue)}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.quantity_sold} un</p>
                         </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-bold text-primary">{formatCurrency(p.total_revenue)}</p>
-                        <p className="text-[10px] text-muted-foreground">{p.quantity_sold} un</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Least sold */}
             <Card>
@@ -420,7 +424,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-warning">{p.quantity_sold} un</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -448,7 +454,9 @@ export default function InteligenciaPage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-sm font-bold text-destructive">{p.avg_daily_qty}/dia</p>
-                        <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        {!isCoordinator && (
+                          <p className="text-[10px] text-muted-foreground">{formatCurrency(p.total_revenue)}</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -462,7 +470,7 @@ export default function InteligenciaPage() {
             <>
               <div className="flex items-center gap-2 mt-2">
                 <Zap className="h-5 w-5 text-primary" />
-                <h2 className="font-heading text-sm font-bold">Sugestões da IA</h2>
+                <h2 className="font-heading text-sm font-bold">{isCoordinator ? 'Sugestões Operacionais' : 'Sugestões da IA'}</h2>
               </div>
               <div className="space-y-3">
                 {ai.suggestions.map((s: any, i: number) => {
@@ -504,7 +512,7 @@ export default function InteligenciaPage() {
             <>
               <div className="flex items-center gap-2 mt-2">
                 <Star className="h-5 w-5 text-warning" />
-                <h2 className="font-heading text-sm font-bold">Oportunidades de Melhoria</h2>
+                <h2 className="font-heading text-sm font-bold">{isCoordinator ? 'Oportunidades Operacionais' : 'Oportunidades de Melhoria'}</h2>
               </div>
               <div className="space-y-2">
                 {ai.opportunities.map((o: any, i: number) => (
@@ -524,8 +532,8 @@ export default function InteligenciaPage() {
             </>
           )}
 
-          {/* Trend */}
-          {ai?.trends && (
+          {/* Trend - admin only */}
+          {!isCoordinator && ai?.trends && (
             <Card className="border-muted">
               <CardContent className="p-4 flex items-center gap-3">
                 {ai.trends.revenue_trend === 'alta' ? (
