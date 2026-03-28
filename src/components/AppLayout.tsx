@@ -66,6 +66,39 @@ const cashierSections: NavSection[] = [
   },
 ];
 
+const coordinatorSections: NavSection[] = [
+  {
+    title: 'Início',
+    items: [
+      { to: '/', icon: LayoutDashboard, label: 'Início' },
+    ],
+  },
+  {
+    title: 'Caixa',
+    items: [
+      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
+      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
+      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
+    ],
+  },
+  {
+    title: 'SPR',
+    items: [
+      { to: '/spr', icon: Heart, label: 'SPR' },
+    ],
+  },
+  {
+    title: 'Gestão',
+    items: [
+      { to: '/produtos', icon: Package, label: 'Produtos' },
+      { to: '/categorias', icon: Tag, label: 'Categorias' },
+      { to: '/estoque', icon: Boxes, label: 'Estoque' },
+      { to: '/insights', icon: Lightbulb, label: 'Insights' },
+      { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
+    ],
+  },
+];
+
 const volunteerSections: NavSection[] = [
   {
     title: 'Menu',
