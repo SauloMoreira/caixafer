@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Plus, Search, Package, Camera, X, Loader2 } from 'lucide-react';
 import ProductImage from '@/components/ProductImage';
+import CurrencyInput from '@/components/CurrencyInput';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
