@@ -277,11 +277,23 @@ export default function ProdutosPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{p.name}</p>
                   <p className="text-xs text-muted-foreground">{p.category}{p.internal_code ? ` • ${p.internal_code}` : ''}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground">Est: {(p as any).quantity_in_stock ?? 0}</span>
+                    {getStockBadge(p)}
+                  </div>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="financial-value text-primary">{formatCurrency(Number(p.unit_price))}</p>
                   {isAdmin && p.cost_price != null && (
                     <p className="text-[10px] text-muted-foreground">Custo: {formatCurrency(Number(p.cost_price))}</p>
+                  )}
+                  {isAdmin && (
+                    <button
+                      className="text-[10px] text-primary hover:underline mt-0.5"
+                      onClick={(e) => openStockAdjust(p, e)}
+                    >
+                      Ajustar estoque
+                    </button>
                   )}
                   {!p.is_active && <span className="text-[10px] text-muted-foreground">Inativo</span>}
                 </div>
