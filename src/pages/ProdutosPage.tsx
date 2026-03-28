@@ -224,7 +224,8 @@ export default function ProdutosPage() {
 
             <div><Label>Nome *</Label><Input value={name} onChange={e => setName(e.target.value)} className="h-12" /></div>
             <div><Label>Categoria</Label><Input value={category} onChange={e => setCategory(e.target.value)} className="h-12" placeholder="geral" /></div>
-            <div><Label>Preço (R$) *</Label><Input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} className="h-12" /></div>
+            <div><Label>Preço de Venda (R$) *</Label><CurrencyInput value={unitPrice} onValueChange={setUnitPrice} className="h-12" placeholder="0,00" /></div>
+            <div><Label>Preço de Custo (R$)</Label><CurrencyInput value={costPrice} onValueChange={setCostPrice} className="h-12" placeholder="0,00" /></div>
             <div><Label>Código Interno</Label><Input value={internalCode} onChange={e => setInternalCode(e.target.value)} className="h-12" /></div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
             <div className="flex items-center justify-between">
