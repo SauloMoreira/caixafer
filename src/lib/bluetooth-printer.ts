@@ -46,6 +46,8 @@ export async function connectPrinter(): Promise<string> {
     throw new Error('Web Bluetooth não é suportado neste navegador. Use Chrome no Android.');
   }
 
+  const bt = (navigator as any).bluetooth;
+
   // If already connected, reuse
   if (cachedDevice?.gatt?.connected && cachedCharacteristic) {
     return cachedDevice.name || 'Impressora';
