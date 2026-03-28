@@ -192,6 +192,26 @@ export default function ProdutosPage() {
   const totalProducts = products.length;
   const totalActive = products.filter(p => p.is_active).length;
   const totalInactive = totalProducts - totalActive;
+  const totalZeroStock = products.filter(p => (p as any).quantity_in_stock <= 0 && p.is_active).length;
+  const totalLowStock = products.filter(p => {
+    const q = (p as any).quantity_in_stock;
+    const min = (p as any).minimum_stock_level;
+    return min != null && q > 0 && q <= min && p.is_active;
+  }).length;
+
+  const getStockBadge = (p: Product) => {
+    const qty = (p as any).quantity_in_stock ?? 0;
+    const min = (p as any).minimum_stock_level;
+    if (qty <= 0) return <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/20">Sem estoque</Badge>;
+    if (min != null && qty <= min) return <Badge variant="outline" className="text-[9px] bg-warning/10 text-warning border-warning/20">Estoque baixo</Badge>;
+    return null;
+  };
+
+  const openStockAdjust = (p: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setStockAdjustProduct({ id: p.id, name: p.name, quantity_in_stock: (p as any).quantity_in_stock ?? 0 });
+    setStockAdjustOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -214,6 +234,29 @@ export default function ProdutosPage() {
           <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Inativos</span>
         </div>
       </div>
+
+      {(totalZeroStock > 0 || totalLowStock > 0) && (
+        <div className="grid grid-cols-2 gap-2">
+          {totalZeroStock > 0 && (
+            <div className="stat-card flex items-center gap-2 py-2 px-3 border-destructive/20">
+              <PackageX className="h-4 w-4 text-destructive shrink-0" />
+              <div>
+                <span className="text-sm font-bold text-destructive">{totalZeroStock}</span>
+                <span className="text-[10px] text-muted-foreground ml-1">sem estoque</span>
+              </div>
+            </div>
+          )}
+          {totalLowStock > 0 && (
+            <div className="stat-card flex items-center gap-2 py-2 px-3 border-warning/20">
+              <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+              <div>
+                <span className="text-sm font-bold text-warning">{totalLowStock}</span>
+                <span className="text-[10px] text-muted-foreground ml-1">estoque baixo</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
