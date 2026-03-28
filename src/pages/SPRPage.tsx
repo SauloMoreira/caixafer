@@ -230,7 +230,7 @@ export default function SPRPage() {
 
           <TabsContent value="charges" className="mt-0 space-y-2">
             <div className="flex justify-end">
-              <Button size="sm" onClick={() => setChargeDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
+              <Button size="sm" onClick={() => setChargeDialogOpen(true)} disabled={isBlockedToday}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
             </div>
             {filteredCharges.map(c => (
               <Card key={c.id}>
