@@ -178,11 +178,30 @@ export default function ProdutosPage() {
 
   const currentImage = imagePreview || (removeImage ? null : existingImageUrl);
 
+  const totalProducts = products.length;
+  const totalActive = products.filter(p => p.is_active).length;
+  const totalInactive = totalProducts - totalActive;
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="page-title">Produtos</h1>
         <Button size="sm" onClick={openNew}><Plus className="mr-1 h-4 w-4" />Novo</Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="stat-card flex flex-col items-center justify-center py-3 sm:py-4">
+          <span className="text-lg sm:text-2xl font-bold text-foreground">{totalProducts}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Total</span>
+        </div>
+        <div className="stat-card flex flex-col items-center justify-center py-3 sm:py-4">
+          <span className="text-lg sm:text-2xl font-bold text-primary">{totalActive}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Ativos</span>
+        </div>
+        <div className="stat-card flex flex-col items-center justify-center py-3 sm:py-4">
+          <span className="text-lg sm:text-2xl font-bold text-destructive">{totalInactive}</span>
+          <span className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Inativos</span>
+        </div>
       </div>
 
       <div className="relative">
