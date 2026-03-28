@@ -165,6 +165,23 @@ export default function SPRPage() {
         <h1 className="page-title flex items-center gap-2"><Heart className="h-5 w-5 text-primary" />SPR Ramatis</h1>
       </div>
 
+      {isBlockedToday && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2">
+          <div className="flex items-start gap-2">
+            <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+            <div className="space-y-1">
+              <p className="font-semibold text-destructive">Operação bloqueada</p>
+              <p className="text-sm text-destructive/90">
+                O caixa está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Somente o responsável atual pode registrar fiados e pagamentos SPR. Se você precisa assumir a operação, solicite a transferência do caixa.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Card className="stat-card">
         <CardContent className="p-0">
           <p className="text-xs text-muted-foreground">Fiado em Aberto</p>
