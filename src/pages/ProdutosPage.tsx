@@ -60,21 +60,31 @@ export default function ProdutosPage() {
     setDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo 5MB.'); return; }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    setRemoveImage(false);
+    // Reset input so re-selecting same file works
     e.target.value = '';
+
+    if (!file.type.startsWith('image/')) { toast.error('Selecione um arquivo de imagem.'); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo 15MB.'); return; }
+
+    try {
+      // Optimize (resize + compress to JPEG)
+      const optimized = await optimizeImage(file);
+      setImageFile(optimized);
+
+      // Generate preview from optimized file
+      const previewUrl = URL.createObjectURL(optimized);
+      setImagePreview(previewUrl);
+      setRemoveImage(false);
+    } catch {
+      toast.error('Erro ao processar imagem. Tente novamente.');
+    }
   };
 
   const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(null);
     setImagePreview(null);
     if (existingImageUrl) setRemoveImage(true);
@@ -83,17 +93,27 @@ export default function ProdutosPage() {
   const uploadImage = async (productId: string): Promise<string | null> => {
     if (!imageFile) return null;
     setUploading(true);
-    const ext = imageFile.name.split('.').pop() || 'jpg';
-    const userId = (await supabase.auth.getUser()).data.user?.id;
-    if (!userId) { setUploading(false); return null; }
-    const path = `${userId}/${productId}-${Date.now()}.${ext}`;
 
-    const { error } = await supabase.storage.from('product-images').upload(path, imageFile, { upsert: true, cacheControl: '0' });
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) { setUploading(false); toast.error('Usuário não autenticado.'); return null; }
+
+    // Always use .jpg since we optimize to JPEG
+    const uniqueId = crypto.randomUUID().slice(0, 8);
+    const path = `${userId}/${productId}-${uniqueId}.jpg`;
+
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(path, imageFile, {
+        upsert: false,
+        cacheControl: '3600',
+        contentType: 'image/jpeg',
+      });
     setUploading(false);
+
     if (error) { toast.error('Erro no upload: ' + error.message); return null; }
 
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    return data.publicUrl + '?t=' + Date.now();
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
