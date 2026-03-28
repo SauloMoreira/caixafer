@@ -83,7 +83,7 @@ export async function connectPrinter(): Promise<string> {
   const server = await device.gatt!.connect();
 
   // Find the writable characteristic
-  let writeChar: BluetoothRemoteGATTCharacteristic | null = null;
+  let writeChar: any = null;
 
   for (const serviceUuid of PRINTER_SERVICE_UUIDS) {
     try {
