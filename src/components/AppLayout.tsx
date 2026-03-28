@@ -185,7 +185,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{profile?.full_name}</p>
             <p className="text-[10px] text-muted-foreground">
-              {role === 'admin' ? 'Administrador' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
+              {role === 'admin' ? 'Administrador' : role === 'cash_coordinator' ? 'Coordenador de Caixa' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
             </p>
           </div>
         </NavLink>
