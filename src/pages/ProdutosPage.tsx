@@ -225,25 +225,46 @@ export default function ProdutosPage() {
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Camera className="mr-1 h-3 w-3" />}
-                    {currentImage ? 'Trocar' : 'Adicionar foto'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Camera className="mr-1 h-3 w-3" />}
+                      Câmera
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      <ImagePlus className="mr-1 h-3 w-3" />
+                      Galeria
+                    </Button>
+                  </div>
+                  {/* Camera input - with capture */}
                   <input
-                    ref={fileInputRef}
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/*"
                     capture="environment"
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <p className="text-[10px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                  {/* File/gallery input - without capture */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Foto otimizada automaticamente</p>
                 </div>
               </div>
             </div>
