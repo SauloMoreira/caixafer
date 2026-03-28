@@ -230,9 +230,7 @@ export default function FechamentoPage() {
       toast.error('Informe o saldo contado antes de fechar o caixa.');
       return;
     }
-    const data = {
-      business_date: date,
-      user_id: profile.id,
+    const updateData = {
       opening_balance: Number(openingBalance),
       sales_total: stats.sales,
       income_total: stats.income,
@@ -244,12 +242,17 @@ export default function FechamentoPage() {
       status: close ? 'closed' as const : 'open' as const,
       closed_at: close ? new Date().toISOString() : null,
     };
+    const insertData = {
+      ...updateData,
+      business_date: date,
+      user_id: profile.id,
+    };
 
     let error;
     if (closing) {
-      ({ error } = await supabase.from('cash_closings').update(data).eq('id', closing.id));
+      ({ error } = await supabase.from('cash_closings').update(updateData).eq('id', closing.id));
     } else {
-      ({ error } = await supabase.from('cash_closings').insert(data));
+      ({ error } = await supabase.from('cash_closings').insert(insertData));
     }
     if (error) toast.error('Erro: ' + error.message);
     else { toast.success(close ? 'Caixa fechado!' : 'Salvo!'); fetchData(); }
