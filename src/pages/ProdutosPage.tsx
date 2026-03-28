@@ -75,6 +75,8 @@ export default function ProdutosPage() {
   const openEdit = (p: Product) => {
     setEditing(p); setName(p.name); setCategoryId(p.category_id || ''); setUnitPrice(String(p.unit_price)); setCostPrice(p.cost_price != null ? String(p.cost_price) : ''); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
     setImageFile(null); setImagePreview(null); setExistingImageUrl((p as any).image_url || null); setRemoveImage(false);
+    setQuantityInStock(String((p as any).quantity_in_stock ?? 0));
+    setMinimumStockLevel((p as any).minimum_stock_level != null ? String((p as any).minimum_stock_level) : '');
     setDialogOpen(true);
   };
 
