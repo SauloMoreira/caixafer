@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
 import FiadoChargeDialog from '@/components/FiadoChargeDialog';
 import { toast } from 'sonner';
-import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
+import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2, Lock } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
 import type { Database } from '@/integrations/supabase/types';
 
