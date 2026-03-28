@@ -126,6 +126,7 @@ const pageTitles: Record<string, string> = {
 function getSections(role: string): NavSection[] {
   switch (role) {
     case 'admin': return adminSections;
+    case 'cash_coordinator': return coordinatorSections;
     case 'volunteer': return volunteerSections;
     default: return cashierSections;
   }
