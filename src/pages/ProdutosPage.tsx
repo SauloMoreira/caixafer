@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Search, Package, Camera, ImagePlus, X, Loader2, ScanLine } from 'lucide-react';
+import { Plus, Search, Package, Camera, ImagePlus, X, Loader2, ScanLine, PackageX, AlertTriangle, Settings } from 'lucide-react';
 import BarcodeScannerDialog from '@/components/BarcodeScannerDialog';
+import StockAdjustmentDialog from '@/components/StockAdjustmentDialog';
 import ProductImage from '@/components/ProductImage';
 import CurrencyInput from '@/components/CurrencyInput';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,6 +36,10 @@ export default function ProdutosPage() {
   const [productNotes, setProductNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [stockAdjustOpen, setStockAdjustOpen] = useState(false);
+  const [stockAdjustProduct, setStockAdjustProduct] = useState<{ id: string; name: string; quantity_in_stock: number } | null>(null);
+  const [quantityInStock, setQuantityInStock] = useState('0');
+  const [minimumStockLevel, setMinimumStockLevel] = useState('');
 
   // Categories
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
@@ -62,12 +68,15 @@ export default function ProdutosPage() {
   const openNew = () => {
     setEditing(null); setName(''); setCategoryId(''); setUnitPrice(''); setCostPrice(''); setInternalCode(''); setProductNotes(''); setIsActive(true);
     setImageFile(null); setImagePreview(null); setExistingImageUrl(null); setRemoveImage(false);
+    setQuantityInStock('0'); setMinimumStockLevel('');
     setDialogOpen(true);
   };
 
   const openEdit = (p: Product) => {
     setEditing(p); setName(p.name); setCategoryId(p.category_id || ''); setUnitPrice(String(p.unit_price)); setCostPrice(p.cost_price != null ? String(p.cost_price) : ''); setInternalCode(p.internal_code || ''); setProductNotes(p.notes || ''); setIsActive(p.is_active);
     setImageFile(null); setImagePreview(null); setExistingImageUrl((p as any).image_url || null); setRemoveImage(false);
+    setQuantityInStock(String((p as any).quantity_in_stock ?? 0));
+    setMinimumStockLevel((p as any).minimum_stock_level != null ? String((p as any).minimum_stock_level) : '');
     setDialogOpen(true);
   };
 
@@ -141,6 +150,8 @@ export default function ProdutosPage() {
       name, category: categoryName, category_id: categoryId, unit_price: Number(unitPrice),
       cost_price: costPrice ? Number(costPrice) : null,
       internal_code: internalCode || null, notes: productNotes || null, is_active: isActive,
+      quantity_in_stock: parseInt(quantityInStock) || 0,
+      minimum_stock_level: minimumStockLevel ? parseInt(minimumStockLevel) : null,
     };
 
     let error;
@@ -181,6 +192,26 @@ export default function ProdutosPage() {
   const totalProducts = products.length;
   const totalActive = products.filter(p => p.is_active).length;
   const totalInactive = totalProducts - totalActive;
+  const totalZeroStock = products.filter(p => (p as any).quantity_in_stock <= 0 && p.is_active).length;
+  const totalLowStock = products.filter(p => {
+    const q = (p as any).quantity_in_stock;
+    const min = (p as any).minimum_stock_level;
+    return min != null && q > 0 && q <= min && p.is_active;
+  }).length;
+
+  const getStockBadge = (p: Product) => {
+    const qty = (p as any).quantity_in_stock ?? 0;
+    const min = (p as any).minimum_stock_level;
+    if (qty <= 0) return <Badge variant="outline" className="text-[9px] bg-destructive/10 text-destructive border-destructive/20">Sem estoque</Badge>;
+    if (min != null && qty <= min) return <Badge variant="outline" className="text-[9px] bg-warning/10 text-warning border-warning/20">Estoque baixo</Badge>;
+    return null;
+  };
+
+  const openStockAdjust = (p: Product, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setStockAdjustProduct({ id: p.id, name: p.name, quantity_in_stock: (p as any).quantity_in_stock ?? 0 });
+    setStockAdjustOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -204,6 +235,29 @@ export default function ProdutosPage() {
         </div>
       </div>
 
+      {(totalZeroStock > 0 || totalLowStock > 0) && (
+        <div className="grid grid-cols-2 gap-2">
+          {totalZeroStock > 0 && (
+            <div className="stat-card flex items-center gap-2 py-2 px-3 border-destructive/20">
+              <PackageX className="h-4 w-4 text-destructive shrink-0" />
+              <div>
+                <span className="text-sm font-bold text-destructive">{totalZeroStock}</span>
+                <span className="text-[10px] text-muted-foreground ml-1">sem estoque</span>
+              </div>
+            </div>
+          )}
+          {totalLowStock > 0 && (
+            <div className="stat-card flex items-center gap-2 py-2 px-3 border-warning/20">
+              <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
+              <div>
+                <span className="text-sm font-bold text-warning">{totalLowStock}</span>
+                <span className="text-[10px] text-muted-foreground ml-1">estoque baixo</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="h-12 pl-10" />
@@ -223,11 +277,23 @@ export default function ProdutosPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{p.name}</p>
                   <p className="text-xs text-muted-foreground">{p.category}{p.internal_code ? ` • ${p.internal_code}` : ''}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground">Est: {(p as any).quantity_in_stock ?? 0}</span>
+                    {getStockBadge(p)}
+                  </div>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="financial-value text-primary">{formatCurrency(Number(p.unit_price))}</p>
                   {isAdmin && p.cost_price != null && (
                     <p className="text-[10px] text-muted-foreground">Custo: {formatCurrency(Number(p.cost_price))}</p>
+                  )}
+                  {isAdmin && (
+                    <button
+                      className="text-[10px] text-primary hover:underline mt-0.5"
+                      onClick={(e) => openStockAdjust(p, e)}
+                    >
+                      Ajustar estoque
+                    </button>
                   )}
                   {!p.is_active && <span className="text-[10px] text-muted-foreground">Inativo</span>}
                 </div>
@@ -338,6 +404,38 @@ export default function ProdutosPage() {
               </div>
             </div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
+
+            {/* Stock fields */}
+            <div className="border-t pt-3 mt-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Estoque</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Quantidade em Estoque</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={quantityInStock}
+                    onChange={e => setQuantityInStock(e.target.value)}
+                    className="h-12"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label>Nível Mínimo</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={minimumStockLevel}
+                    onChange={e => setMinimumStockLevel(e.target.value)}
+                    className="h-12"
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <Label>Ativo</Label>
               <Switch checked={isActive} onCheckedChange={setIsActive} />
@@ -353,6 +451,13 @@ export default function ProdutosPage() {
         open={scannerOpen}
         onOpenChange={setScannerOpen}
         onScan={(value) => setInternalCode(value)}
+      />
+
+      <StockAdjustmentDialog
+        open={stockAdjustOpen}
+        onOpenChange={setStockAdjustOpen}
+        product={stockAdjustProduct}
+        onAdjusted={fetchProducts}
       />
     </div>
   );

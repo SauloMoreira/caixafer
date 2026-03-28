@@ -25,6 +25,7 @@ import NotFound from "@/pages/NotFound";
 import SegurancaPage from "@/pages/SegurancaPage";
 import InsightsPage from "@/pages/InsightsPage";
 import InteligenciaPage from "@/pages/InteligenciaPage";
+import EstoquePage from "@/pages/EstoquePage";
 import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 
@@ -59,6 +60,7 @@ const App = () => (
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute adminOnly><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/estoque" element={<ProtectedRoute adminOnly><LayoutWrapper><EstoquePage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/inteligencia" element={<ProtectedRoute adminOnly><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/notificacoes" element={<ProtectedRoute adminOnly><LayoutWrapper><NotificacoesPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/meu-consumo" element={<ProtectedRoute allowedRoles={['volunteer']}><LayoutWrapper><MeuSPRPage /></LayoutWrapper></ProtectedRoute>} />

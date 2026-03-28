@@ -40,9 +40,9 @@ export function useNotifications() {
       setNotifications(data as unknown as Notification[]);
       setUnreadCount(data.filter(n => !n.is_read).length);
       
-      // Check for unread critical/high security alerts
+      // Check for unread critical/high security alerts or stock alerts
       const hasUnreadCritical = data.some(
-        (n: any) => !n.is_read && n.reference_type === 'security_alert'
+        (n: any) => !n.is_read && (n.reference_type === 'security_alert' || n.type === 'stock_alert')
       );
       setHasCriticalAlert(hasUnreadCritical);
     }
