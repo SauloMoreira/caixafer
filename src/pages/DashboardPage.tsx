@@ -205,15 +205,15 @@ export default function DashboardPage() {
       )}
 
       {/* Stat cards */}
-      <div className={`grid grid-cols-2 gap-3 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'}`}>
+      <div className={`grid grid-cols-2 gap-2.5 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'}`}>
         {statCards.map(card => (
           <Card key={card.label} className="stat-card">
             <CardContent className="p-0">
-              <div className="flex items-center gap-2 mb-2">
-                <card.icon className={`h-4 w-4 ${card.color}`} />
-                <span className="text-xs text-muted-foreground">{card.label}</span>
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <card.icon className={`h-3.5 w-3.5 ${card.color}`} />
+                <span className="text-[11px] text-muted-foreground leading-tight">{card.label}</span>
               </div>
-              <p className={`financial-value text-lg md:text-xl ${card.color}`}>
+              <p className={`financial-value text-base md:text-xl ${card.color}`}>
                 {formatCurrency(card.value)}
               </p>
             </CardContent>
