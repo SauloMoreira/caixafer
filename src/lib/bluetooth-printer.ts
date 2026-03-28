@@ -26,7 +26,7 @@ let cachedDevice: any = null;
 let cachedCharacteristic: any = null;
 
 export function isBluetoothSupported(): boolean {
-  return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
+  return typeof navigator !== 'undefined' && 'bluetooth' in (navigator as any);
 }
 
 export function getConnectedPrinterName(): string | null {
