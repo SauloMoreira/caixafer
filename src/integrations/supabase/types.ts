@@ -442,8 +442,10 @@ export type Database = {
           image_url: string | null
           internal_code: string | null
           is_active: boolean
+          minimum_stock_level: number | null
           name: string
           notes: string | null
+          quantity_in_stock: number
           unit_price: number
         }
         Insert: {
@@ -455,8 +457,10 @@ export type Database = {
           image_url?: string | null
           internal_code?: string | null
           is_active?: boolean
+          minimum_stock_level?: number | null
           name: string
           notes?: string | null
+          quantity_in_stock?: number
           unit_price: number
         }
         Update: {
@@ -468,8 +472,10 @@ export type Database = {
           image_url?: string | null
           internal_code?: string | null
           is_active?: boolean
+          minimum_stock_level?: number | null
           name?: string
           notes?: string | null
+          quantity_in_stock?: number
           unit_price?: number
         }
         Relationships: [
@@ -1279,6 +1285,63 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          movement_type: string
+          new_stock: number
+          notes: string | null
+          previous_stock: number
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          movement_type: string
+          new_stock: number
+          notes?: string | null
+          previous_stock: number
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          movement_type?: string
+          new_stock?: number
+          notes?: string | null
+          previous_stock?: number
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1332,6 +1395,7 @@ export type Database = {
         | "spr_over_30_days"
         | "cash_correction"
         | "cash_transfer"
+        | "stock_alert"
       payment_method:
         | "pix"
         | "debito"
@@ -1480,6 +1544,7 @@ export const Constants = {
         "spr_over_30_days",
         "cash_correction",
         "cash_transfer",
+        "stock_alert",
       ],
       payment_method: ["pix", "debito", "credito", "transferencia", "dinheiro"],
       transfer_status: ["pending", "accepted", "rejected", "cancelled"],
