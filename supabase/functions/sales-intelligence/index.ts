@@ -335,7 +335,9 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "Você é um analista de vendas de cantina. Responda APENAS com JSON válido, sem markdown." },
+          { role: "system", content: isCoordinator 
+            ? "Você é um analista operacional de cantina. Responda APENAS com JSON válido, sem markdown. NUNCA mencione faturamento, receita, R$, ticket médio ou valores monetários."
+            : "Você é um analista de vendas de cantina. Responda APENAS com JSON válido, sem markdown." },
           { role: "user", content: prompt },
         ],
       }),
