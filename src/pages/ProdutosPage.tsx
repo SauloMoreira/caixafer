@@ -287,7 +287,19 @@ export default function ProdutosPage() {
             </div>
 
             <div><Label>Nome *</Label><Input value={name} onChange={e => setName(e.target.value)} className="h-12" /></div>
-            <div><Label>Categoria</Label><Input value={category} onChange={e => setCategory(e.target.value)} className="h-12" placeholder="geral" /></div>
+            <div>
+              <Label>Categoria *</Label>
+              <Select value={categoryId} onValueChange={setCategoryId}>
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Selecione a categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label>Preço de Venda (R$) *</Label><CurrencyInput value={unitPrice} onValueChange={setUnitPrice} className="h-12" placeholder="0,00" /></div>
             <div><Label>Preço de Custo (R$)</Label><CurrencyInput value={costPrice} onValueChange={setCostPrice} className="h-12" placeholder="0,00" /></div>
             <div>
