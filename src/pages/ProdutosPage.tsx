@@ -100,6 +100,7 @@ export default function ProdutosPage() {
 
     const baseData: any = {
       name, category: category || 'geral', unit_price: Number(unitPrice),
+      cost_price: costPrice ? Number(costPrice) : null,
       internal_code: internalCode || null, notes: productNotes || null, is_active: isActive,
     };
 
