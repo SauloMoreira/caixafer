@@ -149,7 +149,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Greeting */}
-      <div className="flex items-center gap-4 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 md:p-5">
+      <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3 md:p-5">
         {profile?.avatar_url ? (
           <img key={profile.avatar_url} src={profile.avatar_url} alt={profile.full_name} className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0" />
         ) : (
