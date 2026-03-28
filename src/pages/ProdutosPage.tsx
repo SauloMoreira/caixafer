@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/lib/constants';
+import { optimizeImage } from '@/lib/image-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Plus, Search, Package, Camera, X, Loader2 } from 'lucide-react';
+import { Plus, Search, Package, Camera, ImagePlus, X, Loader2 } from 'lucide-react';
 import ProductImage from '@/components/ProductImage';
 import CurrencyInput from '@/components/CurrencyInput';
 import { useAuth } from '@/contexts/AuthContext';
@@ -38,6 +39,7 @@ export default function ProdutosPage() {
   const [uploading, setUploading] = useState(false);
   const [removeImage, setRemoveImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { fetchProducts(); }, []);
 
@@ -58,21 +60,31 @@ export default function ProdutosPage() {
     setDialogOpen(true);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo 5MB.'); return; }
-    setImageFile(file);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setImagePreview(ev.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-    setRemoveImage(false);
+    // Reset input so re-selecting same file works
     e.target.value = '';
+
+    if (!file.type.startsWith('image/')) { toast.error('Selecione um arquivo de imagem.'); return; }
+    if (file.size > 15 * 1024 * 1024) { toast.error('Imagem muito grande. Máximo 15MB.'); return; }
+
+    try {
+      // Optimize (resize + compress to JPEG)
+      const optimized = await optimizeImage(file);
+      setImageFile(optimized);
+
+      // Generate preview from optimized file
+      const previewUrl = URL.createObjectURL(optimized);
+      setImagePreview(previewUrl);
+      setRemoveImage(false);
+    } catch {
+      toast.error('Erro ao processar imagem. Tente novamente.');
+    }
   };
 
   const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(null);
     setImagePreview(null);
     if (existingImageUrl) setRemoveImage(true);
@@ -81,17 +93,27 @@ export default function ProdutosPage() {
   const uploadImage = async (productId: string): Promise<string | null> => {
     if (!imageFile) return null;
     setUploading(true);
-    const ext = imageFile.name.split('.').pop() || 'jpg';
-    const userId = (await supabase.auth.getUser()).data.user?.id;
-    if (!userId) { setUploading(false); return null; }
-    const path = `${userId}/${productId}-${Date.now()}.${ext}`;
 
-    const { error } = await supabase.storage.from('product-images').upload(path, imageFile, { upsert: true, cacheControl: '0' });
+    const userId = (await supabase.auth.getUser()).data.user?.id;
+    if (!userId) { setUploading(false); toast.error('Usuário não autenticado.'); return null; }
+
+    // Always use .jpg since we optimize to JPEG
+    const uniqueId = crypto.randomUUID().slice(0, 8);
+    const path = `${userId}/${productId}-${uniqueId}.jpg`;
+
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(path, imageFile, {
+        upsert: false,
+        cacheControl: '3600',
+        contentType: 'image/jpeg',
+      });
     setUploading(false);
+
     if (error) { toast.error('Erro no upload: ' + error.message); return null; }
 
     const { data } = supabase.storage.from('product-images').getPublicUrl(path);
-    return data.publicUrl + '?t=' + Date.now();
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
@@ -122,9 +144,13 @@ export default function ProdutosPage() {
     if (imageFile && productId) {
       const url = await uploadImage(productId);
       if (url) {
-        await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
+        const { error: imgErr } = await supabase.from('products').update({ image_url: url }).eq('id', productId);
+        if (imgErr) { toast.error('Produto salvo, mas erro ao vincular imagem.'); }
       }
     }
+
+    // Cleanup preview blob URL
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
 
     toast.success(editing ? 'Produto atualizado!' : 'Produto criado!');
     setDialogOpen(false);
@@ -199,25 +225,46 @@ export default function ProdutosPage() {
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploading}
-                  >
-                    {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Camera className="mr-1 h-3 w-3" />}
-                    {currentImage ? 'Trocar' : 'Adicionar foto'}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      {uploading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Camera className="mr-1 h-3 w-3" />}
+                      Câmera
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                    >
+                      <ImagePlus className="mr-1 h-3 w-3" />
+                      Galeria
+                    </Button>
+                  </div>
+                  {/* Camera input - with capture */}
                   <input
-                    ref={fileInputRef}
+                    ref={cameraInputRef}
                     type="file"
                     accept="image/*"
                     capture="environment"
                     className="hidden"
                     onChange={handleFileChange}
                   />
-                  <p className="text-[10px] text-muted-foreground">JPG, PNG. Máx 5MB</p>
+                  {/* File/gallery input - without capture */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <p className="text-[10px] text-muted-foreground">Foto otimizada automaticamente</p>
                 </div>
               </div>
             </div>
