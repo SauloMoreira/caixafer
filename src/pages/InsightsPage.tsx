@@ -14,6 +14,7 @@ import {
   TrendingUp, TrendingDown, AlertTriangle, PackageCheck,
   RotateCcw, PackageX, Lightbulb, BarChart3,
 } from 'lucide-react';
+import StockInsightsSection from '@/components/StockInsightsSection';
 
 const CATEGORY_LABELS: Record<string, string> = {
   salgados: 'Salgados',
