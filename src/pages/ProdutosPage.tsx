@@ -404,6 +404,38 @@ export default function ProdutosPage() {
               </div>
             </div>
             <div><Label>Observações</Label><Input value={productNotes} onChange={e => setProductNotes(e.target.value)} /></div>
+
+            {/* Stock fields */}
+            <div className="border-t pt-3 mt-1">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Estoque</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Quantidade em Estoque</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={quantityInStock}
+                    onChange={e => setQuantityInStock(e.target.value)}
+                    className="h-12"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <Label>Nível Mínimo</Label>
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={minimumStockLevel}
+                    onChange={e => setMinimumStockLevel(e.target.value)}
+                    className="h-12"
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <Label>Ativo</Label>
               <Switch checked={isActive} onCheckedChange={setIsActive} />
@@ -419,6 +451,13 @@ export default function ProdutosPage() {
         open={scannerOpen}
         onOpenChange={setScannerOpen}
         onScan={(value) => setInternalCode(value)}
+      />
+
+      <StockAdjustmentDialog
+        open={stockAdjustOpen}
+        onOpenChange={setStockAdjustOpen}
+        product={stockAdjustProduct}
+        onAdjusted={fetchProducts}
       />
     </div>
   );
