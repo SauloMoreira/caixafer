@@ -302,6 +302,12 @@ export default function ProdutosPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={(value) => setInternalCode(value)}
+      />
     </div>
   );
 }
