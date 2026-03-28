@@ -370,6 +370,39 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
       aiParsed = { summary: "Não foi possível gerar análise.", suggestions: [], opportunities: [] };
     }
 
+    // Strip financial data for coordinator
+    const stripRevenue = (items: any[]) => items.map((p: any) => {
+      const { total_revenue, revenue, revenue_per_unit, ...rest } = p;
+      return rest;
+    });
+
+    const totalItemsSold = saleItems.reduce((s: number, item: any) => s + (item.quantity || 0), 0);
+
+    if (isCoordinator) {
+      // Return operational-only data
+      return new Response(JSON.stringify({
+        ai: aiParsed,
+        data: {
+          kpis: {
+            total_sales: totalSalesCount,
+            active_days: activeDays,
+            sales_change_pct: Math.round(salesChange * 10) / 10,
+            total_items_sold: totalItemsSold,
+          },
+          best_day: bestDay ? { day: bestDay.day, avg_sales: bestDay.avg_sales, total_sales: bestDay.total_sales } : null,
+          top_by_quantity: stripRevenue(topByQuantity),
+          bottom_by_quantity: stripRevenue(bottomByQuantity),
+          low_turnover: stripRevenue(lowTurnover),
+          categories: categoryList.map((c: any) => ({ category: c.category, quantity: c.quantity })),
+          day_of_week: dayOfWeekData.map((d: any) => ({ day: d.day, day_index: d.day_index, total_sales: d.total_sales, avg_sales: d.avg_sales })),
+          champion_quantity: topByQuantity[0] ? { name: topByQuantity[0].name, quantity_sold: topByQuantity[0].quantity_sold } : null,
+        },
+        period: { start: startISO, end: endISO, days: period_days },
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({
       ai: aiParsed,
       data: {
@@ -381,6 +414,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
           avg_daily_revenue: Math.round(avgDailyRevenue * 100) / 100,
           revenue_change_pct: Math.round(revenueChange * 10) / 10,
           sales_change_pct: Math.round(salesChange * 10) / 10,
+          total_items_sold: totalItemsSold,
         },
         best_day: bestDay,
         best_period: bestPeriod,
