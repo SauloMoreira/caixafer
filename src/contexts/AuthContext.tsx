@@ -267,6 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isVolunteer = profile?.role === 'volunteer';
+  const isCashCoordinator = profile?.role === 'cash_coordinator';
   const isPrimaryAdmin = !!(profile as any)?.is_primary_admin;
   const hasOperationalOverride = !!(profile as any)?.has_operational_override;
   const isProfileComplete = isVolunteer
