@@ -60,7 +60,7 @@ export default function ProdutosPage() {
   };
 
   const openNew = () => {
-    setEditing(null); setName(''); setCategory(''); setUnitPrice(''); setCostPrice(''); setInternalCode(''); setProductNotes(''); setIsActive(true);
+    setEditing(null); setName(''); setCategoryId(''); setUnitPrice(''); setCostPrice(''); setInternalCode(''); setProductNotes(''); setIsActive(true);
     setImageFile(null); setImagePreview(null); setExistingImageUrl(null); setRemoveImage(false);
     setDialogOpen(true);
   };
