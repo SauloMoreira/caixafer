@@ -46,6 +46,7 @@ const adminSections: NavSection[] = [
     title: 'Gestão',
     items: [
       { to: '/produtos', icon: Package, label: 'Produtos' },
+      { to: '/categorias', icon: Tag, label: 'Categorias' },
       { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
       { to: '/insights', icon: Lightbulb, label: 'Insights' },
       { to: '/inteligencia', icon: Brain, label: 'Inteligência' },

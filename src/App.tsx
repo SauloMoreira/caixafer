@@ -53,6 +53,7 @@ const App = () => (
             <Route path="/movimentos" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><MovimentosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/fechamento" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/produtos" element={<ProtectedRoute adminOnly><LayoutWrapper><ProdutosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/categorias" element={<ProtectedRoute adminOnly><LayoutWrapper><CategoriasPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
