@@ -250,9 +250,9 @@ export default function FechamentoPage() {
 
     let error;
     if (closing) {
-      ({ error } = await supabase.from('cash_closings').update(data).eq('id', closing.id));
+      ({ error } = await supabase.from('cash_closings').update(updateData).eq('id', closing.id));
     } else {
-      ({ error } = await supabase.from('cash_closings').insert(data));
+      ({ error } = await supabase.from('cash_closings').insert(insertData));
     }
     if (error) toast.error('Erro: ' + error.message);
     else { toast.success(close ? 'Caixa fechado!' : 'Salvo!'); fetchData(); }
