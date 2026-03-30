@@ -79,6 +79,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
           className={cn('pl-9', className)}
           value={display}
           onChange={handleChange}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           {...props}
         />
