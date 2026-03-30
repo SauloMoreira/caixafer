@@ -26,10 +26,13 @@ export function parseBRL(display: string): string {
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
   ({ value, onValueChange, className, ...props }, ref) => {
     const [display, setDisplay] = React.useState(() => formatToBRL(value));
+    const focusedRef = React.useRef(false);
 
-    // Sync display when external value changes (e.g. editing existing product)
+    // Sync display when external value changes, but NOT while user is typing
     React.useEffect(() => {
-      setDisplay(formatToBRL(value));
+      if (!focusedRef.current) {
+        setDisplay(formatToBRL(value));
+      }
     }, [value]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,10 +52,18 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
       onValueChange(parseBRL(raw));
     };
 
+    const handleFocus = () => {
+      focusedRef.current = true;
+    };
+
     const handleBlur = () => {
+      focusedRef.current = false;
       // Format on blur
-      if (value) {
-        setDisplay(formatToBRL(value));
+      const parsed = parseBRL(display);
+      if (parsed) {
+        setDisplay(formatToBRL(parsed));
+      } else {
+        setDisplay('');
       }
     };
 
