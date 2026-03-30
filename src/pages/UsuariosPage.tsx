@@ -383,7 +383,7 @@ export default function UsuariosPage() {
         }
         details={[
           { label: 'Usuário', value: criticalAction?.userName || '' },
-          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: criticalAction.newRole === 'admin' ? 'Admin' : criticalAction.newRole === 'cashier' ? 'Caixa' : 'Voluntário' }] : []),
+          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: roleLabels[criticalAction.newRole || ''] || criticalAction.newRole || '' }] : []),
         ]}
         severity={criticalAction?.type === 'role_change' && criticalAction.newRole === 'admin' ? 'danger' : criticalAction?.type === 'deactivate' || criticalAction?.type === 'reject' ? 'danger' : 'warning'}
         confirmLabel={
