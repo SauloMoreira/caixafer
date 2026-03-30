@@ -210,6 +210,7 @@ export default function UsuariosPage() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="cashier">Caixa</SelectItem>
+            <SelectItem value="cash_coordinator">Coord. de Caixa</SelectItem>
             <SelectItem value="volunteer">Voluntário</SelectItem>
           </SelectContent>
         </Select>
