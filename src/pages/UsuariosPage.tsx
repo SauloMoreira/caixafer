@@ -210,6 +210,7 @@ export default function UsuariosPage() {
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
             <SelectItem value="cashier">Caixa</SelectItem>
+            <SelectItem value="cash_coordinator">Coord. de Caixa</SelectItem>
             <SelectItem value="volunteer">Voluntário</SelectItem>
           </SelectContent>
         </Select>
@@ -377,12 +378,12 @@ export default function UsuariosPage() {
             : criticalAction?.type === 'reject'
             ? `Tem certeza que deseja rejeitar "${criticalAction?.userName}"? O acesso será bloqueado.`
             : `Tem certeza que deseja alterar o papel de "${criticalAction?.userName}" para ${
-                criticalAction?.newRole === 'admin' ? 'Administrador' : criticalAction?.newRole === 'cashier' ? 'Caixa' : 'Voluntário'
+                roleLabels[criticalAction?.newRole || ''] || criticalAction?.newRole
               }?`
         }
         details={[
           { label: 'Usuário', value: criticalAction?.userName || '' },
-          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: criticalAction.newRole === 'admin' ? 'Admin' : criticalAction.newRole === 'cashier' ? 'Caixa' : 'Voluntário' }] : []),
+          ...(criticalAction?.type === 'role_change' ? [{ label: 'Novo papel', value: roleLabels[criticalAction.newRole || ''] || criticalAction.newRole || '' }] : []),
         ]}
         severity={criticalAction?.type === 'role_change' && criticalAction.newRole === 'admin' ? 'danger' : criticalAction?.type === 'deactivate' || criticalAction?.type === 'reject' ? 'danger' : 'warning'}
         confirmLabel={
