@@ -378,7 +378,7 @@ export default function UsuariosPage() {
             : criticalAction?.type === 'reject'
             ? `Tem certeza que deseja rejeitar "${criticalAction?.userName}"? O acesso será bloqueado.`
             : `Tem certeza que deseja alterar o papel de "${criticalAction?.userName}" para ${
-                criticalAction?.newRole === 'admin' ? 'Administrador' : criticalAction?.newRole === 'cashier' ? 'Caixa' : 'Voluntário'
+                roleLabels[criticalAction?.newRole || ''] || criticalAction?.newRole
               }?`
         }
         details={[
