@@ -16,6 +16,7 @@ import MovimentosPage from "@/pages/MovimentosPage";
 import FechamentoPage from "@/pages/FechamentoPage";
 import ProdutosPage from "@/pages/ProdutosPage";
 import CategoriasPage from "@/pages/CategoriasPage";
+import CategoriasMovimentacaoPage from "@/pages/CategoriasMovimentacaoPage";
 import RelatoriosPage from "@/pages/RelatoriosPage";
 import SPRPage from "@/pages/SPRPage";
 import UsuariosPage from "@/pages/UsuariosPage";
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/fechamento" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><FechamentoPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/produtos" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><ProdutosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/categorias" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><CategoriasPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/categorias-movimentacao" element={<ProtectedRoute adminOnly><LayoutWrapper><CategoriasMovimentacaoPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
