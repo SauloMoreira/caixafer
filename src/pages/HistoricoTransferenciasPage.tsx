@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ArrowRightLeft, CalendarRange, Search } from 'lucide-react';
 
 type TransferRow = {
@@ -268,13 +268,16 @@ export default function HistoricoTransferenciasPage() {
       </div>
 
       <Dialog open={!!selectedTransfer} onOpenChange={(open) => !open && setSelectedTransfer(null)}>
-        <DialogContent className="h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl overflow-hidden p-0 sm:h-auto sm:max-h-[90dvh] sm:w-full">
+        <DialogContent className="h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl overflow-hidden p-0 md:h-[min(90dvh,800px)] md:w-full">
           <div className="flex h-full min-h-0 flex-col">
             <DialogHeader className="shrink-0 border-b px-6 pt-6 pb-4 pr-14">
               <DialogTitle className="flex items-center gap-2 text-base">
                 <CalendarRange className="h-5 w-5 text-primary" />
                 Detalhes da transferência
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                Visualize o histórico completo da transferência e o snapshot do caixa salvo no momento da aceitação.
+              </DialogDescription>
             </DialogHeader>
           {selectedTransfer && (
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
