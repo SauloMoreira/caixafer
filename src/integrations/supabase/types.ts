@@ -215,6 +215,7 @@ export type Database = {
       cash_session_transfers: {
         Row: {
           accepted_at: string | null
+          accepted_by: string | null
           business_date: string
           cash_closing_id: string
           created_at: string
@@ -222,12 +223,29 @@ export type Database = {
           id: string
           notes: string | null
           requested_at: string
+          requested_by: string | null
+          session_id: string | null
+          snapshot_bank_transfer_total: number | null
+          snapshot_cash_total: number | null
+          snapshot_credit_total: number | null
+          snapshot_debit_total: number | null
+          snapshot_expected_balance: number | null
+          snapshot_expense_total: number | null
+          snapshot_fiado_payment_total: number | null
+          snapshot_income_total: number | null
+          snapshot_initial_balance: number | null
+          snapshot_movement_count: number | null
+          snapshot_pix_total: number | null
+          snapshot_sale_count: number | null
+          snapshot_sales_total: number | null
           status: Database["public"]["Enums"]["transfer_status"]
           to_user_id: string
           transfer_reason: string
+          updated_at: string
         }
         Insert: {
           accepted_at?: string | null
+          accepted_by?: string | null
           business_date: string
           cash_closing_id: string
           created_at?: string
@@ -235,12 +253,29 @@ export type Database = {
           id?: string
           notes?: string | null
           requested_at?: string
+          requested_by?: string | null
+          session_id?: string | null
+          snapshot_bank_transfer_total?: number | null
+          snapshot_cash_total?: number | null
+          snapshot_credit_total?: number | null
+          snapshot_debit_total?: number | null
+          snapshot_expected_balance?: number | null
+          snapshot_expense_total?: number | null
+          snapshot_fiado_payment_total?: number | null
+          snapshot_income_total?: number | null
+          snapshot_initial_balance?: number | null
+          snapshot_movement_count?: number | null
+          snapshot_pix_total?: number | null
+          snapshot_sale_count?: number | null
+          snapshot_sales_total?: number | null
           status?: Database["public"]["Enums"]["transfer_status"]
           to_user_id: string
           transfer_reason: string
+          updated_at?: string
         }
         Update: {
           accepted_at?: string | null
+          accepted_by?: string | null
           business_date?: string
           cash_closing_id?: string
           created_at?: string
@@ -248,11 +283,34 @@ export type Database = {
           id?: string
           notes?: string | null
           requested_at?: string
+          requested_by?: string | null
+          session_id?: string | null
+          snapshot_bank_transfer_total?: number | null
+          snapshot_cash_total?: number | null
+          snapshot_credit_total?: number | null
+          snapshot_debit_total?: number | null
+          snapshot_expected_balance?: number | null
+          snapshot_expense_total?: number | null
+          snapshot_fiado_payment_total?: number | null
+          snapshot_income_total?: number | null
+          snapshot_initial_balance?: number | null
+          snapshot_movement_count?: number | null
+          snapshot_pix_total?: number | null
+          snapshot_sale_count?: number | null
+          snapshot_sales_total?: number | null
           status?: Database["public"]["Enums"]["transfer_status"]
           to_user_id?: string
           transfer_reason?: string
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cash_session_transfers_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cash_session_transfers_cash_closing_id_fkey"
             columns: ["cash_closing_id"]
@@ -265,6 +323,20 @@ export type Database = {
             columns: ["from_user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_transfers_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_session_transfers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_closings"
             referencedColumns: ["id"]
           },
           {
