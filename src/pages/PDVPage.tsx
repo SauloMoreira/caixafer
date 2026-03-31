@@ -77,6 +77,16 @@ export default function PDVPage() {
   const [overrideLabel, setOverrideLabel] = useState('');
   const [sessionResponsibleName, setSessionResponsibleName] = useState<string | null>(null);
 
+  const fetchProducts = useCallback(async () => {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (data) setProducts(data);
+  }, []);
+
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
     setCashStatus('loading');
@@ -141,9 +151,8 @@ export default function PDVPage() {
   }, [profile, hasOperationalOverride]);
 
   useEffect(() => {
-    supabase.from('products').select('*').eq('is_active', true).order('name')
-      .then(({ data }) => { if (data) setProducts(data); });
-  }, []);
+    fetchProducts();
+  }, [fetchProducts]);
 
   useEffect(() => {
     checkCashRegister();
@@ -215,6 +224,8 @@ export default function PDVPage() {
 
       const { error: itemsError } = await supabase.from('sale_items').insert(items as any);
       if (itemsError) throw itemsError;
+
+      await fetchProducts();
 
       // Show receipt
       setReceiptData({
