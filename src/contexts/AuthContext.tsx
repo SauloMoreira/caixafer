@@ -193,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
+          setMfaLoading(true);
           setTimeout(() => {
             fetchProfile(session.user.id);
             startSessionCheck(session.user.id);
@@ -216,6 +217,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        setMfaLoading(true);
         fetchProfile(session.user.id);
         startSessionCheck(session.user.id);
         checkMfaStatus();

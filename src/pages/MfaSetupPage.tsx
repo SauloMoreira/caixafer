@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaSetupPage() {
-  const { profile, session, loading: authLoading } = useAuth();
+  const { profile, session, loading: authLoading, refreshMfaStatus } = useAuth();
   const navigate = useNavigate();
   const [qrUrl, setQrUrl] = useState('');
   const [secret, setSecret] = useState('');
@@ -127,6 +127,8 @@ export default function MfaSetupPage() {
         severity: 'high',
         notes: 'Admin concluiu ativação do MFA TOTP',
       }).catch(() => {});
+
+      await refreshMfaStatus();
 
       toast.success('MFA ativado com sucesso! Sua conta está protegida.');
       navigate('/', { replace: true });

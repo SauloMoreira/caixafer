@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { logSecurityEvent } from '@/lib/security';
 
 export default function MfaVerifyPage() {
-  const { profile, signOut, session, loading: authLoading } = useAuth();
+  const { profile, signOut, session, loading: authLoading, refreshMfaStatus } = useAuth();
   const navigate = useNavigate();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,6 +69,8 @@ export default function MfaVerifyPage() {
         severity: 'info',
         notes: 'Admin completou verificação MFA no login',
       });
+
+      await refreshMfaStatus();
 
       toast.success('Verificação concluída!');
       navigate('/', { replace: true });
