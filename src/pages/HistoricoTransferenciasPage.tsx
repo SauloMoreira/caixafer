@@ -268,10 +268,10 @@ export default function HistoricoTransferenciasPage() {
       </div>
 
       <Dialog open={!!selectedTransfer} onOpenChange={(open) => !open && setSelectedTransfer(null)}>
-        <DialogContent className="h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl overflow-hidden p-0 md:h-[min(90dvh,800px)] md:w-full">
+        <DialogContent className="h-[calc(100dvh-0.75rem)] w-[calc(100vw-0.75rem)] max-w-3xl overflow-hidden p-0 md:h-[min(90dvh,800px)] md:w-full">
           <div className="flex h-full min-h-0 flex-col">
-            <DialogHeader className="shrink-0 border-b px-6 pt-6 pb-4 pr-14">
-              <DialogTitle className="flex items-center gap-2 text-base">
+            <DialogHeader className="shrink-0 border-b px-4 pt-4 pb-3 pr-12 sm:px-6 sm:pt-6 sm:pb-4 sm:pr-14">
+              <DialogTitle className="flex items-start gap-2 text-sm leading-snug sm:items-center sm:text-base">
                 <CalendarRange className="h-5 w-5 text-primary" />
                 Detalhes da transferência
               </DialogTitle>
@@ -280,10 +280,10 @@ export default function HistoricoTransferenciasPage() {
               </DialogDescription>
             </DialogHeader>
           {selectedTransfer && (
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:px-6 sm:pt-4 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
               <div className="space-y-4">
                 <Card>
-                  <CardContent className="grid gap-3 p-4 md:grid-cols-2">
+                  <CardContent className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
                     <Detail label="Sessão" value={selectedTransfer.session_id || selectedTransfer.cash_closing_id} />
                     <Detail label="Data operacional" value={formatDate(selectedTransfer.business_date)} />
                     <Detail label="De" value={selectedTransfer.from_name || '—'} />
@@ -301,10 +301,10 @@ export default function HistoricoTransferenciasPage() {
                 {hasTransferSnapshot(selectedTransfer) ? (
                   <>
                     <Card>
-                      <CardHeader className="pb-3">
+                      <CardHeader className="pb-2 sm:pb-3">
                         <CardTitle className="text-sm">Resumo do caixa no momento da aceitação</CardTitle>
                       </CardHeader>
-                      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <CardContent className="grid grid-cols-1 gap-3 p-3 pt-0 sm:grid-cols-2 sm:p-6 sm:pt-0 lg:grid-cols-3">
                         <Metric label="Saldo inicial" value={selectedTransfer.snapshot_initial_balance} />
                         <Metric label="Vendas" value={selectedTransfer.snapshot_sales_total} />
                         <Metric label="Entradas" value={selectedTransfer.snapshot_income_total} />
@@ -320,10 +320,10 @@ export default function HistoricoTransferenciasPage() {
                     </Card>
 
                     <Card>
-                      <CardHeader className="pb-3">
+                      <CardHeader className="pb-2 sm:pb-3">
                         <CardTitle className="text-sm">Totais por forma de pagamento</CardTitle>
                       </CardHeader>
-                      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <CardContent className="grid grid-cols-1 gap-3 p-3 pt-0 sm:grid-cols-2 sm:p-6 sm:pt-0 lg:grid-cols-3">
                         {PAYMENT_SNAPSHOT_FIELDS.map((item) => (
                           <Metric key={item.key} label={item.label} value={selectedTransfer[item.key]} />
                         ))}
@@ -369,16 +369,16 @@ function Detail({ label, value, className }: { label: string; value: string; cla
   return (
     <div className={className}>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-sm font-medium">{value}</p>
+      <p className="break-words text-sm font-medium leading-snug">{value}</p>
     </div>
   );
 }
 
 function Metric({ label, value, highlight = false }: { label: string; value?: number | null; highlight?: boolean }) {
   return (
-    <div className={`rounded-lg p-3 ${highlight ? 'border border-primary/20 bg-primary/5' : 'bg-muted/50'}`}>
+    <div className={`min-w-0 rounded-lg p-3 ${highlight ? 'border border-primary/20 bg-primary/5' : 'bg-muted/50'}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`font-semibold ${highlight ? 'text-primary' : ''}`}>{formatSnapshotCurrency(value)}</p>
+      <p className={`break-words text-sm font-semibold leading-snug sm:text-base ${highlight ? 'text-primary' : ''}`}>{formatSnapshotCurrency(value)}</p>
     </div>
   );
 }
