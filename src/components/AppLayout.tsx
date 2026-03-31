@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb, Brain, Boxes
+  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,7 @@ const adminSections: NavSection[] = [
     items: [
       { to: '/produtos', icon: Package, label: 'Produtos' },
       { to: '/categorias', icon: Tag, label: 'Categorias' },
+      { to: '/categorias-movimentacao', icon: SlidersHorizontal, label: 'Cat. Movimentação' },
       { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
       { to: '/estoque', icon: Boxes, label: 'Estoque' },
       { to: '/insights', icon: Lightbulb, label: 'Insights' },
@@ -114,6 +115,8 @@ const pageTitles: Record<string, string> = {
   '/movimentos': 'Movimentos',
   '/fechamento': 'Fechamento',
   '/produtos': 'Produtos',
+  '/categorias': 'Categorias',
+  '/categorias-movimentacao': 'Categorias de Movimentação',
   '/relatorios': 'Relatórios',
   '/spr': 'SPR',
   '/notificacoes': 'Pendências',

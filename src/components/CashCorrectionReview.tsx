@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency, formatDateTime, todayISO, PAYMENT_METHODS, DOCUMENT_TYPES, ENTRY_CATEGORIES } from '@/lib/constants';
+import { formatCurrency, formatDateTime, todayISO, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

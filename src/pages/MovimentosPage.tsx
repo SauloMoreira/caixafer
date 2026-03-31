@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCashSession } from '@/hooks/useCashSession';
-import { formatCurrency, formatDateTime, todayISO, ENTRY_CATEGORIES, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
+import { formatCurrency, formatDateTime, todayISO, PAYMENT_METHODS, DOCUMENT_TYPES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { Plus, TrendingUp, TrendingDown, Trash2, Edit, Lock } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
+import { useMovementCategories } from '@/hooks/useMovementCategories';
 
 type CashEntry = Database['public']['Tables']['cash_entries']['Row'];
 type EntryType = Database['public']['Enums']['entry_type'];
@@ -26,10 +27,11 @@ export default function MovimentosPage() {
   const [filterDate, setFilterDate] = useState(todayISO());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { loading: categoriesLoading, getCategoriesForType, getDefaultCategoryName } = useMovementCategories();
 
   // Form state
   const [entryType, setEntryType] = useState<EntryType>('income');
-  const [category, setCategory] = useState('venda');
+  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
@@ -37,7 +39,20 @@ export default function MovimentosPage() {
   const [documentRef, setDocumentRef] = useState('');
   const [notes, setNotes] = useState('');
 
+  const availableCategories = useMemo(() => getCategoriesForType(entryType), [entryType, getCategoriesForType]);
+
   useEffect(() => { fetchEntries(); }, [filterDate, profile]);
+
+  useEffect(() => {
+    if (availableCategories.length === 0) {
+      if (category) setCategory('');
+      return;
+    }
+
+    if (!availableCategories.some(item => item.name === category)) {
+      setCategory(getDefaultCategoryName(entryType));
+    }
+  }, [availableCategories, category, entryType, getDefaultCategoryName]);
 
   const fetchEntries = async () => {
     if (!profile) return;
@@ -51,6 +66,10 @@ export default function MovimentosPage() {
 
   const handleSubmit = async () => {
     if (!profile || !amount) return;
+    if (!category) {
+      toast.error('Selecione uma categoria de movimentação.');
+      return;
+    }
     if (filterDate === todayISO() && sessionOpen && !canOperate) {
       toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
       return;
@@ -92,7 +111,7 @@ export default function MovimentosPage() {
   };
 
   const resetForm = () => {
-    setEntryType('income'); setCategory('venda'); setDescription('');
+    setEntryType('income'); setCategory(getDefaultCategoryName('income')); setDescription('');
     setAmount(''); setPaymentMethod('pix'); setDocumentType('sem_documento');
     setDocumentRef(''); setNotes('');
   };
@@ -147,8 +166,14 @@ export default function MovimentosPage() {
               </div>
               <div><Label>Categoria</Label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                  <SelectContent>{ENTRY_CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}</SelectContent>
+                  <SelectTrigger className="h-12"><SelectValue placeholder={categoriesLoading ? 'Carregando categorias...' : 'Selecione a categoria'} /></SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.length > 0 ? (
+                      availableCategories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)
+                    ) : (
+                      <div className="px-2 py-3 text-sm text-muted-foreground">Nenhuma categoria ativa disponível</div>
+                    )}
+                  </SelectContent>
                 </Select>
               </div>
               <div><Label>Descrição</Label><Input value={description} onChange={e => setDescription(e.target.value)} className="h-12" /></div>
@@ -167,7 +192,7 @@ export default function MovimentosPage() {
               </div>
               <div><Label>Referência do Documento</Label><Input value={documentRef} onChange={e => setDocumentRef(e.target.value)} className="h-12" /></div>
               <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} /></div>
-              <Button className="h-12 w-full" onClick={handleSubmit}>Salvar</Button>
+              <Button className="h-12 w-full" onClick={handleSubmit} disabled={categoriesLoading || !category}>Salvar</Button>
             </div>
           </DialogContent>
         </Dialog>

@@ -33,11 +33,9 @@ export const DOCUMENT_TYPES = [
 ] as const;
 
 export const ENTRY_CATEGORIES = [
-  { value: 'venda', label: 'Venda' },
-  { value: 'doacao', label: 'Doação' },
-  { value: 'mensalidade', label: 'Mensalidade' },
-  { value: 'despesa', label: 'Despesa' },
   { value: 'reposicao', label: 'Reposição' },
   { value: 'ajuste', label: 'Ajuste' },
-  { value: 'fiado_payment', label: 'Pagamento de Fiado' },
+  { value: 'compra', label: 'Compra' },
+  { value: 'despesa_extra', label: 'Despesa extra' },
+  { value: 'outro', label: 'Outro' },
 ] as const;
