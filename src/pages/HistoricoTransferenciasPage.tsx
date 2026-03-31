@@ -268,9 +268,9 @@ export default function HistoricoTransferenciasPage() {
       </div>
 
       <Dialog open={!!selectedTransfer} onOpenChange={(open) => !open && setSelectedTransfer(null)}>
-        <DialogContent className="h-[calc(100dvh-0.75rem)] w-[calc(100vw-0.75rem)] max-w-3xl overflow-hidden p-0 md:h-[min(90dvh,800px)] md:w-full">
+        <DialogContent className="left-1/2 top-2 grid h-[calc(100dvh-1rem)] w-[calc(100vw-0.5rem)] max-w-3xl translate-x-[-50%] translate-y-0 gap-0 overflow-hidden rounded-lg p-0 md:top-1/2 md:h-[min(90dvh,800px)] md:w-full md:translate-y-[-50%]">
           <div className="flex h-full min-h-0 flex-col">
-            <DialogHeader className="shrink-0 border-b px-4 pt-4 pb-3 pr-12 sm:px-6 sm:pt-6 sm:pb-4 sm:pr-14">
+            <DialogHeader className="shrink-0 border-b px-3 pt-3 pb-2 pr-10 sm:px-6 sm:pt-6 sm:pb-4 sm:pr-14">
               <DialogTitle className="flex items-start gap-2 text-sm leading-snug sm:items-center sm:text-base">
                 <CalendarRange className="h-5 w-5 text-primary" />
                 Detalhes da transferência
@@ -280,8 +280,8 @@ export default function HistoricoTransferenciasPage() {
               </DialogDescription>
             </DialogHeader>
           {selectedTransfer && (
-            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:px-6 sm:pt-4 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-              <div className="space-y-4">
+            <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch] sm:px-6 sm:pt-4 sm:pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <div className="space-y-3 sm:space-y-4">
                 <Card>
                   <CardContent className="grid gap-3 p-3 sm:p-4 md:grid-cols-2">
                     <Detail label="Sessão" value={selectedTransfer.session_id || selectedTransfer.cash_closing_id} />
@@ -310,7 +310,7 @@ export default function HistoricoTransferenciasPage() {
                         <Metric label="Entradas" value={selectedTransfer.snapshot_income_total} />
                         <Metric label="Saídas" value={selectedTransfer.snapshot_expense_total} />
                         <Metric label="Saldo esperado" value={selectedTransfer.snapshot_expected_balance} highlight />
-                        <div className="rounded-lg bg-muted/50 p-3">
+                        <div className="min-w-0 rounded-lg bg-muted/50 p-3">
                           <p className="text-xs text-muted-foreground">Contagens</p>
                           <p className="font-semibold">
                             {formatSnapshotCount(selectedTransfer.snapshot_sale_count, 'venda')} • {formatSnapshotCount(selectedTransfer.snapshot_movement_count, 'movimento')}
