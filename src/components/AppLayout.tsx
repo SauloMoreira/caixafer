@@ -2,12 +2,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal, ArrowRightLeft
+  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal, ArrowRightLeft, ChevronRight
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import NotificationBell from '@/components/NotificationBell';
 import logoImg from '@/assets/logo.png';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface NavItem {
   to: string;
@@ -18,43 +19,60 @@ interface NavItem {
 interface NavSection {
   title: string;
   items: NavItem[];
+  collapsible?: boolean;
 }
 
 const adminSections: NavSection[] = [
   {
     title: 'Início',
+    collapsible: true,
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Início' },
     ],
   },
   {
-    title: 'Caixa',
+    title: 'Operação',
+    collapsible: true,
     items: [
       { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
       { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
       { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-    ],
-  },
-  {
-    title: 'SPR',
-    items: [
       { to: '/spr', icon: Heart, label: 'SPR' },
-      { to: '/notificacoes', icon: AlertTriangle, label: 'Pendências' },
     ],
   },
   {
-    title: 'Gestão',
+    title: 'Cadastros',
+    collapsible: true,
     items: [
       { to: '/produtos', icon: Package, label: 'Produtos' },
       { to: '/categorias', icon: Tag, label: 'Categorias' },
       { to: '/categorias-movimentacao', icon: SlidersHorizontal, label: 'Cat. Movimentação' },
-      { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
+    ],
+  },
+  {
+    title: 'Estoque',
+    collapsible: true,
+    items: [
       { to: '/estoque', icon: Boxes, label: 'Estoque' },
+    ],
+  },
+  {
+    title: 'Análises',
+    collapsible: true,
+    items: [
+      { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
       { to: '/insights', icon: Lightbulb, label: 'Insights' },
       { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
+    ],
+  },
+  {
+    title: 'Administração',
+    collapsible: true,
+    items: [
       { to: '/usuarios', icon: Users, label: 'Usuários' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
       { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
+      { to: '/notificacoes', icon: AlertTriangle, label: 'Pendências' },
     ],
   },
 ];
@@ -140,6 +158,7 @@ function getSections(role: string): NavSection[] {
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, signOut, isAdmin, isVolunteer } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const location = useLocation();
 
   const role = profile?.role || 'cashier';
@@ -147,6 +166,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const currentTitle = pageTitles[location.pathname] || 'Caixa da FER';
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    setOpenSections((current) => {
+      const next = { ...current };
+      sections.forEach((section) => {
+        if (section.items.some((item) => item.to === location.pathname) && next[section.title] !== true) {
+          next[section.title] = true;
+        }
+        if (next[section.title] === undefined) {
+          next[section.title] = role === 'admin' || section.items.some((item) => item.to === location.pathname);
+        }
+      });
+      return next;
+    });
+  }, [location.pathname, role, sections]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -157,9 +191,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sidebarContent = (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+      <div className="flex items-center gap-3 px-4 pt-4 pb-3 sm:px-5 sm:pt-5">
         <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="h-10 w-10 rounded-xl object-contain shrink-0" />
         <div className="min-w-0">
           <p className="font-heading text-sm font-bold truncate">Caixa da FER</p>
@@ -168,10 +202,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* User */}
-      <div className="px-5 pb-4">
+      <div className="px-4 pb-4 sm:px-5">
         <NavLink
           to="/perfil"
-          className="flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity"
+          className="flex min-w-0 items-center gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-3 transition-colors hover:bg-sidebar-accent/70"
         >
           {profile?.avatar_url ? (
             <img
@@ -196,49 +230,73 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </NavLink>
       </div>
 
-      <div className="h-px bg-border mx-4" />
+      <div className="mx-4 h-px bg-sidebar-border/80" />
 
       {/* Navigation sections */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-2">
-        {sections.map((section, sIdx) => (
-          <div key={section.title} className={cn(sIdx > 0 && 'mt-5')}>
-            <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-              {section.title}
-            </p>
-            <div className="space-y-0.5">
-              {section.items.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  className={({ isActive }) => cn(
-                    'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all',
-                    isActive
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                  )}
-                >
-                  <item.icon className="h-[18px] w-[18px] shrink-0" />
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4">
+        <div className="space-y-2">
+          {sections.map((section, sIdx) => {
+            const isSectionActive = section.items.some((item) => item.to === location.pathname);
+            const isOpen = openSections[section.title] ?? isSectionActive;
+
+            return (
+              <div key={section.title} className="animate-fade-in">
+                {sIdx > 0 && <div className="mx-2 mb-2 h-px bg-sidebar-border/70" />}
+
+                <Collapsible open={isOpen} onOpenChange={(open) => setOpenSections((current) => ({ ...current, [section.title]: open }))}>
+                  <CollapsibleTrigger
+                    className={cn(
+                      'flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left transition-all duration-200 hover:bg-sidebar-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2',
+                      isSectionActive && 'bg-sidebar-accent/60'
+                    )}
+                  >
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
+                        {section.title}
+                      </p>
+                    </div>
+                    <ChevronRight className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-90 text-primary')} />
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
+                    <div className="ml-2 mt-1 space-y-1 border-l border-sidebar-border/80 pl-3">
+                      {section.items.map((item) => (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          end={item.to === '/'}
+                          className={({ isActive }) => cn(
+                            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.99]',
+                            isActive
+                              ? 'bg-sidebar-primary/12 text-primary shadow-sm'
+                              : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground'
+                          )}
+                        >
+                          <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" />
+                          <span className="truncate">{item.label}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            );
+          })}
+        </div>
 
         {/* Conta section */}
-        <div className="mt-5">
-          <p className="px-3 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+        <div className="mt-4 border-t border-sidebar-border/80 pt-3">
+          <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
             Conta
           </p>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <NavLink
               to="/perfil"
               className={({ isActive }) => cn(
-                'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all',
+                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.99]',
                 isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-sidebar-primary/12 text-primary shadow-sm'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground'
               )}
             >
               <User className="h-[18px] w-[18px] shrink-0" />
@@ -246,7 +304,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
             <button
               onClick={() => signOut()}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 active:scale-[0.99] hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" />
               Sair
@@ -284,7 +342,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-muted transition-colors md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-muted transition-colors md:hidden"
               aria-label="Abrir menu"
             >
               <Menu className="h-5 w-5" />
