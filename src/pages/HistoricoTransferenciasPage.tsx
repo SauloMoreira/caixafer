@@ -67,6 +67,22 @@ const PAYMENT_SNAPSHOT_FIELDS = [
   { key: 'snapshot_fiado_payment_total', label: 'Pagamento de fiado' },
 ] as const;
 
+const SNAPSHOT_FIELDS = [
+  'snapshot_initial_balance',
+  'snapshot_sales_total',
+  'snapshot_income_total',
+  'snapshot_expense_total',
+  'snapshot_expected_balance',
+  'snapshot_cash_total',
+  'snapshot_pix_total',
+  'snapshot_debit_total',
+  'snapshot_credit_total',
+  'snapshot_bank_transfer_total',
+  'snapshot_fiado_payment_total',
+  'snapshot_movement_count',
+  'snapshot_sale_count',
+] as const;
+
 export default function HistoricoTransferenciasPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -78,6 +94,8 @@ export default function HistoricoTransferenciasPage() {
 
   const { data: transfers = [], isLoading } = useQuery({
     queryKey: ['cash-transfer-history-admin'],
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cash_session_transfers')
@@ -237,7 +255,7 @@ export default function HistoricoTransferenciasPage() {
                   </div>
                   <div>
                     <p className="text-[11px] text-muted-foreground">Saldo esperado</p>
-                    <p className="font-medium">{formatCurrency(Number(transfer.snapshot_expected_balance || 0))}</p>
+                     <p className="font-medium">{formatSnapshotCurrency(transfer.snapshot_expected_balance)}</p>
                   </div>
                   <div>
                     <p className="text-[11px] text-muted-foreground">Aceita em</p>
@@ -251,7 +269,7 @@ export default function HistoricoTransferenciasPage() {
       </div>
 
       <Dialog open={!!selectedTransfer} onOpenChange={(open) => !open && setSelectedTransfer(null)}>
-        <DialogContent className="flex max-h-[calc(100vh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden p-0 sm:max-h-[90vh] sm:w-full">
+        <DialogContent className="flex min-h-0 max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden p-0 sm:max-h-[90dvh] sm:w-full">
           <DialogHeader className="shrink-0 border-b px-6 pt-6 pb-4">
             <DialogTitle className="flex items-center gap-2 text-base">
               <CalendarRange className="h-5 w-5 text-primary" />
@@ -259,8 +277,8 @@ export default function HistoricoTransferenciasPage() {
             </DialogTitle>
           </DialogHeader>
           {selectedTransfer && (
-            <ScrollArea className="flex-1">
-              <div className="space-y-4 px-6 pb-6 pt-4">
+            <ScrollArea className="min-h-0 flex-1 overscroll-contain">
+              <div className="space-y-4 px-6 pb-6 pt-4 safe-bottom">
                 <Card>
                   <CardContent className="grid gap-3 p-4 md:grid-cols-2">
                     <Detail label="Sessão" value={selectedTransfer.session_id || selectedTransfer.cash_closing_id} />
@@ -277,33 +295,50 @@ export default function HistoricoTransferenciasPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Resumo do caixa no momento da aceitação</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                    <Metric label="Saldo inicial" value={selectedTransfer.snapshot_initial_balance} />
-                    <Metric label="Vendas" value={selectedTransfer.snapshot_sales_total} />
-                    <Metric label="Entradas" value={selectedTransfer.snapshot_income_total} />
-                    <Metric label="Saídas" value={selectedTransfer.snapshot_expense_total} />
-                    <Metric label="Saldo esperado" value={selectedTransfer.snapshot_expected_balance} highlight />
-                    <div className="rounded-lg bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground">Contagens</p>
-                      <p className="font-semibold">{selectedTransfer.snapshot_sale_count || 0} venda(s) • {selectedTransfer.snapshot_movement_count || 0} movimento(s)</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                {hasTransferSnapshot(selectedTransfer) ? (
+                  <>
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Resumo do caixa no momento da aceitação</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <Metric label="Saldo inicial" value={selectedTransfer.snapshot_initial_balance} />
+                        <Metric label="Vendas" value={selectedTransfer.snapshot_sales_total} />
+                        <Metric label="Entradas" value={selectedTransfer.snapshot_income_total} />
+                        <Metric label="Saídas" value={selectedTransfer.snapshot_expense_total} />
+                        <Metric label="Saldo esperado" value={selectedTransfer.snapshot_expected_balance} highlight />
+                        <div className="rounded-lg bg-muted/50 p-3">
+                          <p className="text-xs text-muted-foreground">Contagens</p>
+                          <p className="font-semibold">
+                            {formatSnapshotCount(selectedTransfer.snapshot_sale_count, 'venda')} • {formatSnapshotCount(selectedTransfer.snapshot_movement_count, 'movimento')}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Totais por forma de pagamento</CardTitle>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                    {PAYMENT_SNAPSHOT_FIELDS.map((item) => (
-                      <Metric key={item.key} label={item.label} value={selectedTransfer[item.key]} />
-                    ))}
-                  </CardContent>
-                </Card>
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-sm">Totais por forma de pagamento</CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {PAYMENT_SNAPSHOT_FIELDS.map((item) => (
+                          <Metric key={item.key} label={item.label} value={selectedTransfer[item.key]} />
+                        ))}
+                      </CardContent>
+                    </Card>
+                  </>
+                ) : (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm">Resumo do caixa no momento da aceitação</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+                        O snapshot desta transferência ainda não estava disponível no histórico; atualize a lista para carregar os dados reais já salvos.
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             </ScrollArea>
           )}
@@ -311,6 +346,19 @@ export default function HistoricoTransferenciasPage() {
       </Dialog>
     </div>
   );
+}
+
+function hasTransferSnapshot(transfer: TransferRow) {
+  return SNAPSHOT_FIELDS.some((field) => transfer[field] !== null && transfer[field] !== undefined);
+}
+
+function formatSnapshotCurrency(value?: number | null) {
+  return value === null || value === undefined ? '—' : formatCurrency(Number(value));
+}
+
+function formatSnapshotCount(value: number | null | undefined, singularLabel: string) {
+  if (value === null || value === undefined) return `— ${singularLabel}(s)`;
+  return `${value} ${singularLabel}(s)`;
 }
 
 function Detail({ label, value, className }: { label: string; value: string; className?: string }) {
@@ -326,7 +374,7 @@ function Metric({ label, value, highlight = false }: { label: string; value?: nu
   return (
     <div className={`rounded-lg p-3 ${highlight ? 'border border-primary/20 bg-primary/5' : 'bg-muted/50'}`}>
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`font-semibold ${highlight ? 'text-primary' : ''}`}>{formatCurrency(Number(value || 0))}</p>
+      <p className={`font-semibold ${highlight ? 'text-primary' : ''}`}>{formatSnapshotCurrency(value)}</p>
     </div>
   );
 }
