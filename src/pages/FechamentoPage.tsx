@@ -453,6 +453,13 @@ export default function FechamentoPage() {
                 <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
               </div>
 
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1 text-xs">
+                <p className="font-semibold text-primary">Histórico de responsabilidade</p>
+                <p className="text-muted-foreground">Aberto por: <strong>{profile?.full_name || '—'}</strong></p>
+                <p className="text-muted-foreground">Responsável atual: <strong>{closing.current_responsible_id === closing.user_id ? (profile?.full_name || '—') : 'Operador transferido'}</strong></p>
+                <p className="text-muted-foreground">Transferências realizadas: <strong>{closing.transfer_count || 0}</strong></p>
+              </div>
+
               {Object.keys(salesByMethod).length > 0 && (
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Vendas por Forma de Pagamento</p>

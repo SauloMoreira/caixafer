@@ -29,6 +29,7 @@ import InteligenciaPage from "@/pages/InteligenciaPage";
 import EstoquePage from "@/pages/EstoquePage";
 import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
+import HistoricoTransferenciasPage from "@/pages/HistoricoTransferenciasPage";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/historico-transferencias" element={<ProtectedRoute adminOnly><LayoutWrapper><HistoricoTransferenciasPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/estoque" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><EstoquePage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/inteligencia" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />

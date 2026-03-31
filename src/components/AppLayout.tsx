@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal
+  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Bell, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal, ArrowRightLeft
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
@@ -54,6 +54,7 @@ const adminSections: NavSection[] = [
       { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
       { to: '/usuarios', icon: Users, label: 'Usuários' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
+      { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
     ],
   },
 ];
@@ -122,6 +123,7 @@ const pageTitles: Record<string, string> = {
   '/notificacoes': 'Pendências',
   '/usuarios': 'Usuários',
   '/seguranca': 'Segurança',
+  '/historico-transferencias': 'Histórico de Transferências',
   '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
 };

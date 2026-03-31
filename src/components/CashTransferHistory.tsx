@@ -6,15 +6,27 @@ import { ArrowRightLeft } from 'lucide-react';
 
 interface Transfer {
   id: string;
+  cash_closing_id: string;
+  session_id?: string | null;
   from_user_id: string;
   to_user_id: string;
+  requested_by?: string | null;
+  accepted_by?: string | null;
   transfer_reason: string;
   status: string;
   requested_at: string;
   accepted_at: string | null;
   notes: string | null;
+  snapshot_initial_balance?: number | null;
+  snapshot_sales_total?: number | null;
+  snapshot_income_total?: number | null;
+  snapshot_expense_total?: number | null;
+  snapshot_expected_balance?: number | null;
+  snapshot_movement_count?: number | null;
+  snapshot_sale_count?: number | null;
   from_name?: string;
   to_name?: string;
+  accepted_by_name?: string;
 }
 
 interface Props {
@@ -45,7 +57,11 @@ export default function CashTransferHistory({ closingId }: Props) {
       }
 
       const userIds = new Set<string>();
-      data.forEach((t: any) => { userIds.add(t.from_user_id); userIds.add(t.to_user_id); });
+      data.forEach((t: any) => {
+        userIds.add(t.from_user_id);
+        userIds.add(t.to_user_id);
+        if (t.accepted_by) userIds.add(t.accepted_by);
+      });
 
       const { data: profiles } = await supabase
         .rpc('get_user_names', { _user_ids: Array.from(userIds) });
@@ -54,8 +70,10 @@ export default function CashTransferHistory({ closingId }: Props) {
 
       setTransfers(data.map((t: any) => ({
         ...t,
+        session_id: t.session_id || t.cash_closing_id,
         from_name: nameMap[t.from_user_id] || 'Desconhecido',
         to_name: nameMap[t.to_user_id] || 'Desconhecido',
+        accepted_by_name: t.accepted_by ? (nameMap[t.accepted_by] || 'Desconhecido') : undefined,
       })));
     };
 
@@ -78,10 +96,21 @@ export default function CashTransferHistory({ closingId }: Props) {
               <span className="font-medium">{t.from_name} → {t.to_name}</span>
               <Badge variant={statusInfo.variant} className="text-[9px]">{statusInfo.label}</Badge>
             </div>
+            <p className="text-muted-foreground">Sessão: {t.session_id || t.cash_closing_id}</p>
             <p className="text-muted-foreground">Motivo: {t.transfer_reason}</p>
             <p className="text-muted-foreground">Solicitado: {formatDateTime(t.requested_at)}</p>
             {t.accepted_at && <p className="text-muted-foreground">Aceito: {formatDateTime(t.accepted_at)}</p>}
+            {t.accepted_by_name && <p className="text-muted-foreground">Aceito por: {t.accepted_by_name}</p>}
             {t.notes && <p className="text-muted-foreground">Obs: {t.notes}</p>}
+            {t.status === 'accepted' && (
+              <div className="rounded-md bg-muted/50 p-2 space-y-0.5">
+                <p className="font-medium text-muted-foreground">Snapshot salvo:</p>
+                <p className="text-muted-foreground">Saldo inicial: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.snapshot_initial_balance || 0))}</p>
+                <p className="text-muted-foreground">Vendas: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.snapshot_sales_total || 0))} · Entradas: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.snapshot_income_total || 0))}</p>
+                <p className="text-muted-foreground">Saídas: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.snapshot_expense_total || 0))} · Esperado: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(t.snapshot_expected_balance || 0))}</p>
+                <p className="text-muted-foreground">{t.snapshot_sale_count || 0} venda(s) · {t.snapshot_movement_count || 0} movimento(s)</p>
+              </div>
+            )}
           </div>
         );
       })}

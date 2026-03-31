@@ -27,6 +27,7 @@ const EVENT_LABELS: Record<string, string> = {
   cash_transfer_rejected: 'Transferência recusada',
   cash_transfer_cancelled: 'Transferência cancelada',
   cash_responsibility_changed: 'Responsabilidade alterada',
+  cash_transfer_snapshot_created: 'Snapshot da transferência salvo',
   sale_created: 'Venda criada', sale_updated: 'Venda editada', sale_deleted: 'Venda excluída',
   cash_entry_created: 'Lançamento criado', cash_entry_updated: 'Lançamento editado', cash_entry_deleted: 'Lançamento excluído',
   cash_opened: 'Caixa aberto', cash_closed: 'Caixa fechado', cash_reopened: 'Caixa reaberto', cash_updated: 'Caixa atualizado',
@@ -91,7 +92,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 };
 const PRIORITY_LABELS: Record<string, string> = { urgent: 'Urgente', high: 'Alta', normal: 'Normal' };
 
-const TRANSFER_EVENTS = ['cash_transfer_requested', 'cash_transfer_accepted', 'cash_transfer_rejected', 'cash_transfer_cancelled', 'cash_responsibility_changed'];
+const TRANSFER_EVENTS = ['cash_transfer_requested', 'cash_transfer_accepted', 'cash_transfer_rejected', 'cash_transfer_cancelled', 'cash_responsibility_changed', 'cash_transfer_snapshot_created'];
 const CASH_CHANGE_EVENTS = ['cash_entry_created', 'cash_entry_updated', 'cash_entry_deleted', 'cash_opened', 'cash_closed', 'cash_reopened', 'cash_updated', 'sale_created', 'sale_updated', 'sale_deleted'];
 const INCIDENT_EVENTS = ['unauthorized_route_access', 'unauthorized_data_access_attempt', 'session_invalidated_by_new_login', 'admin_access_blocked_missing_mfa', 'mfa_login_failed', 'forced_reauthentication'];
 const BLOCKED_EVENTS = ['cash_open_blocked_existing_open_session', 'cash_operation_blocked_wrong_user', 'cash_close_blocked_wrong_user', 'spr_operation_blocked_wrong_user', 'admin_operational_action_blocked'];
