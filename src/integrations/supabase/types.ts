@@ -1347,6 +1347,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_spr_operation: { Args: never; Returns: boolean }
       get_eligible_transfer_cashiers: {
         Args: { _exclude_user_id: string }
         Returns: {
