@@ -70,6 +70,10 @@ export default function PDVPage() {
 
   // Transfer state
   const [transferOpen, setTransferOpen] = useState(false);
+  const [transferSummary, setTransferSummary] = useState({
+    openingBalance: 0,
+    currentStats: { sales: 0, income: 0, expense: 0 },
+  });
 
   // Override state
   const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
@@ -86,6 +90,43 @@ export default function PDVPage() {
 
     if (data) setProducts(data);
   }, []);
+
+  const fetchTransferSummary = useCallback(async () => {
+    if (!closingId) return;
+
+    const today = todayISO();
+    const [{ data: closingData }, { data: salesData }, { data: entriesData }] = await Promise.all([
+      supabase
+        .from('cash_closings')
+        .select('opening_balance')
+        .eq('id', closingId)
+        .maybeSingle(),
+      supabase
+        .from('sales')
+        .select('total_amount, is_deleted')
+        .eq('business_date', today),
+      supabase
+        .from('cash_entries')
+        .select('entry_type, amount, is_deleted')
+        .eq('business_date', today),
+    ]);
+
+    const activeSales = (salesData || []).filter((sale) => !sale.is_deleted);
+    const activeEntries = (entriesData || []).filter((entry) => !entry.is_deleted);
+
+    setTransferSummary({
+      openingBalance: Number(closingData?.opening_balance || 0),
+      currentStats: {
+        sales: activeSales.reduce((sum, sale) => sum + Number(sale.total_amount), 0),
+        income: activeEntries
+          .filter((entry) => entry.entry_type === 'income')
+          .reduce((sum, entry) => sum + Number(entry.amount), 0),
+        expense: activeEntries
+          .filter((entry) => entry.entry_type === 'expense')
+          .reduce((sum, entry) => sum + Number(entry.amount), 0),
+      },
+    });
+  }, [closingId]);
 
   const checkCashRegister = useCallback(async () => {
     if (!profile) return;
@@ -157,6 +198,11 @@ export default function PDVPage() {
   useEffect(() => {
     checkCashRegister();
   }, [checkCashRegister]);
+
+  useEffect(() => {
+    if (!transferOpen || !closingId) return;
+    fetchTransferSummary();
+  }, [transferOpen, closingId, fetchTransferSummary]);
 
   const filteredProducts = useMemo(() => {
     if (!search) return products;
@@ -602,8 +648,8 @@ export default function PDVPage() {
           onOpenChange={setTransferOpen}
           closingId={closingId}
           businessDate={todayISO()}
-          currentStats={{ sales: subtotal, income: 0, expense: 0 }}
-          openingBalance={0}
+          currentStats={transferSummary.currentStats}
+          openingBalance={transferSummary.openingBalance}
           onTransferred={checkCashRegister}
         />
       )}
