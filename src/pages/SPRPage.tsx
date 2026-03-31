@@ -14,10 +14,12 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
 import FiadoChargeDialog from '@/components/FiadoChargeDialog';
+import SPROperationalBlockCard from '@/components/SPROperationalBlockCard';
 import { toast } from 'sonner';
-import { Heart, Plus, Users, DollarSign, Search, Camera, Upload, User, Pencil, Loader2, Lock } from 'lucide-react';
+import { Heart, Plus, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
 import type { Database } from '@/integrations/supabase/types';
+import { useNavigate } from 'react-router-dom';
 
 type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'] & { avatar_url?: string | null };
 type FiadoCharge = Database['public']['Tables']['spr_fiado_charges']['Row'];
@@ -26,8 +28,10 @@ type DocumentType = Database['public']['Enums']['document_type'];
 
 export default function SPRPage() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const { sessionOpen, canOperate, responsibleName } = useCashSession();
-  const isBlockedToday = sessionOpen && !canOperate;
+  const canAccessOperationalSpr = profile?.role === 'admin' || canOperate;
+  const showBlockedCard = (profile?.role === 'cashier' || profile?.role === 'cash_coordinator') && !canAccessOperationalSpr;
   const [tab, setTab] = useState('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
@@ -58,7 +62,16 @@ export default function SPRPage() {
   const [payDocType, setPayDocType] = useState<DocumentType>('sem_documento');
   const [payDocRef, setPayDocRef] = useState('');
 
-  useEffect(() => { fetchVolunteers(); fetchCharges(); }, []);
+  useEffect(() => {
+    if (!canAccessOperationalSpr) {
+      setVolunteers([]);
+      setCharges([]);
+      return;
+    }
+
+    fetchVolunteers();
+    fetchCharges();
+  }, [canAccessOperationalSpr]);
 
   const fetchVolunteers = async () => {
     const { data } = await supabase.from('spr_volunteers').select('*').order('full_name');
@@ -143,7 +156,7 @@ export default function SPRPage() {
 
   const savePayment = async () => {
     if (!profile || !payCharge) return;
-    if (isBlockedToday) {
+    if (!canAccessOperationalSpr) {
       toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
       return;
     }
@@ -169,98 +182,91 @@ export default function SPRPage() {
         <h1 className="page-title flex items-center gap-2"><Heart className="h-5 w-5 text-primary" />SPR Ramatis</h1>
       </div>
 
-      {isBlockedToday && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-4 space-y-2">
-          <div className="flex items-start gap-2">
-            <Lock className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
-            <div className="space-y-1">
-              <p className="font-semibold text-destructive">Operação bloqueada</p>
-              <p className="text-sm text-destructive/90">
-                O caixa está sob responsabilidade de <strong>{responsibleName || 'outro operador'}</strong>.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Somente o responsável atual pode registrar fiados e pagamentos SPR. Se você precisa assumir a operação, solicite a transferência do caixa.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {showBlockedCard ? (
+        <SPROperationalBlockCard
+          responsibleName={sessionOpen ? responsibleName : null}
+          hasOpenSession={sessionOpen}
+          onRequestTransfer={sessionOpen ? () => navigate('/fechamento') : undefined}
+        />
+      ) : (
+        <>
+          <Card className="stat-card">
+            <CardContent className="p-0">
+              <p className="text-xs text-muted-foreground">Fiado em Aberto</p>
+              <p className="financial-value text-xl text-warning">{formatCurrency(totalOpen)}</p>
+            </CardContent>
+          </Card>
 
-      <Card className="stat-card">
-        <CardContent className="p-0">
-          <p className="text-xs text-muted-foreground">Fiado em Aberto</p>
-          <p className="financial-value text-xl text-warning">{formatCurrency(totalOpen)}</p>
-        </CardContent>
-      </Card>
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList className="w-full">
+              <TabsTrigger value="volunteers" className="flex-1">Voluntários</TabsTrigger>
+              <TabsTrigger value="charges" className="flex-1">Fiados</TabsTrigger>
+            </TabsList>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="w-full">
-          <TabsTrigger value="volunteers" className="flex-1">Voluntários</TabsTrigger>
-          <TabsTrigger value="charges" className="flex-1">Fiados</TabsTrigger>
-        </TabsList>
+            <div className="mt-3">
+              <div className="relative mb-3">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="h-12 pl-10" />
+              </div>
 
-        <div className="mt-3">
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="h-12 pl-10" />
-          </div>
-
-          <TabsContent value="volunteers" className="mt-0 space-y-2">
-            <div className="flex justify-end">
-              <Button size="sm" onClick={openNewVolunteer}><Plus className="mr-1 h-4 w-4" />Voluntário</Button>
-            </div>
-            {filteredVol.map(v => (
-              <Card key={v.id} className="cursor-pointer hover:border-primary/30 transition-all" onClick={() => openEditVolunteer(v)}>
-                <CardContent className="flex items-center justify-between p-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    {v.avatar_url ? (
-                      <img src={v.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                        <User className="h-5 w-5 text-primary" />
+              <TabsContent value="volunteers" className="mt-0 space-y-2">
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={openNewVolunteer}><Plus className="mr-1 h-4 w-4" />Voluntário</Button>
+                </div>
+                {filteredVol.map(v => (
+                  <Card key={v.id} className="cursor-pointer hover:border-primary/30 transition-all" onClick={() => openEditVolunteer(v)}>
+                    <CardContent className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {v.avatar_url ? (
+                          <img src={v.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{v.full_name}</p>
+                          <p className="text-xs text-muted-foreground">{v.phone || 'Sem telefone'}{!v.is_active ? ' • Inativo' : ''}</p>
+                        </div>
                       </div>
-                    )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{v.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{v.phone || 'Sem telefone'}{!v.is_active ? ' • Inativo' : ''}</p>
-                    </div>
-                  </div>
-                  <Pencil className="h-4 w-4 text-muted-foreground shrink-0" />
-                </CardContent>
-              </Card>
-            ))}
-            {filteredVol.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>}
-          </TabsContent>
+                      <Pencil className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </CardContent>
+                  </Card>
+                ))}
+                {filteredVol.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>}
+              </TabsContent>
 
-          <TabsContent value="charges" className="mt-0 space-y-2">
-            <div className="flex justify-end">
-              <Button size="sm" onClick={() => setChargeDialogOpen(true)} disabled={isBlockedToday}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
+              <TabsContent value="charges" className="mt-0 space-y-2">
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={() => setChargeDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
+                </div>
+                {filteredCharges.map(c => (
+                  <Card key={c.id}>
+                    <CardContent className="flex items-center justify-between p-3">
+                      <div>
+                        <p className="text-sm font-medium">{c.volunteer_name}</p>
+                        <p className="text-xs text-muted-foreground">{c.description || 'Fiado'} • {formatDate(c.business_date)}</p>
+                        <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(c.status)}`}>
+                          {c.status === 'paid' ? 'Pago' : c.status === 'partial' ? 'Parcial' : 'Em Aberto'}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <p className="financial-value text-sm">{formatCurrency(Number(c.amount))}</p>
+                        {c.status !== 'paid' && (
+                          <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)}>
+                            <DollarSign className="mr-1 h-3 w-3" />Pagar
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {filteredCharges.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum fiado encontrado.</p>}
+              </TabsContent>
             </div>
-            {filteredCharges.map(c => (
-              <Card key={c.id}>
-                <CardContent className="flex items-center justify-between p-3">
-                  <div>
-                    <p className="text-sm font-medium">{c.volunteer_name}</p>
-                    <p className="text-xs text-muted-foreground">{c.description || 'Fiado'} • {formatDate(c.business_date)}</p>
-                    <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(c.status)}`}>
-                      {c.status === 'paid' ? 'Pago' : c.status === 'partial' ? 'Parcial' : 'Em Aberto'}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <p className="financial-value text-sm">{formatCurrency(Number(c.amount))}</p>
-                    {c.status !== 'paid' && (
-                      <Button size="sm" variant="outline" className="mt-1 h-7 text-xs" onClick={() => openPayment(c)} disabled={isBlockedToday}>
-                        <DollarSign className="mr-1 h-3 w-3" />Pagar
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {filteredCharges.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum fiado encontrado.</p>}
-          </TabsContent>
-        </div>
-      </Tabs>
+          </Tabs>
+        </>
+      )}
 
       {/* Volunteer Dialog */}
       <Dialog open={volDialogOpen} onOpenChange={setVolDialogOpen}>
