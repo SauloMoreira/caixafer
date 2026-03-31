@@ -375,6 +375,39 @@ export type Database = {
           },
         ]
       }
+      movement_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          movement_type: Database["public"]["Enums"]["movement_category_type"]
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          movement_type: Database["public"]["Enums"]["movement_category_type"]
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          movement_type?: Database["public"]["Enums"]["movement_category_type"]
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1392,6 +1425,7 @@ export type Database = {
         | "sem_documento"
       entry_type: "income" | "expense"
       fiado_status: "open" | "partial" | "paid"
+      movement_category_type: "income" | "expense"
       notification_type:
         | "spr_over_30_days"
         | "cash_correction"
@@ -1541,6 +1575,7 @@ export const Constants = {
       ],
       entry_type: ["income", "expense"],
       fiado_status: ["open", "partial", "paid"],
+      movement_category_type: ["income", "expense"],
       notification_type: [
         "spr_over_30_days",
         "cash_correction",
