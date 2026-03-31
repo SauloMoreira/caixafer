@@ -19,6 +19,7 @@ import AIRecommendations from '@/components/AIRecommendations';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
+import { useQuery } from '@tanstack/react-query';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -50,6 +51,17 @@ export default function FechamentoPage() {
   const [closingHistory, setClosingHistory] = useState<any[]>([]);
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+
+  const { data: responsibilityNames = {} } = useQuery({
+    queryKey: ['cash-closing-responsibility-names', closing?.user_id, closing?.current_responsible_id],
+    queryFn: async () => {
+      const ids = [closing?.user_id, closing?.current_responsible_id].filter(Boolean) as string[];
+      if (ids.length === 0) return {};
+      const { data } = await supabase.rpc('get_user_names', { _user_ids: Array.from(new Set(ids)) });
+      return Object.fromEntries((data || []).map((item: { id: string; full_name: string }) => [item.id, item.full_name]));
+    },
+    enabled: !!closing,
+  });
 
   useEffect(() => { fetchData(); }, [date, profile]);
 
@@ -455,8 +467,8 @@ export default function FechamentoPage() {
 
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1 text-xs">
                 <p className="font-semibold text-primary">Histórico de responsabilidade</p>
-                <p className="text-muted-foreground">Aberto por: <strong>{profile?.full_name || '—'}</strong></p>
-                <p className="text-muted-foreground">Responsável atual: <strong>{closing.current_responsible_id === closing.user_id ? (profile?.full_name || '—') : 'Operador transferido'}</strong></p>
+                <p className="text-muted-foreground">Aberto por: <strong>{responsibilityNames[closing.user_id] || profile?.full_name || '—'}</strong></p>
+                <p className="text-muted-foreground">Responsável atual: <strong>{responsibilityNames[closing.current_responsible_id] || '—'}</strong></p>
                 <p className="text-muted-foreground">Transferências realizadas: <strong>{closing.transfer_count || 0}</strong></p>
               </div>
 
