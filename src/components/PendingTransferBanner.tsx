@@ -5,6 +5,7 @@ import { todayISO, formatDateTime } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import CashTransferReceivedDialog from '@/components/CashTransferReceivedDialog';
 import { toast } from 'sonner';
 import { ArrowRightLeft, Check, X, Clock } from 'lucide-react';
 
@@ -18,8 +19,27 @@ interface Transfer {
   notes: string | null;
   status: string;
   requested_at: string;
+  accepted_at?: string | null;
+  accepted_by?: string | null;
+  requested_by?: string | null;
+  session_id?: string | null;
+  snapshot_initial_balance?: number | null;
+  snapshot_sales_total?: number | null;
+  snapshot_income_total?: number | null;
+  snapshot_expense_total?: number | null;
+  snapshot_expected_balance?: number | null;
+  snapshot_cash_total?: number | null;
+  snapshot_pix_total?: number | null;
+  snapshot_debit_total?: number | null;
+  snapshot_credit_total?: number | null;
+  snapshot_bank_transfer_total?: number | null;
+  snapshot_fiado_payment_total?: number | null;
+  snapshot_movement_count?: number | null;
+  snapshot_sale_count?: number | null;
   from_name?: string;
   to_name?: string;
+  accepted_by_name?: string;
+  requested_by_name?: string;
 }
 
 interface Props {
@@ -31,6 +51,7 @@ export default function PendingTransferBanner({ onTransferAccepted, onTransferSt
   const { profile } = useAuth();
   const [pendingTransfers, setPendingTransfers] = useState<Transfer[]>([]);
   const [outgoingTransfers, setOutgoingTransfers] = useState<Transfer[]>([]);
+  const [acceptedTransfer, setAcceptedTransfer] = useState<Transfer | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchTransfers = useCallback(async () => {
@@ -73,6 +94,8 @@ export default function PendingTransferBanner({ onTransferAccepted, onTransferSt
       ...t,
       from_name: nameMap[t.from_user_id] || 'Desconhecido',
       to_name: nameMap[t.to_user_id] || 'Desconhecido',
+      requested_by_name: t.requested_by ? (nameMap[t.requested_by] || 'Desconhecido') : undefined,
+      accepted_by_name: t.accepted_by ? (nameMap[t.accepted_by] || 'Desconhecido') : undefined,
     });
 
     setPendingTransfers((incoming || []).map(mapNames));
@@ -87,14 +110,23 @@ export default function PendingTransferBanner({ onTransferAccepted, onTransferSt
 
   const handleAccept = async (transfer: Transfer) => {
     setLoading(true);
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('cash_session_transfers')
-      .update({ status: 'accepted', accepted_at: new Date().toISOString() } as any)
-      .eq('id', transfer.id);
+      .update({ status: 'accepted', accepted_at: new Date().toISOString(), accepted_by: profile?.id } as any)
+      .eq('id', transfer.id)
+      .select('*')
+      .single();
 
     if (error) {
       toast.error('Erro ao aceitar: ' + error.message);
     } else {
+      setAcceptedTransfer({
+        ...(data as any),
+        from_name: transfer.from_name,
+        to_name: transfer.to_name,
+        accepted_by_name: profile?.full_name || transfer.to_name,
+        requested_by_name: transfer.from_name,
+      });
       toast.success('Transferência aceita! Você agora é responsável pelo caixa.');
       onTransferAccepted();
       onTransferStatusChanged?.();
@@ -201,6 +233,14 @@ export default function PendingTransferBanner({ onTransferAccepted, onTransferSt
           </CardContent>
         </Card>
       ))}
+
+      <CashTransferReceivedDialog
+        transfer={acceptedTransfer}
+        open={!!acceptedTransfer}
+        onOpenChange={(open) => {
+          if (!open) setAcceptedTransfer(null);
+        }}
+      />
     </div>
   );
 }
