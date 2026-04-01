@@ -381,15 +381,18 @@ export default function FechamentoPage() {
       notes: `Admin iniciou fechamento administrativo. Motivo: ${adminCloseReasonFinal}`,
     });
 
+    const adminCounted = adminCloseCountedBalance ? Number(adminCloseCountedBalance) : null;
+    const adminDifference = adminCounted != null ? adminCounted - expectedBalance : null;
+
     const updateData = {
       opening_balance: Number(openingBalance),
       sales_total: stats.sales,
       income_total: stats.income,
       expense_total: stats.expense,
       expected_balance: expectedBalance,
-      counted_balance: countedBalance ? Number(countedBalance) : null,
-      difference_amount: difference,
-      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
+      counted_balance: adminCounted,
+      difference_amount: adminDifference,
+      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCounted != null ? ` Saldo contado: ${adminCounted}. Diferença: ${adminDifference}.` : ' Sem conferência física.'}${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
       status: 'closed' as const,
       closed_at: new Date().toISOString(),
     };
