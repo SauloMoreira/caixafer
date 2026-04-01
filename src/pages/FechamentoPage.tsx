@@ -68,6 +68,7 @@ export default function FechamentoPage() {
   const [adminCloseReason, setAdminCloseReason] = useState('');
   const [adminCloseCustomReason, setAdminCloseCustomReason] = useState('');
   const [adminCloseNotes, setAdminCloseNotes] = useState('');
+  const [adminCloseCountedBalance, setAdminCloseCountedBalance] = useState('');
   const [adminCloseLoading, setAdminCloseLoading] = useState(false);
   const { data: responsibilityNames = {} } = useQuery({
     queryKey: ['cash-closing-responsibility-names', closing?.user_id, closing?.current_responsible_id],
@@ -380,15 +381,18 @@ export default function FechamentoPage() {
       notes: `Admin iniciou fechamento administrativo. Motivo: ${adminCloseReasonFinal}`,
     });
 
+    const adminCounted = adminCloseCountedBalance ? Number(adminCloseCountedBalance) : null;
+    const adminDifference = adminCounted != null ? adminCounted - expectedBalance : null;
+
     const updateData = {
       opening_balance: Number(openingBalance),
       sales_total: stats.sales,
       income_total: stats.income,
       expense_total: stats.expense,
       expected_balance: expectedBalance,
-      counted_balance: countedBalance ? Number(countedBalance) : null,
-      difference_amount: difference,
-      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
+      counted_balance: adminCounted,
+      difference_amount: adminDifference,
+      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCounted != null ? ` Saldo contado: ${adminCounted}. Diferença: ${adminDifference}.` : ' Sem conferência física.'}${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
       status: 'closed' as const,
       closed_at: new Date().toISOString(),
     };
@@ -422,6 +426,8 @@ export default function FechamentoPage() {
           snapshot_income_total: stats.income,
           snapshot_expense_total: stats.expense,
           snapshot_expected_balance: expectedBalance,
+          counted_balance: adminCounted,
+          difference_amount: adminDifference,
         },
         notes: `Fechamento administrativo concluído por ${profile.full_name}. Sessão aberta por ${responsibilityNames[closing.user_id] || 'operador'}. Responsável: ${responsibilityNames[closing.current_responsible_id] || 'operador'}. Motivo: ${adminCloseReasonFinal}.`,
       });
@@ -431,6 +437,7 @@ export default function FechamentoPage() {
       setAdminCloseReason('');
       setAdminCloseCustomReason('');
       setAdminCloseNotes('');
+      setAdminCloseCountedBalance('');
       fetchData();
     }
 
@@ -877,7 +884,7 @@ export default function FechamentoPage() {
       {/* Admin Override Close Dialog */}
       <CriticalActionDialog
         open={showAdminCloseDialog}
-        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); } setShowAdminCloseDialog(v); }}
+        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); setAdminCloseCountedBalance(''); } setShowAdminCloseDialog(v); }}
         title="Fechamento Administrativo"
         description="Você está fechando uma sessão de outro operador. Esta é uma ação excepcional e será totalmente auditada."
         severity="danger"
@@ -896,9 +903,54 @@ export default function FechamentoPage() {
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
             <div className="space-y-1">
               <p>Este fechamento será registrado como <strong className="text-destructive">ação administrativa excepcional</strong>.</p>
-              <p>Será auditado: quem abriu, quem fechou, motivo e snapshot financeiro.</p>
+              <p>Será auditado: quem abriu, quem fechou, motivo, saldo contado e diferença.</p>
             </div>
           </div>
+
+          {/* Saldo contado */}
+          <div>
+            <Label className="text-xs font-semibold">Saldo contado (R$)</Label>
+            <p className="text-[10px] text-muted-foreground mb-1">Deixe vazio para encerramento forçado sem conferência física.</p>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={adminCloseCountedBalance}
+              onChange={e => setAdminCloseCountedBalance(e.target.value)}
+              placeholder="0,00"
+              className="mt-1 h-12"
+            />
+          </div>
+
+          {/* Diferença */}
+          {adminCloseCountedBalance && (
+            <div className="rounded-lg border bg-muted/50 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Saldo esperado</span>
+                <span className="font-medium">{formatCurrency(expectedBalance)}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Saldo contado</span>
+                <span className="font-medium">{formatCurrency(Number(adminCloseCountedBalance))}</span>
+              </div>
+              <div className="border-t pt-1.5 flex justify-between gap-2">
+                <span className="font-semibold">Diferença</span>
+                <span className={`font-bold ${(Number(adminCloseCountedBalance) - expectedBalance) < 0 ? 'text-destructive' : (Number(adminCloseCountedBalance) - expectedBalance) > 0 ? 'text-emerald-600' : ''}`}>
+                  {formatCurrency(Number(adminCloseCountedBalance) - expectedBalance)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {!adminCloseCountedBalance && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-2.5 text-xs text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <p>Sem saldo contado, este fechamento será registrado como <strong>encerramento forçado sem conferência física</strong>.</p>
+            </div>
+          )}
+
+          {/* Motivo */}
           <div>
             <Label className="text-xs font-semibold">Motivo obrigatório *</Label>
             <Select value={adminCloseReason} onValueChange={setAdminCloseReason}>
