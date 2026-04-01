@@ -19,6 +19,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const role = profile?.role || 'cashier';
   const sections = getSections(role);
+  const standaloneHomeItem = sections[0]?.title === 'Início' && sections[0]?.items.length === 1 ? sections[0].items[0] : null;
+  const groupedSections = standaloneHomeItem ? sections.slice(1) : sections;
   const currentTitle = pageTitles[location.pathname] || 'Caixa da FER';
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
@@ -68,8 +70,39 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarUserCard avatarUrl={profile?.avatar_url} fullName={profile?.full_name} role={role} />
 
       <nav className="flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(0.9rem,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+        {standaloneHomeItem && (
+          <div className="mb-3 animate-fade-in">
+            <NavLink
+              to={standaloneHomeItem.to}
+              end={standaloneHomeItem.to === '/'}
+              className={({ isActive }) =>
+                cn(
+                  'group flex min-w-0 items-center gap-3 rounded-[1.5rem] border border-sidebar-border/70 bg-card/85 px-3 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 active:scale-[0.99]',
+                  isActive
+                    ? 'border-sidebar-ring/20 bg-sidebar-accent text-primary'
+                    : 'text-muted-foreground hover:border-sidebar-border hover:bg-card hover:text-foreground'
+                )
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  <div
+                    className={cn(
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-muted/40 transition-all duration-200 group-hover:bg-sidebar-accent/60',
+                      isActive && 'bg-sidebar-accent/90 text-primary'
+                    )}
+                  >
+                    <standaloneHomeItem.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" />
+                  </div>
+                  <span className="truncate text-sm font-medium">{standaloneHomeItem.label}</span>
+                </>
+              )}
+            </NavLink>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {sections.map((section, sIdx) => {
+          {groupedSections.map((section, sIdx) => {
             const isOpen = openSections[section.title] ?? section.items.some((item) => item.to === location.pathname);
 
             return (
