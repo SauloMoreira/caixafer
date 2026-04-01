@@ -437,6 +437,7 @@ export default function FechamentoPage() {
       setAdminCloseReason('');
       setAdminCloseCustomReason('');
       setAdminCloseNotes('');
+      setAdminCloseCountedBalance('');
       fetchData();
     }
 
