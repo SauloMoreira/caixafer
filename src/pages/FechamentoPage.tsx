@@ -355,6 +355,87 @@ export default function FechamentoPage() {
 
   const wasReopened = closing?.reopened_at != null;
   const closingVersion = closing?.closing_version || 1;
+  const isAdminViewingOtherSession = isAdmin && closing && closing.current_responsible_id !== profile?.id;
+  const isSessionTransferred = closing && closing.current_responsible_id !== closing.user_id;
+
+  const adminCloseReasonFinal = adminCloseReason === 'outro'
+    ? adminCloseCustomReason
+    : ADMIN_CLOSE_REASONS.find(r => r.value === adminCloseReason)?.label || adminCloseReason;
+  const canAdminClose = adminCloseReason && (adminCloseReason !== 'outro' || adminCloseCustomReason.trim().length > 0);
+
+  const handleAdminClose = async () => {
+    if (!profile || !closing || !canAdminClose) return;
+    setAdminCloseLoading(true);
+
+    // Log override start
+    await logSecurityEvent({
+      event_type: 'admin_cash_close_override_started',
+      entity_type: 'cash_closings',
+      entity_id: closing.id,
+      action: 'ADMIN_CLOSE_OVERRIDE',
+      severity: 'critical',
+      business_date: date,
+      target_user_id: closing.current_responsible_id,
+      new_data: { reason: adminCloseReasonFinal, notes: adminCloseNotes },
+      notes: `Admin iniciou fechamento administrativo. Motivo: ${adminCloseReasonFinal}`,
+    });
+
+    const updateData = {
+      opening_balance: Number(openingBalance),
+      sales_total: stats.sales,
+      income_total: stats.income,
+      expense_total: stats.expense,
+      expected_balance: expectedBalance,
+      counted_balance: countedBalance ? Number(countedBalance) : null,
+      difference_amount: difference,
+      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
+      status: 'closed' as const,
+      closed_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('cash_closings').update(updateData).eq('id', closing.id);
+
+    if (error) {
+      toast.error('Erro ao fechar: ' + error.message);
+    } else {
+      // Log override completed
+      await logSecurityEvent({
+        event_type: 'admin_cash_close_override_completed',
+        entity_type: 'cash_closings',
+        entity_id: closing.id,
+        action: 'ADMIN_CLOSE_OVERRIDE',
+        severity: 'critical',
+        business_date: date,
+        target_user_id: closing.current_responsible_id,
+        old_data: {
+          opened_by: closing.user_id,
+          current_responsible_id: closing.current_responsible_id,
+          status: 'open',
+        },
+        new_data: {
+          closed_by: profile.id,
+          close_type: 'admin_override',
+          close_reason: adminCloseReasonFinal,
+          notes: adminCloseNotes,
+          snapshot_initial_balance: Number(openingBalance),
+          snapshot_sales_total: stats.sales,
+          snapshot_income_total: stats.income,
+          snapshot_expense_total: stats.expense,
+          snapshot_expected_balance: expectedBalance,
+        },
+        notes: `Fechamento administrativo concluído por ${profile.full_name}. Sessão aberta por ${responsibilityNames[closing.user_id] || 'operador'}. Responsável: ${responsibilityNames[closing.current_responsible_id] || 'operador'}. Motivo: ${adminCloseReasonFinal}.`,
+      });
+
+      toast.success('Caixa fechado administrativamente.');
+      setShowAdminCloseDialog(false);
+      setAdminCloseReason('');
+      setAdminCloseCustomReason('');
+      setAdminCloseNotes('');
+      fetchData();
+    }
+
+    setAdminCloseLoading(false);
+  };
 
   return (
     <div className="space-y-4 max-w-xl mx-auto">
