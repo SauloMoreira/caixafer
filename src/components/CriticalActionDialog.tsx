@@ -39,7 +39,7 @@ export default function CriticalActionDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={v => { if (!v) setTyped(''); onOpenChange(v); }}>
-      <AlertDialogContent className="max-w-sm max-h-[90dvh] overflow-y-auto">
+      <AlertDialogContent className="max-w-sm sm:max-w-lg max-h-[90dvh] overflow-y-auto">
         <AlertDialogHeader>
           <div className="flex items-center gap-3">
             <div className={`flex h-10 w-10 items-center justify-center rounded-full shrink-0 ${isDanger ? 'bg-destructive/10' : 'bg-amber-100 dark:bg-amber-900/20'}`}>
