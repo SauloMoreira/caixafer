@@ -68,6 +68,7 @@ export default function FechamentoPage() {
   const [adminCloseReason, setAdminCloseReason] = useState('');
   const [adminCloseCustomReason, setAdminCloseCustomReason] = useState('');
   const [adminCloseNotes, setAdminCloseNotes] = useState('');
+  const [adminCloseCountedBalance, setAdminCloseCountedBalance] = useState('');
   const [adminCloseLoading, setAdminCloseLoading] = useState(false);
   const { data: responsibilityNames = {} } = useQuery({
     queryKey: ['cash-closing-responsibility-names', closing?.user_id, closing?.current_responsible_id],
