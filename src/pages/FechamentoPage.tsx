@@ -884,7 +884,7 @@ export default function FechamentoPage() {
       {/* Admin Override Close Dialog */}
       <CriticalActionDialog
         open={showAdminCloseDialog}
-        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); } setShowAdminCloseDialog(v); }}
+        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); setAdminCloseCountedBalance(''); } setShowAdminCloseDialog(v); }}
         title="Fechamento Administrativo"
         description="Você está fechando uma sessão de outro operador. Esta é uma ação excepcional e será totalmente auditada."
         severity="danger"
