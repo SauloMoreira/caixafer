@@ -563,7 +563,7 @@ export default function FechamentoPage() {
               {(stats.sales > 0 || stats.income > 0 || stats.expense > 0) && (
                 <div className="rounded-lg bg-background p-2.5 space-y-1.5 text-xs">
                   <p className="font-semibold text-muted-foreground">Resumo da sessão</p>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="space-y-1">
                     <div className="flex justify-between"><span className="text-muted-foreground">Saldo inicial:</span><span className="font-medium">{formatCurrency(Number(openingBalance))}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Vendas:</span><span className="font-medium">{formatCurrency(stats.sales)}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Entradas:</span><span className="font-medium">{formatCurrency(stats.income)}</span></div>
