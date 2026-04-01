@@ -519,6 +519,70 @@ export default function FechamentoPage() {
       {/* Closing exists */}
       {closing && (
         <>
+          {/* Admin viewing another operator's session */}
+          {isAdminViewingOtherSession && closing.status === 'open' && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <p className="font-semibold text-destructive text-sm">Sessão de outro operador</p>
+                  <p className="text-xs text-muted-foreground">
+                    Você está visualizando a sessão de caixa de outro operador. Ações administrativas excepcionais estão disponíveis abaixo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Data operacional</p>
+                  <p className="font-semibold">{formatDate(closing.business_date)}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Abertura</p>
+                  <p className="font-semibold">{formatDateTime(closing.created_at)}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Aberto por</p>
+                  <p className="font-semibold">{responsibilityNames[closing.user_id] || '—'}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Responsável atual</p>
+                  <p className="font-semibold">{responsibilityNames[closing.current_responsible_id] || '—'}</p>
+                </div>
+              </div>
+
+              {isSessionTransferred && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground rounded-lg bg-background p-2.5">
+                  <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+                  <span>Sessão transferida · {closing.transfer_count || 0} transferência(s)</span>
+                </div>
+              )}
+
+              {(stats.sales > 0 || stats.income > 0 || stats.expense > 0) && (
+                <div className="rounded-lg bg-background p-2.5 space-y-1.5 text-xs">
+                  <p className="font-semibold text-muted-foreground">Resumo da sessão</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saldo inicial:</span><span className="font-medium">{formatCurrency(Number(openingBalance))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Vendas:</span><span className="font-medium">{formatCurrency(stats.sales)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas:</span><span className="font-medium">{formatCurrency(stats.income)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas:</span><span className="font-medium">{formatCurrency(stats.expense)}</span></div>
+                  </div>
+                  <div className="flex justify-between border-t pt-1.5"><span className="font-semibold">Saldo esperado:</span><span className="font-bold text-primary">{formatCurrency(expectedBalance)}</span></div>
+                </div>
+              )}
+
+              <Button
+                variant="destructive"
+                className="w-full h-11"
+                onClick={() => setShowAdminCloseDialog(true)}
+              >
+                <ShieldAlert className="mr-2 h-4 w-4" />
+                Fechar Administrativamente
+              </Button>
+            </div>
+          )}
           {/* Reopen badge banner */}
           {wasReopened && (
             <div className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm">
