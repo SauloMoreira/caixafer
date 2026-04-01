@@ -426,6 +426,8 @@ export default function FechamentoPage() {
           snapshot_income_total: stats.income,
           snapshot_expense_total: stats.expense,
           snapshot_expected_balance: expectedBalance,
+          counted_balance: adminCounted,
+          difference_amount: adminDifference,
         },
         notes: `Fechamento administrativo concluído por ${profile.full_name}. Sessão aberta por ${responsibilityNames[closing.user_id] || 'operador'}. Responsável: ${responsibilityNames[closing.current_responsible_id] || 'operador'}. Motivo: ${adminCloseReasonFinal}.`,
       });
