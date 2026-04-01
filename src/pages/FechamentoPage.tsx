@@ -63,6 +63,12 @@ export default function FechamentoPage() {
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
 
+  // Admin override close state
+  const [showAdminCloseDialog, setShowAdminCloseDialog] = useState(false);
+  const [adminCloseReason, setAdminCloseReason] = useState('');
+  const [adminCloseCustomReason, setAdminCloseCustomReason] = useState('');
+  const [adminCloseNotes, setAdminCloseNotes] = useState('');
+  const [adminCloseLoading, setAdminCloseLoading] = useState(false);
   const { data: responsibilityNames = {} } = useQuery({
     queryKey: ['cash-closing-responsibility-names', closing?.user_id, closing?.current_responsible_id],
     queryFn: async () => {
