@@ -1,159 +1,15 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  LayoutDashboard, ShoppingCart, ArrowUpDown, Lock,
-  Package, Tag, BarChart3, Users, Heart, LogOut, Menu, User, Shield, AlertTriangle, Lightbulb, Brain, Boxes, SlidersHorizontal, ArrowRightLeft, ChevronRight
+  LogOut, Menu, User
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import NotificationBell from '@/components/NotificationBell';
 import logoImg from '@/assets/logo.png';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-interface NavItem {
-  to: string;
-  icon: React.ElementType;
-  label: string;
-}
-
-interface NavSection {
-  title: string;
-  items: NavItem[];
-  collapsible?: boolean;
-}
-
-const adminSections: NavSection[] = [
-  {
-    title: 'Início',
-    collapsible: true,
-    items: [
-      { to: '/', icon: LayoutDashboard, label: 'Início' },
-    ],
-  },
-  {
-    title: 'Operação',
-    collapsible: true,
-    items: [
-      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
-      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
-      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-      { to: '/spr', icon: Heart, label: 'SPR' },
-    ],
-  },
-  {
-    title: 'Cadastros',
-    collapsible: true,
-    items: [
-      { to: '/produtos', icon: Package, label: 'Produtos' },
-      { to: '/categorias', icon: Tag, label: 'Categorias' },
-      { to: '/categorias-movimentacao', icon: SlidersHorizontal, label: 'Cat. Movimentação' },
-    ],
-  },
-  {
-    title: 'Estoque',
-    collapsible: true,
-    items: [
-      { to: '/estoque', icon: Boxes, label: 'Estoque' },
-    ],
-  },
-  {
-    title: 'Análises',
-    collapsible: true,
-    items: [
-      { to: '/relatorios', icon: BarChart3, label: 'Relatórios' },
-      { to: '/insights', icon: Lightbulb, label: 'Insights' },
-      { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
-    ],
-  },
-  {
-    title: 'Administração',
-    collapsible: true,
-    items: [
-      { to: '/usuarios', icon: Users, label: 'Usuários' },
-      { to: '/seguranca', icon: Shield, label: 'Segurança' },
-      { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
-      { to: '/notificacoes', icon: AlertTriangle, label: 'Pendências' },
-    ],
-  },
-];
-
-const cashierSections: NavSection[] = [
-  {
-    title: 'Início',
-    items: [
-      { to: '/', icon: LayoutDashboard, label: 'Início' },
-    ],
-  },
-];
-
-const coordinatorSections: NavSection[] = [
-  {
-    title: 'Início',
-    items: [
-      { to: '/', icon: LayoutDashboard, label: 'Início' },
-    ],
-  },
-  {
-    title: 'Caixa',
-    items: [
-      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
-      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
-      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
-    ],
-  },
-  {
-    title: 'SPR',
-    items: [
-      { to: '/spr', icon: Heart, label: 'SPR' },
-    ],
-  },
-  {
-    title: 'Gestão',
-    items: [
-      { to: '/produtos', icon: Package, label: 'Produtos' },
-      { to: '/categorias', icon: Tag, label: 'Categorias' },
-      { to: '/estoque', icon: Boxes, label: 'Estoque' },
-      { to: '/insights', icon: Lightbulb, label: 'Insights' },
-      { to: '/inteligencia', icon: Brain, label: 'Inteligência' },
-    ],
-  },
-];
-
-const volunteerSections: NavSection[] = [
-  {
-    title: 'Menu',
-    items: [
-      { to: '/meu-consumo', icon: Heart, label: 'Meu Consumo' },
-    ],
-  },
-];
-
-const pageTitles: Record<string, string> = {
-  '/': 'Início',
-  '/pdv': 'PDV',
-  '/movimentos': 'Movimentos',
-  '/fechamento': 'Fechamento',
-  '/produtos': 'Produtos',
-  '/categorias': 'Categorias',
-  '/categorias-movimentacao': 'Categorias de Movimentação',
-  '/relatorios': 'Relatórios',
-  '/spr': 'SPR',
-  '/notificacoes': 'Pendências',
-  '/usuarios': 'Usuários',
-  '/seguranca': 'Segurança',
-  '/historico-transferencias': 'Histórico de Transferências',
-  '/meu-consumo': 'Meu Consumo',
-  '/perfil': 'Perfil',
-};
-
-function getSections(role: string): NavSection[] {
-  switch (role) {
-    case 'admin': return adminSections;
-    case 'cash_coordinator': return coordinatorSections;
-    case 'volunteer': return volunteerSections;
-    default: return cashierSections;
-  }
-}
+import { SidebarSection } from '@/components/layout/SidebarSection';
+import { SidebarUserCard } from '@/components/layout/SidebarUserCard';
+import { getSections, pageTitles } from '@/components/layout/sidebar-config';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, signOut, isAdmin, isVolunteer } = useAuth();
@@ -191,123 +47,73 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sidebarContent = (
-    <div className="flex h-full flex-col overflow-hidden">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3 sm:px-5 sm:pt-5">
-        <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="h-10 w-10 rounded-xl object-contain shrink-0" />
-        <div className="min-w-0">
-          <p className="font-heading text-sm font-bold truncate">Caixa da FER</p>
-          <p className="text-[10px] text-muted-foreground">Fraternidade Espírita Ramatis</p>
+    <div className="flex h-full flex-col overflow-hidden bg-sidebar-background/95">
+      <div className="px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+        <div className="rounded-[1.9rem] border border-sidebar-border/70 bg-card/90 p-4 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/60">
+              <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="h-9 w-9 object-contain" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="inline-flex rounded-full bg-sidebar-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-accent-foreground">
+                Painel admin
+              </div>
+              <p className="mt-2 truncate font-heading text-base font-bold tracking-tight text-foreground">Caixa da FER</p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground">Fraternidade Espírita Ramatis</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* User */}
-      <div className="px-4 pb-4 sm:px-5">
-        <NavLink
-          to="/perfil"
-          className="flex min-w-0 items-center gap-3 rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/40 px-3 py-3 transition-colors hover:bg-sidebar-accent/70"
-        >
-          {profile?.avatar_url ? (
-            <img
-              key={profile.avatar_url}
-              src={profile.avatar_url}
-              alt=""
-              className="h-9 w-9 rounded-full object-cover shrink-0 ring-2 ring-primary/20"
-            />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shrink-0">
-              <span className="text-xs font-bold text-primary-foreground">
-                {profile?.full_name?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="text-sm font-medium truncate">{profile?.full_name}</p>
-            <p className="text-[10px] text-muted-foreground">
-              {role === 'admin' ? 'Administrador' : role === 'cash_coordinator' ? 'Coordenador de Caixa' : role === 'volunteer' ? 'Voluntário' : 'Operador de Caixa'}
-            </p>
-          </div>
-        </NavLink>
-      </div>
+      <SidebarUserCard avatarUrl={profile?.avatar_url} fullName={profile?.full_name} role={role} />
 
-      <div className="mx-4 h-px bg-sidebar-border/80" />
-
-      {/* Navigation sections */}
-      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4">
-        <div className="space-y-2">
+      <nav className="flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(0.9rem,env(safe-area-inset-bottom))] pt-2 sm:px-4">
+        <div className="space-y-3">
           {sections.map((section, sIdx) => {
-            const isSectionActive = section.items.some((item) => item.to === location.pathname);
-            const isOpen = openSections[section.title] ?? isSectionActive;
+            const isOpen = openSections[section.title] ?? section.items.some((item) => item.to === location.pathname);
 
             return (
-              <div key={section.title} className="animate-fade-in">
-                {sIdx > 0 && <div className="mx-2 mb-2 h-px bg-sidebar-border/70" />}
-
-                <Collapsible open={isOpen} onOpenChange={(open) => setOpenSections((current) => ({ ...current, [section.title]: open }))}>
-                  <CollapsibleTrigger
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left transition-all duration-200 hover:bg-sidebar-accent/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2',
-                      isSectionActive && 'bg-sidebar-accent/60'
-                    )}
-                  >
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
-                        {section.title}
-                      </p>
-                    </div>
-                    <ChevronRight className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-90 text-primary')} />
-                  </CollapsibleTrigger>
-
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-                    <div className="ml-2 mt-1 space-y-1 border-l border-sidebar-border/80 pl-3">
-                      {section.items.map((item) => (
-                        <NavLink
-                          key={item.to}
-                          to={item.to}
-                          end={item.to === '/'}
-                          className={({ isActive }) => cn(
-                            'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.99]',
-                            isActive
-                              ? 'bg-sidebar-primary/12 text-primary shadow-sm'
-                              : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground'
-                          )}
-                        >
-                          <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-105" />
-                          <span className="truncate">{item.label}</span>
-                        </NavLink>
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
+              <SidebarSection
+                key={section.title}
+                currentPath={location.pathname}
+                isFirst={sIdx === 0}
+                onOpenChange={(open) => setOpenSections((current) => ({ ...current, [section.title]: open }))}
+                open={isOpen}
+                section={section}
+              />
             );
           })}
         </div>
 
-        {/* Conta section */}
-        <div className="mt-4 border-t border-sidebar-border/80 pt-3">
-          <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/80">
+        <div className="mx-4 my-4 h-px bg-sidebar-border/60" />
+
+        <div className="rounded-[1.6rem] border border-sidebar-border/70 bg-card/85 p-2 shadow-sm backdrop-blur-sm">
+          <p className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-muted-foreground/80">
             Conta
           </p>
-          <div className="space-y-1">
+          <div className="space-y-1 rounded-[1.1rem] border border-sidebar-border/60 bg-background/70 p-2">
             <NavLink
               to="/perfil"
               className={({ isActive }) => cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.99]',
+                'flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200 active:scale-[0.99]',
                 isActive
-                  ? 'bg-sidebar-primary/12 text-primary shadow-sm'
-                  : 'text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground'
+                  ? 'border border-sidebar-ring/20 bg-sidebar-accent text-primary shadow-sm'
+                  : 'text-muted-foreground hover:bg-sidebar-accent/45 hover:text-foreground'
               )}
             >
-              <User className="h-[18px] w-[18px] shrink-0" />
-              Perfil
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/40">
+                <User className="h-[18px] w-[18px] shrink-0" />
+              </div>
+              <span className="truncate">Perfil</span>
             </NavLink>
             <button
               onClick={() => signOut()}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-200 active:scale-[0.99] hover:bg-destructive/10 hover:text-destructive"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-colors duration-200 active:scale-[0.99] hover:bg-destructive/10 hover:text-destructive"
             >
-              <LogOut className="h-[18px] w-[18px] shrink-0" />
-              Sair
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted/40">
+                <LogOut className="h-[18px] w-[18px] shrink-0" />
+              </div>
+              <span className="truncate">Sair</span>
             </button>
           </div>
         </div>
@@ -317,26 +123,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:bg-card shrink-0">
+      <aside className="hidden shrink-0 md:flex md:w-[19rem] md:flex-col md:border-r md:border-sidebar-border/70 md:bg-sidebar-background/95">
         {sidebarContent}
       </aside>
 
-      {/* Mobile Sidebar Drawer */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div
-            className="absolute inset-0 bg-foreground/20 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-foreground/20 backdrop-blur-md transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-[280px] bg-card shadow-2xl flex flex-col animate-slide-in-left">
+          <aside className="absolute left-2 top-2 h-[calc(100dvh-1rem)] w-[min(88vw,22rem)] overflow-hidden rounded-[2rem] border border-sidebar-border/70 bg-sidebar-background/95 shadow-2xl animate-slide-in-left">
             {sidebarContent}
-            <div className="safe-bottom" />
           </aside>
         </div>
       )}
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/80 backdrop-blur-md px-4">
           <div className="flex items-center gap-3 min-w-0">
