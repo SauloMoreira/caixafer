@@ -31,6 +31,15 @@ const REOPEN_REASONS = [
   { value: 'outro', label: 'Outro' },
 ];
 
+const ADMIN_CLOSE_REASONS = [
+  { value: 'operador_ausente', label: 'Operador ausente' },
+  { value: 'esquecimento_fechamento', label: 'Esquecimento de fechamento' },
+  { value: 'contingencia_operacional', label: 'Contingência operacional' },
+  { value: 'correcao_emergencial', label: 'Correção emergencial' },
+  { value: 'necessidade_administrativa', label: 'Necessidade administrativa' },
+  { value: 'outro', label: 'Outro' },
+];
+
 export default function FechamentoPage() {
   const { profile, isAdmin, hasOperationalOverride } = useAuth();
   const [date, setDate] = useState(todayISO());
