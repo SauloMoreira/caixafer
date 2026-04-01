@@ -873,6 +873,68 @@ export default function FechamentoPage() {
           onTransferred={fetchData}
         />
       )}
+
+      {/* Admin Override Close Dialog */}
+      <CriticalActionDialog
+        open={showAdminCloseDialog}
+        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); } setShowAdminCloseDialog(v); }}
+        title="Fechamento Administrativo"
+        description="Você está fechando uma sessão de outro operador. Esta é uma ação excepcional e será totalmente auditada."
+        severity="danger"
+        confirmLabel="Confirmar Fechamento Administrativo"
+        loading={adminCloseLoading}
+        onConfirm={handleAdminClose}
+        summary={closing ? [
+          { label: 'Data operacional', value: formatDate(closing.business_date) },
+          { label: 'Aberto por', value: responsibilityNames[closing.user_id] || '—' },
+          { label: 'Responsável atual', value: responsibilityNames[closing.current_responsible_id] || '—' },
+          { label: 'Saldo esperado', value: formatCurrency(expectedBalance) },
+        ] : []}
+      >
+        <div className="space-y-3 mt-2">
+          <div className="flex items-start gap-2 rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-xs text-muted-foreground">
+            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+            <div className="space-y-1">
+              <p>Este fechamento será registrado como <strong className="text-destructive">ação administrativa excepcional</strong>.</p>
+              <p>Será auditado: quem abriu, quem fechou, motivo e snapshot financeiro.</p>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold">Motivo obrigatório *</Label>
+            <Select value={adminCloseReason} onValueChange={setAdminCloseReason}>
+              <SelectTrigger className="mt-1 h-12">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {ADMIN_CLOSE_REASONS.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {adminCloseReason === 'outro' && (
+            <div>
+              <Label className="text-xs font-semibold">Descreva o motivo *</Label>
+              <Input
+                value={adminCloseCustomReason}
+                onChange={e => setAdminCloseCustomReason(e.target.value)}
+                placeholder="Motivo do fechamento administrativo..."
+                className="mt-1 h-12"
+              />
+            </div>
+          )}
+          <div>
+            <Label className="text-xs font-semibold">Observações adicionais</Label>
+            <Textarea
+              value={adminCloseNotes}
+              onChange={e => setAdminCloseNotes(e.target.value)}
+              placeholder="Informações complementares (opcional)..."
+              className="mt-1"
+              rows={2}
+            />
+          </div>
+        </div>
+      </CriticalActionDialog>
     </div>
   );
 }
