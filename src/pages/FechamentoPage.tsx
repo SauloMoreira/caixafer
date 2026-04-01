@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles, ArrowRightLeft } from 'lucide-react';
+import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, History, Shield, ChevronDown, ChevronUp, Edit, Sparkles, ArrowRightLeft, ShieldAlert, User, Calendar, Clock } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { logSecurityEvent } from '@/lib/security';
 import BluetoothPrintButton from '@/components/BluetoothPrintButton';
 import { printClosing } from '@/lib/bluetooth-printer';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
@@ -26,6 +28,15 @@ const REOPEN_REASONS = [
   { value: 'correcao_lancamento', label: 'Correção de lançamento' },
   { value: 'nova_venda', label: 'Nova venda após fechamento' },
   { value: 'acerto_administrativo', label: 'Acerto administrativo' },
+  { value: 'outro', label: 'Outro' },
+];
+
+const ADMIN_CLOSE_REASONS = [
+  { value: 'operador_ausente', label: 'Operador ausente' },
+  { value: 'esquecimento_fechamento', label: 'Esquecimento de fechamento' },
+  { value: 'contingencia_operacional', label: 'Contingência operacional' },
+  { value: 'correcao_emergencial', label: 'Correção emergencial' },
+  { value: 'necessidade_administrativa', label: 'Necessidade administrativa' },
   { value: 'outro', label: 'Outro' },
 ];
 
@@ -52,6 +63,12 @@ export default function FechamentoPage() {
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
 
+  // Admin override close state
+  const [showAdminCloseDialog, setShowAdminCloseDialog] = useState(false);
+  const [adminCloseReason, setAdminCloseReason] = useState('');
+  const [adminCloseCustomReason, setAdminCloseCustomReason] = useState('');
+  const [adminCloseNotes, setAdminCloseNotes] = useState('');
+  const [adminCloseLoading, setAdminCloseLoading] = useState(false);
   const { data: responsibilityNames = {} } = useQuery({
     queryKey: ['cash-closing-responsibility-names', closing?.user_id, closing?.current_responsible_id],
     queryFn: async () => {
@@ -338,6 +355,87 @@ export default function FechamentoPage() {
 
   const wasReopened = closing?.reopened_at != null;
   const closingVersion = closing?.closing_version || 1;
+  const isAdminViewingOtherSession = isAdmin && closing && closing.current_responsible_id !== profile?.id;
+  const isSessionTransferred = closing && closing.current_responsible_id !== closing.user_id;
+
+  const adminCloseReasonFinal = adminCloseReason === 'outro'
+    ? adminCloseCustomReason
+    : ADMIN_CLOSE_REASONS.find(r => r.value === adminCloseReason)?.label || adminCloseReason;
+  const canAdminClose = adminCloseReason && (adminCloseReason !== 'outro' || adminCloseCustomReason.trim().length > 0);
+
+  const handleAdminClose = async () => {
+    if (!profile || !closing || !canAdminClose) return;
+    setAdminCloseLoading(true);
+
+    // Log override start
+    await logSecurityEvent({
+      event_type: 'admin_cash_close_override_started',
+      entity_type: 'cash_closings',
+      entity_id: closing.id,
+      action: 'ADMIN_CLOSE_OVERRIDE',
+      severity: 'critical',
+      business_date: date,
+      target_user_id: closing.current_responsible_id,
+      new_data: { reason: adminCloseReasonFinal, notes: adminCloseNotes },
+      notes: `Admin iniciou fechamento administrativo. Motivo: ${adminCloseReasonFinal}`,
+    });
+
+    const updateData = {
+      opening_balance: Number(openingBalance),
+      sales_total: stats.sales,
+      income_total: stats.income,
+      expense_total: stats.expense,
+      expected_balance: expectedBalance,
+      counted_balance: countedBalance ? Number(countedBalance) : null,
+      difference_amount: difference,
+      notes: `[FECHAMENTO ADMINISTRATIVO] Motivo: ${adminCloseReasonFinal}. Fechado por: ${profile.full_name}.${adminCloseNotes ? ` Obs: ${adminCloseNotes}` : ''}${notes ? ` | Notas originais: ${notes}` : ''}`,
+      status: 'closed' as const,
+      closed_at: new Date().toISOString(),
+    };
+
+    const { error } = await supabase.from('cash_closings').update(updateData).eq('id', closing.id);
+
+    if (error) {
+      toast.error('Erro ao fechar: ' + error.message);
+    } else {
+      // Log override completed
+      await logSecurityEvent({
+        event_type: 'admin_cash_close_override_completed',
+        entity_type: 'cash_closings',
+        entity_id: closing.id,
+        action: 'ADMIN_CLOSE_OVERRIDE',
+        severity: 'critical',
+        business_date: date,
+        target_user_id: closing.current_responsible_id,
+        old_data: {
+          opened_by: closing.user_id,
+          current_responsible_id: closing.current_responsible_id,
+          status: 'open',
+        },
+        new_data: {
+          closed_by: profile.id,
+          close_type: 'admin_override',
+          close_reason: adminCloseReasonFinal,
+          notes: adminCloseNotes,
+          snapshot_initial_balance: Number(openingBalance),
+          snapshot_sales_total: stats.sales,
+          snapshot_income_total: stats.income,
+          snapshot_expense_total: stats.expense,
+          snapshot_expected_balance: expectedBalance,
+        },
+        notes: `Fechamento administrativo concluído por ${profile.full_name}. Sessão aberta por ${responsibilityNames[closing.user_id] || 'operador'}. Responsável: ${responsibilityNames[closing.current_responsible_id] || 'operador'}. Motivo: ${adminCloseReasonFinal}.`,
+      });
+
+      toast.success('Caixa fechado administrativamente.');
+      setShowAdminCloseDialog(false);
+      setAdminCloseReason('');
+      setAdminCloseCustomReason('');
+      setAdminCloseNotes('');
+      fetchData();
+    }
+
+    setAdminCloseLoading(false);
+  };
 
   return (
     <div className="space-y-4 max-w-xl mx-auto">
@@ -421,6 +519,70 @@ export default function FechamentoPage() {
       {/* Closing exists */}
       {closing && (
         <>
+          {/* Admin viewing another operator's session */}
+          {isAdminViewingOtherSession && closing.status === 'open' && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-destructive/10 shrink-0">
+                  <ShieldAlert className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <p className="font-semibold text-destructive text-sm">Sessão de outro operador</p>
+                  <p className="text-xs text-muted-foreground">
+                    Você está visualizando a sessão de caixa de outro operador. Ações administrativas excepcionais estão disponíveis abaixo.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Data operacional</p>
+                  <p className="font-semibold">{formatDate(closing.business_date)}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Abertura</p>
+                  <p className="font-semibold">{formatDateTime(closing.created_at)}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Aberto por</p>
+                  <p className="font-semibold">{responsibilityNames[closing.user_id] || '—'}</p>
+                </div>
+                <div className="rounded-lg bg-background p-2.5 space-y-0.5">
+                  <p className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Responsável atual</p>
+                  <p className="font-semibold">{responsibilityNames[closing.current_responsible_id] || '—'}</p>
+                </div>
+              </div>
+
+              {isSessionTransferred && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground rounded-lg bg-background p-2.5">
+                  <ArrowRightLeft className="h-3.5 w-3.5 text-primary" />
+                  <span>Sessão transferida · {closing.transfer_count || 0} transferência(s)</span>
+                </div>
+              )}
+
+              {(stats.sales > 0 || stats.income > 0 || stats.expense > 0) && (
+                <div className="rounded-lg bg-background p-2.5 space-y-1.5 text-xs">
+                  <p className="font-semibold text-muted-foreground">Resumo da sessão</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saldo inicial:</span><span className="font-medium">{formatCurrency(Number(openingBalance))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Vendas:</span><span className="font-medium">{formatCurrency(stats.sales)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas:</span><span className="font-medium">{formatCurrency(stats.income)}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas:</span><span className="font-medium">{formatCurrency(stats.expense)}</span></div>
+                  </div>
+                  <div className="flex justify-between border-t pt-1.5"><span className="font-semibold">Saldo esperado:</span><span className="font-bold text-primary">{formatCurrency(expectedBalance)}</span></div>
+                </div>
+              )}
+
+              <Button
+                variant="destructive"
+                className="w-full h-11"
+                onClick={() => setShowAdminCloseDialog(true)}
+              >
+                <ShieldAlert className="mr-2 h-4 w-4" />
+                Fechar Administrativamente
+              </Button>
+            </div>
+          )}
           {/* Reopen badge banner */}
           {wasReopened && (
             <div className="flex items-start gap-2 rounded-xl border border-accent/30 bg-accent/5 p-3 text-sm">
@@ -711,6 +873,68 @@ export default function FechamentoPage() {
           onTransferred={fetchData}
         />
       )}
+
+      {/* Admin Override Close Dialog */}
+      <CriticalActionDialog
+        open={showAdminCloseDialog}
+        onOpenChange={v => { if (!v) { setAdminCloseReason(''); setAdminCloseCustomReason(''); setAdminCloseNotes(''); } setShowAdminCloseDialog(v); }}
+        title="Fechamento Administrativo"
+        description="Você está fechando uma sessão de outro operador. Esta é uma ação excepcional e será totalmente auditada."
+        severity="danger"
+        confirmLabel="Confirmar Fechamento Administrativo"
+        loading={adminCloseLoading}
+        onConfirm={handleAdminClose}
+        summary={closing ? [
+          { label: 'Data operacional', value: formatDate(closing.business_date) },
+          { label: 'Aberto por', value: responsibilityNames[closing.user_id] || '—' },
+          { label: 'Responsável atual', value: responsibilityNames[closing.current_responsible_id] || '—' },
+          { label: 'Saldo esperado', value: formatCurrency(expectedBalance) },
+        ] : []}
+      >
+        <div className="space-y-3 mt-2">
+          <div className="flex items-start gap-2 rounded-lg bg-destructive/5 border border-destructive/20 p-3 text-xs text-muted-foreground">
+            <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
+            <div className="space-y-1">
+              <p>Este fechamento será registrado como <strong className="text-destructive">ação administrativa excepcional</strong>.</p>
+              <p>Será auditado: quem abriu, quem fechou, motivo e snapshot financeiro.</p>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold">Motivo obrigatório *</Label>
+            <Select value={adminCloseReason} onValueChange={setAdminCloseReason}>
+              <SelectTrigger className="mt-1 h-12">
+                <SelectValue placeholder="Selecione o motivo" />
+              </SelectTrigger>
+              <SelectContent>
+                {ADMIN_CLOSE_REASONS.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {adminCloseReason === 'outro' && (
+            <div>
+              <Label className="text-xs font-semibold">Descreva o motivo *</Label>
+              <Input
+                value={adminCloseCustomReason}
+                onChange={e => setAdminCloseCustomReason(e.target.value)}
+                placeholder="Motivo do fechamento administrativo..."
+                className="mt-1 h-12"
+              />
+            </div>
+          )}
+          <div>
+            <Label className="text-xs font-semibold">Observações adicionais</Label>
+            <Textarea
+              value={adminCloseNotes}
+              onChange={e => setAdminCloseNotes(e.target.value)}
+              placeholder="Informações complementares (opcional)..."
+              className="mt-1"
+              rows={2}
+            />
+          </div>
+        </div>
+      </CriticalActionDialog>
     </div>
   );
 }
