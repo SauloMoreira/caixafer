@@ -903,9 +903,54 @@ export default function FechamentoPage() {
             <ShieldAlert className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
             <div className="space-y-1">
               <p>Este fechamento será registrado como <strong className="text-destructive">ação administrativa excepcional</strong>.</p>
-              <p>Será auditado: quem abriu, quem fechou, motivo e snapshot financeiro.</p>
+              <p>Será auditado: quem abriu, quem fechou, motivo, saldo contado e diferença.</p>
             </div>
           </div>
+
+          {/* Saldo contado */}
+          <div>
+            <Label className="text-xs font-semibold">Saldo contado (R$)</Label>
+            <p className="text-[10px] text-muted-foreground mb-1">Deixe vazio para encerramento forçado sem conferência física.</p>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={adminCloseCountedBalance}
+              onChange={e => setAdminCloseCountedBalance(e.target.value)}
+              placeholder="0,00"
+              className="mt-1 h-12"
+            />
+          </div>
+
+          {/* Diferença */}
+          {adminCloseCountedBalance && (
+            <div className="rounded-lg border bg-muted/50 p-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Saldo esperado</span>
+                <span className="font-medium">{formatCurrency(expectedBalance)}</span>
+              </div>
+              <div className="flex justify-between gap-2">
+                <span className="text-muted-foreground">Saldo contado</span>
+                <span className="font-medium">{formatCurrency(Number(adminCloseCountedBalance))}</span>
+              </div>
+              <div className="border-t pt-1.5 flex justify-between gap-2">
+                <span className="font-semibold">Diferença</span>
+                <span className={`font-bold ${(Number(adminCloseCountedBalance) - expectedBalance) < 0 ? 'text-destructive' : (Number(adminCloseCountedBalance) - expectedBalance) > 0 ? 'text-emerald-600' : ''}`}>
+                  {formatCurrency(Number(adminCloseCountedBalance) - expectedBalance)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {!adminCloseCountedBalance && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-2.5 text-xs text-amber-700 dark:text-amber-400">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <p>Sem saldo contado, este fechamento será registrado como <strong>encerramento forçado sem conferência física</strong>.</p>
+            </div>
+          )}
+
+          {/* Motivo */}
           <div>
             <Label className="text-xs font-semibold">Motivo obrigatório *</Label>
             <Select value={adminCloseReason} onValueChange={setAdminCloseReason}>
