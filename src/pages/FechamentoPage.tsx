@@ -607,6 +607,18 @@ export default function FechamentoPage() {
             </div>
           )}
 
+          {/* Period breakdowns after transfer */}
+          {isSessionTransferred && closing.status === 'open' && (
+            <CashSessionPeriods
+              closingId={closing.id}
+              businessDate={date}
+              openingBalance={Number(openingBalance)}
+              currentStats={stats}
+              currentSalesByMethod={salesByMethod}
+              closingCreatedAt={closing.created_at}
+            />
+          )}
+
           <Card ref={reportRef}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
