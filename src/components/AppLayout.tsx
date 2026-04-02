@@ -15,6 +15,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, signOut, isAdmin, isVolunteer } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useThemeColor();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const location = useLocation();
 
