@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -23,11 +23,17 @@ export function useNotifications() {
   const [hasCriticalAlert, setHasCriticalAlert] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const lastSprRefreshRef = useRef(0);
+
   const fetchNotifications = useCallback(async () => {
     if (!profile) return;
 
-    // Refresh notifications server-side (call the DB function)
-    await supabase.rpc('refresh_spr_notifications');
+    // Only call heavy RPC once every 10 minutes, not on every poll
+    const now = Date.now();
+    if (now - lastSprRefreshRef.current > 10 * 60 * 1000) {
+      lastSprRefreshRef.current = now;
+      try { await supabase.rpc('refresh_spr_notifications'); } catch {};
+    }
 
     const { data } = await supabase
       .from('notifications')

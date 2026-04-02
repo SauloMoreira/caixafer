@@ -16,6 +16,8 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
   } = useAuth();
   const loggedRef = useRef(false);
   const location = useLocation();
+  // Track if we've ever finished loading to prevent re-showing spinner
+  const hasLoadedOnce = useRef(false);
 
   // Log unauthorized access attempts once per mount
   useEffect(() => {
@@ -36,7 +38,28 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
     }
   }, [loading, session, profile, adminOnly, allowedRoles, isAdmin]);
 
+  // Only show full-screen spinner on initial load, never after
+  const isInitialLoad = (loading || mfaLoading) && !hasLoadedOnce.current;
+  
+  if (!loading && !mfaLoading) {
+    hasLoadedOnce.current = true;
+  }
+
+  if (isInitialLoad) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // If still loading after initial render, don't unmount children
   if (loading || mfaLoading) {
+    // Session already established - keep showing children to prevent flicker
+    if (session && profile) {
+      return <>{children}</>;
+    }
+    // No session yet - show spinner
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />

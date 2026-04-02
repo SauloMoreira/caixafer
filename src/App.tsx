@@ -31,7 +31,15 @@ import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 import HistoricoTransferenciasPage from "@/pages/HistoricoTransferenciasPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000, // 2 minutes - prevent aggressive refetching
+      refetchOnWindowFocus: false, // prevent flicker on tab switch
+      retry: 1,
+    },
+  },
+});
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>;
