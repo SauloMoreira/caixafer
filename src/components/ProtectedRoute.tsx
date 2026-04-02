@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { logSecurityIncident, logSecurityEvent } from '@/lib/security';
+import { logSecurityIncident } from '@/lib/security';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -89,15 +89,6 @@ export function ProtectedRoute({ children, adminOnly = false, allowedRoles }: Pr
     } else if (!mfaVerified) {
       // Admin has MFA but hasn't verified this session → force challenge
       if (location.pathname !== '/mfa-verify') {
-        // Log blocked access
-        logSecurityEvent({
-          event_type: 'admin_access_blocked_missing_mfa',
-          entity_type: 'auth',
-          action: 'MFA_REQUIRED',
-          severity: 'high',
-          route: location.pathname,
-          notes: 'Admin tentou acessar rota protegida sem MFA verificado',
-        });
         return <Navigate to="/mfa-verify" replace />;
       }
     }
