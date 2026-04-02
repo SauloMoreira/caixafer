@@ -18,7 +18,7 @@ import PendingTransferBanner from '@/components/PendingTransferBanner';
 import type { ManualItem } from '@/components/ManualItemDialog';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import OverrideConfirmDialog from '@/components/OverrideConfirmDialog';
-import { logOverrideAction } from '@/hooks/useCashSession';
+import { useCashSession, logOverrideAction } from '@/hooks/useCashSession';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
