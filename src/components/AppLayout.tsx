@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const role = profile?.role || 'cashier';
-  const sections = getSections(role);
+  const sections = useMemo(() => getSections(role), [role]);
   const standaloneHomeItem = sections[0]?.title === 'Início' && sections[0]?.items.length === 1 ? sections[0].items[0] : null;
   const groupedSections = standaloneHomeItem ? sections.slice(1) : sections;
   const currentTitle = pageTitles[location.pathname] || 'Caixa da FER';
