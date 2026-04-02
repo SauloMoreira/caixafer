@@ -49,10 +49,12 @@ export default function EmpresaPage() {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Imagem muito grande. Máximo 5MB.');
       return;
     }
+
     try {
       setUploading(true);
       const optimized = await optimizeImage(file);
@@ -79,6 +81,7 @@ export default function EmpresaPage() {
     }
   };
 
+  const handleSave = () => {
     updateCompany({
       name: form.name,
       legal_name: form.legal_name || null,
