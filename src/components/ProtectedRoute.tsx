@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { logSecurityIncident, logSecurityEvent } from '@/lib/security';
+import { logSecurityIncident } from '@/lib/security';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
