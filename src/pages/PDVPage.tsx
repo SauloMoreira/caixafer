@@ -272,8 +272,8 @@ export default function PDVPage() {
       <div className="space-y-4">
         <h1 className="page-title">PDV</h1>
         <PendingTransferBanner
-          onTransferAccepted={checkCashRegister}
-          onTransferStatusChanged={checkCashRegister}
+          onTransferAccepted={refreshSession}
+          onTransferStatusChanged={refreshSession}
         />
 
         {/* Blocked: another cashier has the session */}
@@ -341,7 +341,7 @@ export default function PDVPage() {
             onOpenChange={setOpeningDialogOpen}
             userId={profile.id}
             pendingDate={pendingDate}
-            onOpened={checkCashRegister}
+            onOpened={refreshSession}
           />
         )}
       </div>
@@ -352,8 +352,8 @@ export default function PDVPage() {
     <div className="space-y-4">
       {/* Pending transfer banner */}
       <PendingTransferBanner
-        onTransferAccepted={checkCashRegister}
-        onTransferStatusChanged={checkCashRegister}
+        onTransferAccepted={refreshSession}
+        onTransferStatusChanged={refreshSession}
       />
 
       {/* Override mode banner */}
@@ -594,7 +594,7 @@ export default function PDVPage() {
           businessDate={todayISO()}
           currentStats={transferSummary.currentStats}
           openingBalance={transferSummary.openingBalance}
-          onTransferred={checkCashRegister}
+          onTransferred={refreshSession}
         />
       )}
 
