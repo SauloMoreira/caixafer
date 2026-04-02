@@ -16,6 +16,36 @@ export default function EmpresaPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
+  const [form, setForm] = useState({
+    name: '',
+    legal_name: '',
+    cnpj: '',
+    email: '',
+    phone: '',
+    address: '',
+    logo_url: '',
+    receipt_footer: '',
+  });
+
+  useEffect(() => {
+    if (company) {
+      setForm({
+        name: company.name || '',
+        legal_name: company.legal_name || '',
+        cnpj: company.cnpj || '',
+        email: company.email || '',
+        phone: company.phone || '',
+        address: company.address || '',
+        logo_url: company.logo_url || '',
+        receipt_footer: company.receipt_footer || '',
+      });
+    }
+  }, [company]);
+
+  const handleChange = (field: string, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -49,37 +79,6 @@ export default function EmpresaPage() {
     }
   };
 
-  const [form, setForm] = useState({
-    name: '',
-    legal_name: '',
-    cnpj: '',
-    email: '',
-    phone: '',
-    address: '',
-    logo_url: '',
-    receipt_footer: '',
-  });
-
-  useEffect(() => {
-    if (company) {
-      setForm({
-        name: company.name || '',
-        legal_name: company.legal_name || '',
-        cnpj: company.cnpj || '',
-        email: company.email || '',
-        phone: company.phone || '',
-        address: company.address || '',
-        logo_url: company.logo_url || '',
-        receipt_footer: company.receipt_footer || '',
-      });
-    }
-  }, [company]);
-
-  const handleChange = (field: string, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = () => {
     updateCompany({
       name: form.name,
       legal_name: form.legal_name || null,
