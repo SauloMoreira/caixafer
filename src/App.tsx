@@ -30,6 +30,7 @@ import EstoquePage from "@/pages/EstoquePage";
 import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 import HistoricoTransferenciasPage from "@/pages/HistoricoTransferenciasPage";
+import EmpresaPage from "@/pages/EmpresaPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
