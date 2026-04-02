@@ -22,6 +22,7 @@ import CashTransferDialog from '@/components/CashTransferDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
+import CashDayStatement from '@/components/CashDayStatement';
 import { useQuery } from '@tanstack/react-query';
 
 const REOPEN_REASONS = [
@@ -690,6 +691,19 @@ export default function FechamentoPage() {
           <DailyOperationInsights
             businessDate={date}
             disabled={closing.status === 'closed' && !isAdmin}
+          />
+
+          {/* Cash Day Statement */}
+          <CashDayStatement
+            closingId={closing.id}
+            businessDate={date}
+            openingBalance={Number(openingBalance)}
+            closingCreatedAt={closing.created_at}
+            closingStatus={closing.status}
+            closedAt={closing.closed_at}
+            openedByName={responsibilityNames[closing.user_id] || profile?.full_name || '—'}
+            currentResponsibleName={responsibilityNames[closing.current_responsible_id] || '—'}
+            transferCount={closing.transfer_count || 0}
           />
 
           <Card>
