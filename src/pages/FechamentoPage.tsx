@@ -21,6 +21,7 @@ import AIRecommendations from '@/components/AIRecommendations';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
+import CashSessionPeriods from '@/components/CashSessionPeriods';
 import { useQuery } from '@tanstack/react-query';
 
 const REOPEN_REASONS = [
