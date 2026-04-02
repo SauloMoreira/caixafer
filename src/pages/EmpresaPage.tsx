@@ -46,7 +46,39 @@ export default function EmpresaPage() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
+    }
+    try {
+      setUploading(true);
+      const optimized = await optimizeImage(file);
+      const fileName = `logo_${Date.now()}.jpg`;
+      const filePath = company?.id ? `${company.id}/${fileName}` : fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, optimized, { cacheControl: '0', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      handleChange('logo_url', urlData.publicUrl);
+      toast.success('Logo enviado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao enviar logo: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
     updateCompany({
       name: form.name,
       legal_name: form.legal_name || null,
