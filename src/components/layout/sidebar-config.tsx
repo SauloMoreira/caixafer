@@ -6,6 +6,7 @@ import {
   BarChart3,
   Boxes,
   Brain,
+  Building2,
   Heart,
   LayoutDashboard,
   Lightbulb,
@@ -66,6 +67,7 @@ const adminSections: NavSection[] = [
   {
     title: 'Administração',
     items: [
+      { to: '/empresa', icon: Building2, label: 'Empresa' },
       { to: '/usuarios', icon: Users, label: 'Usuários' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
       { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
@@ -142,6 +144,7 @@ export const pageTitles: Record<string, string> = {
   '/notificacoes': 'Pendências',
   '/usuarios': 'Usuários',
   '/seguranca': 'Segurança',
+  '/empresa': 'Dados da Empresa',
   '/historico-transferencias': 'Histórico de Transferências',
   '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
