@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Building2, Save, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { optimizeImage } from '@/lib/image-utils';
+import { optimizeCompanyLogo } from '@/lib/logo-optimizer';
 import { toast } from 'sonner';
 
 export default function EmpresaPage() {
