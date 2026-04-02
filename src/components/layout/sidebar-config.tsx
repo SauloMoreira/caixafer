@@ -6,6 +6,7 @@ import {
   BarChart3,
   Boxes,
   Brain,
+  Building2,
   Heart,
   LayoutDashboard,
   Lightbulb,
