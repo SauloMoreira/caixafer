@@ -229,10 +229,19 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="p-4">
             <h3 className="mb-4 text-sm font-semibold">Vendas por Forma de Pagamento</h3>
-            <div className="h-48">
+            <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={salesByMethod} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name}: ${formatCurrency(value)}`}>
+                <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                  <Pie
+                    data={salesByMethod}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={55}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    labelLine={{ strokeWidth: 1 }}
+                  >
                     {salesByMethod.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
