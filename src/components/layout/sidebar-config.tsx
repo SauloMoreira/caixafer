@@ -67,6 +67,7 @@ const adminSections: NavSection[] = [
   {
     title: 'Administração',
     items: [
+      { to: '/empresa', icon: Building2, label: 'Empresa' },
       { to: '/usuarios', icon: Users, label: 'Usuários' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
       { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
