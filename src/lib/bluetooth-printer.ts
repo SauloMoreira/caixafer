@@ -3,6 +3,8 @@
  * Uses Web Bluetooth API for direct printing without browser dialog.
  */
 
+import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine, type CompanyDocumentData } from '@/lib/company-documents';
+
 const ESC = 0x1B;
 const GS = 0x1D;
 const LF = 0x0A;
@@ -225,6 +227,43 @@ function centerText(text: string): string {
   return ' '.repeat(pad) + text + '\n';
 }
 
+function wrapText(text: string, maxLength = LINE_WIDTH): string[] {
+  if (text.length <= maxLength) return [text];
+
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+
+    if (nextLine.length <= maxLength) {
+      currentLine = nextLine;
+      continue;
+    }
+
+    if (currentLine) lines.push(currentLine);
+
+    if (word.length > maxLength) {
+      for (let i = 0; i < word.length; i += maxLength) {
+        lines.push(word.slice(i, i + maxLength));
+      }
+      currentLine = '';
+    } else {
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
+
+function pushWrappedText(parts: Uint8Array[], text: string, align: 'left' | 'center' = 'left') {
+  wrapText(text).forEach((line) => {
+    parts.push(encodeText(align === 'center' ? centerText(line) : `${line}\n`));
+  });
+}
+
 // ─── Public print functions ─────────────────────────────────────
 
 export interface ReceiptPrintData {
@@ -237,32 +276,41 @@ export interface ReceiptPrintData {
   total: number;
   paymentMethod: string;
   paymentLabel: string;
+  company?: CompanyDocumentData | null;
   notes?: string | null;
 }
 
 export async function printReceipt(data: ReceiptPrintData): Promise<void> {
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const fmtDate = (d: string) => new Date(d).toLocaleString('pt-BR');
+  const companyData = getCompanyDocumentData(data.company);
+  const companyLegalLine = getCompanyLegalLine(companyData);
+  const companyHeaderLines = getCompanyHeaderLines(companyData);
+  const companyFooterLines = getCompanyFooterLines(companyData);
 
   const parts: Uint8Array[] = [
     CMD_INIT,
     CMD_CENTER,
     CMD_DOUBLE_ON,
-    encodeText('CANTINA DA FER\n'),
+    encodeText(centerText(companyData.name)),
     CMD_NORMAL,
-    encodeText('Caixa da FER - Sistema de Gestao\n'),
-    CMD_LEFT,
-    dashedLine(),
-    encodeText(padLine('Pedido:', `#${data.saleNumber}`)),
-    encodeText(padLine('Data:', fmtDate(data.createdAt))),
-    encodeText(padLine('Operador:', data.operatorName)),
-    dashedLine(),
-    // Column headers
-    CMD_BOLD_ON,
-    encodeText('ITEM                QTD   UNIT.    TOTAL\n'),
-    CMD_BOLD_OFF,
-    encodeText('.'.repeat(LINE_WIDTH) + '\n'),
   ];
+
+  if (companyLegalLine) pushWrappedText(parts, companyLegalLine, 'center');
+  companyHeaderLines.forEach((line) => pushWrappedText(parts, line, 'center'));
+
+  parts.push(CMD_LEFT);
+  parts.push(dashedLine());
+  parts.push(
+    encodeText(padLine('Pedido:', `#${data.saleNumber}`)),
+  );
+  parts.push(encodeText(padLine('Data:', fmtDate(data.createdAt))));
+  parts.push(encodeText(padLine('Operador:', data.operatorName)));
+  parts.push(dashedLine());
+  parts.push(CMD_BOLD_ON);
+  parts.push(encodeText('ITEM                QTD   UNIT.    TOTAL\n'));
+  parts.push(CMD_BOLD_OFF);
+  parts.push(encodeText('.'.repeat(LINE_WIDTH) + '\n'));
 
   // Items
   for (const item of data.items) {
@@ -293,10 +341,9 @@ export async function printReceipt(data: ReceiptPrintData): Promise<void> {
   // Footer
   parts.push(CMD_CENTER);
   parts.push(CMD_BOLD_ON);
-  parts.push(encodeText('Obrigado pela preferencia! <3\n'));
+  pushWrappedText(parts, 'Obrigado pela preferencia! <3', 'center');
   parts.push(CMD_BOLD_OFF);
-  parts.push(encodeText('Cantina da FER\n'));
-  parts.push(encodeText('Todos os direitos reservados\n'));
+  companyFooterLines.forEach((line) => pushWrappedText(parts, line, 'center'));
   parts.push(CMD_LEFT);
 
   // Feed and cut
@@ -328,6 +375,7 @@ export interface ClosingPrintData {
   notes?: string;
   version?: number;
   status: string;
+  company?: CompanyDocumentData | null;
 }
 
 export async function printClosing(data: ClosingPrintData): Promise<void> {
@@ -335,13 +383,23 @@ export async function printClosing(data: ClosingPrintData): Promise<void> {
   const fmtDate = (d: string) => {
     try { return new Date(d).toLocaleDateString('pt-BR'); } catch { return d; }
   };
+  const companyData = getCompanyDocumentData(data.company);
+  const companyLegalLine = getCompanyLegalLine(companyData);
+  const companyHeaderLines = getCompanyHeaderLines(companyData);
+  const companyFooterLines = getCompanyFooterLines(companyData);
 
   const parts: Uint8Array[] = [
     CMD_INIT,
     CMD_CENTER,
     CMD_DOUBLE_ON,
-    encodeText('CANTINA DA FER\n'),
+    encodeText(centerText(companyData.name)),
     CMD_NORMAL,
+  ];
+
+  if (companyLegalLine) pushWrappedText(parts, companyLegalLine, 'center');
+  companyHeaderLines.forEach((line) => pushWrappedText(parts, line, 'center'));
+
+  parts.push(
     CMD_BOLD_ON,
     encodeText('FECHAMENTO DE CAIXA\n'),
     CMD_BOLD_OFF,
@@ -350,7 +408,7 @@ export async function printClosing(data: ClosingPrintData): Promise<void> {
     encodeText(padLine('Data:', fmtDate(data.date))),
     encodeText(padLine('Operador:', data.operatorName)),
     encodeText(padLine('Status:', data.status === 'closed' ? 'FECHADO' : 'ABERTO')),
-  ];
+  );
 
   if (data.version && data.version > 1) {
     parts.push(encodeText(padLine('Versao:', `v${data.version}`)));
@@ -403,8 +461,8 @@ export async function printClosing(data: ClosingPrintData): Promise<void> {
 
   parts.push(dashedLine());
   parts.push(CMD_CENTER);
-  parts.push(encodeText('Cantina da FER\n'));
-  parts.push(encodeText(new Date().toLocaleString('pt-BR') + '\n'));
+  companyFooterLines.forEach((line) => pushWrappedText(parts, line, 'center'));
+  pushWrappedText(parts, new Date().toLocaleString('pt-BR'), 'center');
   parts.push(CMD_LEFT);
   parts.push(CMD_FEED_CUT);
 

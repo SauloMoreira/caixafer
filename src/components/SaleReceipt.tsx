@@ -1,6 +1,8 @@
 import { forwardRef } from 'react';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/constants';
 import type { Database } from '@/integrations/supabase/types';
+import type { Company } from '@/hooks/useCompany';
+import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
@@ -18,13 +20,31 @@ export interface ReceiptData {
 
 const paymentLabel = (m: PaymentMethod) => PAYMENT_METHODS.find(p => p.value === m)?.label || m;
 
-const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData }>(({ data }, ref) => {
+const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData; company?: Partial<Company> | null }>(({ data, company }, ref) => {
+  const companyData = getCompanyDocumentData(company);
+  const companyLegalLine = getCompanyLegalLine(companyData);
+  const companyHeaderLines = getCompanyHeaderLines(companyData);
+  const companyFooterLines = getCompanyFooterLines(companyData);
+
   return (
     <div ref={ref} className="w-[320px] mx-auto bg-white text-black p-6 font-mono text-xs leading-relaxed" style={{ fontFamily: "'Courier New', monospace" }}>
       {/* Header */}
       <div className="text-center mb-4">
-        <p className="text-base font-bold tracking-wide">CANTINA DA FER</p>
-        <p className="text-[10px] text-gray-500 mt-0.5">Caixa da FER - Sistema de Gestão</p>
+        {companyData.logoUrl && (
+          <img
+            src={companyData.logoUrl}
+            alt={`Logo da empresa ${companyData.name}`}
+            className="mx-auto mb-2 max-h-16 max-w-[140px] object-contain"
+            crossOrigin="anonymous"
+          />
+        )}
+        <p className="text-base font-bold tracking-wide">{companyData.name}</p>
+        {companyLegalLine && <p className="text-[10px] text-gray-500 mt-0.5">{companyLegalLine}</p>}
+        {companyHeaderLines.map((line) => (
+          <p key={line} className="text-[10px] text-gray-500 mt-0.5">
+            {line}
+          </p>
+        ))}
         <div className="border-b border-dashed border-gray-400 mt-3" />
       </div>
 
@@ -96,7 +116,9 @@ const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData }>(({ data },
       {/* Footer */}
       <div className="text-center text-[10px] text-gray-500 space-y-1">
         <p className="font-bold text-black text-xs">Obrigado pela preferência! 💚</p>
-        <p>Cantina da FER - Todos os direitos reservados</p>
+        {companyFooterLines.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
       </div>
     </div>
   );

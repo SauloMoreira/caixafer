@@ -24,6 +24,9 @@ import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
 import CashDayStatement from '@/components/CashDayStatement';
 import { useQuery } from '@tanstack/react-query';
+import { useCompany } from '@/hooks/useCompany';
+import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
+import { printHtmlDocument } from '@/lib/print-window';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -44,6 +47,7 @@ const ADMIN_CLOSE_REASONS = [
 
 export default function FechamentoPage() {
   const { profile, isAdmin, hasOperationalOverride } = useAuth();
+  const { company } = useCompany();
   const [date, setDate] = useState(todayISO());
   const [closing, setClosing] = useState<any>(null);
   const [openingBalance, setOpeningBalance] = useState('0');
@@ -327,48 +331,64 @@ export default function FechamentoPage() {
     else { toast.success(close ? 'Caixa fechado!' : 'Salvo!'); fetchData(); }
   };
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const content = reportRef.current;
     if (!content) { window.print(); return; }
-    const printWindow = window.open('', '_blank', 'width=500,height=700');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>Fechamento ${formatDate(date)}</title>
-      <style>
+
+    const companyData = getCompanyDocumentData(company);
+    const companyLegalLine = getCompanyLegalLine(companyData);
+    const companyHeaderLines = getCompanyHeaderLines(companyData);
+    const companyFooterLines = getCompanyFooterLines(companyData);
+    const companyHeaderHtml = `
+      <div style="text-align:center;margin-bottom:10px;">
+        ${companyData.logoUrl ? `<img src="${escapeHtml(companyData.logoUrl)}" alt="Logo da empresa ${escapeHtml(companyData.name)}" style="display:block;margin:0 auto 8px;max-width:140px;max-height:70px;object-fit:contain;" />` : ''}
+        <h2>${escapeHtml(companyData.name)}</h2>
+        ${companyLegalLine ? `<p style="text-align:center;font-size:10px;color:#666;margin:2px 0;">${escapeHtml(companyLegalLine)}</p>` : ''}
+        ${companyHeaderLines.map((line) => `<p style="text-align:center;font-size:10px;color:#666;margin:2px 0;">${escapeHtml(line)}</p>`).join('')}
+        <p style="text-align:center;font-size:11px;color:#666;margin-top:6px;">Fechamento de Caixa</p>
+      </div>
+    `;
+
+    await printHtmlDocument({
+      title: `Fechamento ${formatDate(date)}`,
+      bodyHtml: `
+        ${companyHeaderHtml}
+        <div class="sep"></div>
+        <div class="row"><span>Data:</span><span class="bold">${escapeHtml(formatDate(date))}</span></div>
+        <div class="row"><span>Operador:</span><span>${escapeHtml(profile?.full_name || '—')}</span></div>
+        <div class="sep"></div>
+        <div class="row"><span>Saldo Inicial:</span><span>${escapeHtml(formatCurrency(Number(openingBalance)))}</span></div>
+        <div class="row"><span>Vendas:</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
+        <div class="row"><span>Entradas:</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
+        <div class="row"><span>Saídas:</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
+        <div class="sep"></div>
+        <div class="row bold"><span>Saldo Esperado:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
+        ${countedBalance ? `
+          <div class="row"><span>Saldo Contado:</span><span>${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
+          <div class="row bold"><span>Diferença:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
+        ` : ''}
+        ${notes ? `<div class="sep"></div><p>Obs: ${escapeHtml(notes)}</p>` : ''}
+        <div class="sep"></div>
+        <div style="text-align:center;font-size:10px;color:#666;display:flex;flex-direction:column;gap:4px;">
+          ${companyFooterLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
+        </div>
+      `,
+      styles: `
         body { margin: 0; padding: 15mm; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.6; }
-        h2 { text-align: center; margin-bottom: 8px; }
-        .row { display: flex; justify-content: space-between; }
+        h2 { text-align: center; margin-bottom: 4px; }
+        .row { display: flex; justify-content: space-between; gap: 12px; }
         .sep { border-bottom: 1px dashed #999; margin: 8px 0; }
         .bold { font-weight: bold; }
+        img { display: block; margin: 0 auto 8px; }
         @media print { @page { size: 80mm auto; margin: 5mm; } }
-      </style></head><body>
-        <h2>CANTINA DA FER</h2>
-        <p style="text-align:center;font-size:11px;color:#666;">Fechamento de Caixa</p>
-        <div class="sep"></div>
-        <div class="row"><span>Data:</span><span class="bold">${formatDate(date)}</span></div>
-        <div class="row"><span>Operador:</span><span>${profile?.full_name}</span></div>
-        <div class="sep"></div>
-        <div class="row"><span>Saldo Inicial:</span><span>${formatCurrency(Number(openingBalance))}</span></div>
-        <div class="row"><span>Vendas:</span><span>${formatCurrency(stats.sales)}</span></div>
-        <div class="row"><span>Entradas:</span><span>${formatCurrency(stats.income)}</span></div>
-        <div class="row"><span>Saídas:</span><span>${formatCurrency(stats.expense)}</span></div>
-        <div class="sep"></div>
-        <div class="row bold"><span>Saldo Esperado:</span><span>${formatCurrency(expectedBalance)}</span></div>
-        ${countedBalance ? `
-          <div class="row"><span>Saldo Contado:</span><span>${formatCurrency(Number(countedBalance))}</span></div>
-          <div class="row bold"><span>Diferença:</span><span>${formatCurrency(difference || 0)}</span></div>
-        ` : ''}
-        ${notes ? `<div class="sep"></div><p>Obs: ${notes}</p>` : ''}
-        <div class="sep"></div>
-        <p style="text-align:center;font-size:10px;color:#666;">Caixa da FER - Todos os direitos reservados</p>
-      </body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+      `,
+      windowFeatures: 'width=500,height=700',
+    });
   };
 
   const handleShare = async () => {
-    const text = `Fechamento Caixa da FER\nData: ${formatDate(date)}\nOperador: ${profile?.full_name}\nSaldo Inicial: ${formatCurrency(Number(openingBalance))}\nVendas: ${formatCurrency(stats.sales)}\nEntradas: ${formatCurrency(stats.income)}\nSaídas: ${formatCurrency(stats.expense)}\nSaldo Esperado: ${formatCurrency(expectedBalance)}\n${countedBalance ? `Saldo Contado: ${formatCurrency(Number(countedBalance))}\nDiferença: ${formatCurrency(difference || 0)}` : ''}`;
+    const companyData = getCompanyDocumentData(company);
+    const text = `${companyData.name}\nFechamento de Caixa\n${getCompanyHeaderLines(companyData).join('\n')}\n\nData: ${formatDate(date)}\nOperador: ${profile?.full_name}\nSaldo Inicial: ${formatCurrency(Number(openingBalance))}\nVendas: ${formatCurrency(stats.sales)}\nEntradas: ${formatCurrency(stats.income)}\nSaídas: ${formatCurrency(stats.expense)}\nSaldo Esperado: ${formatCurrency(expectedBalance)}\n${countedBalance ? `Saldo Contado: ${formatCurrency(Number(countedBalance))}\nDiferença: ${formatCurrency(difference || 0)}\n` : ''}${getCompanyFooterLines(companyData).join('\n')}`;
     if (navigator.share) {
       await navigator.share({ title: 'Fechamento de Caixa', text });
     } else {
@@ -809,6 +829,7 @@ export default function FechamentoPage() {
                       notes,
                       version: closing?.closing_version,
                       status: closing?.status || 'open',
+                      company: getCompanyDocumentData(company),
                     });
                   }}
                 />
