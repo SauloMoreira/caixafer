@@ -10,10 +10,12 @@ import logoImg from '@/assets/logo.png';
 import { SidebarSection } from '@/components/layout/SidebarSection';
 import { SidebarUserCard } from '@/components/layout/SidebarUserCard';
 import { getSections, pageTitles } from '@/components/layout/sidebar-config';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile, signOut, isAdmin, isVolunteer } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useThemeColor();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
   const location = useLocation();
 
