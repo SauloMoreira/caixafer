@@ -21,6 +21,7 @@ import AIRecommendations from '@/components/AIRecommendations';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
+import CashSessionPeriods from '@/components/CashSessionPeriods';
 import { useQuery } from '@tanstack/react-query';
 
 const REOPEN_REASONS = [
@@ -604,6 +605,18 @@ export default function FechamentoPage() {
                 </p>
               </div>
             </div>
+          )}
+
+          {/* Period breakdowns after transfer */}
+          {isSessionTransferred && closing.status === 'open' && (
+            <CashSessionPeriods
+              closingId={closing.id}
+              businessDate={date}
+              openingBalance={Number(openingBalance)}
+              currentStats={stats}
+              currentSalesByMethod={salesByMethod}
+              closingCreatedAt={closing.created_at}
+            />
           )}
 
           <Card ref={reportRef}>
