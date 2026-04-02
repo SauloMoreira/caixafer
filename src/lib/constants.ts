@@ -6,7 +6,10 @@ export function formatCurrency(value: number): string {
 }
 
 export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('pt-BR');
+  // Date-only strings (YYYY-MM-DD) are parsed as UTC by JS, causing off-by-one in negative UTC offsets.
+  // Append T12:00:00 to force local interpretation without timezone shift.
+  const d = date.length === 10 ? new Date(date + 'T12:00:00') : new Date(date);
+  return d.toLocaleDateString('pt-BR');
 }
 
 export function formatDateTime(date: string): string {
