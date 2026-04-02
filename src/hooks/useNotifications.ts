@@ -32,7 +32,7 @@ export function useNotifications() {
     const now = Date.now();
     if (now - lastSprRefreshRef.current > 10 * 60 * 1000) {
       lastSprRefreshRef.current = now;
-      await supabase.rpc('refresh_spr_notifications').catch(() => {});
+      try { await supabase.rpc('refresh_spr_notifications'); } catch {};
     }
 
     const { data } = await supabase
