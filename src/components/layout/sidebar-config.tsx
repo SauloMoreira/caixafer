@@ -144,6 +144,7 @@ export const pageTitles: Record<string, string> = {
   '/notificacoes': 'Pendências',
   '/usuarios': 'Usuários',
   '/seguranca': 'Segurança',
+  '/empresa': 'Dados da Empresa',
   '/historico-transferencias': 'Histórico de Transferências',
   '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
