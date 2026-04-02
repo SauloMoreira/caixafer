@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCompany, Company } from '@/hooks/useCompany';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,48 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Building2, Save, Loader2, Upload, ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { optimizeImage } from '@/lib/image-utils';
+import { toast } from 'sonner';
 
 export default function EmpresaPage() {
   const { company, isLoading, updateCompany, isUpdating } = useCompany();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
+    }
+    try {
+      setUploading(true);
+      const optimized = await optimizeImage(file);
+      const fileName = `logo_${Date.now()}.jpg`;
+      const filePath = company?.id ? `${company.id}/${fileName}` : fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('company-logos')
+        .upload(filePath, optimized, { cacheControl: '0', upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('company-logos')
+        .getPublicUrl(filePath);
+
+      handleChange('logo_url', urlData.publicUrl);
+      toast.success('Logo enviado com sucesso!');
+    } catch (err: any) {
+      toast.error('Erro ao enviar logo: ' + (err.message || 'Erro desconhecido'));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const [form, setForm] = useState({
     name: '',
@@ -163,23 +201,61 @@ export default function EmpresaPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="logo_url">URL do Logo</Label>
-              <Input
-                id="logo_url"
-                value={form.logo_url}
-                onChange={e => handleChange('logo_url', e.target.value)}
-                placeholder="https://..."
-              />
-              {form.logo_url && (
-                <div className="mt-2 flex justify-center rounded-lg border border-border bg-muted/30 p-4">
+              <Label>Logo da Empresa</Label>
+              {form.logo_url ? (
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/30 p-4">
                   <img
                     src={form.logo_url}
                     alt="Logo da empresa"
                     className="max-h-24 max-w-full object-contain"
                     onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-1 h-3 w-3" />
+                      Trocar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange('logo_url', '')}
+                    >
+                      Remover
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/20 p-8 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {uploading ? 'Enviando...' : 'Clique para enviar o logo'}
+                  </span>
+                  <span className="text-xs">PNG, JPG até 5MB</span>
+                </button>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
             </div>
           </CardContent>
         </Card>
