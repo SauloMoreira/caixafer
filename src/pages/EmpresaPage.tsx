@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCompany, Company } from '@/hooks/useCompany';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { Building2, Save, Loader2 } from 'lucide-react';
+import { Building2, Save, Loader2, Upload, ImageIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { optimizeImage } from '@/lib/image-utils';
+import { toast } from 'sonner';
 
 export default function EmpresaPage() {
   const { company, isLoading, updateCompany, isUpdating } = useCompany();
