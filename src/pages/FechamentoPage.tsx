@@ -90,11 +90,54 @@ export default function FechamentoPage() {
     setLoading(true);
     setExistingOpenByOther(null);
 
-    // Get closing for selected date (latest version)
-    let closingQuery = supabase.from('cash_closings').select('*').eq('business_date', date);
-    if (!isAdmin && !hasOperationalOverride) closingQuery = closingQuery.or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`);
-    closingQuery = closingQuery.eq('is_latest_version', true);
-    const { data: closingData } = await closingQuery.maybeSingle();
+    const isSelectedToday = date === todayISO();
+    let closingData: any = null;
+
+    // For today's date, first use the same source of truth used by other cash flows.
+    if (isSelectedToday) {
+      const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
+      const openSession = sessions?.[0];
+
+      if (openSession) {
+        const canAccessOpenSession =
+          isAdmin ||
+          hasOperationalOverride ||
+          openSession.user_id === profile.id ||
+          openSession.current_responsible_id === profile.id;
+
+        if (canAccessOpenSession) {
+          const { data } = await supabase
+            .from('cash_closings')
+            .select('*')
+            .eq('id', openSession.closing_id)
+            .eq('is_latest_version', true)
+            .maybeSingle();
+
+          closingData = data;
+        } else {
+          setExistingOpenByOther({ responsibleName: openSession.responsible_name || 'outro operador' });
+        }
+      }
+    }
+
+    // Fallback for historical dates and for days with multiple records.
+    if (!closingData) {
+      let closingQuery = supabase
+        .from('cash_closings')
+        .select('*')
+        .eq('business_date', date)
+        .eq('is_latest_version', true)
+        .order('status', { ascending: true })
+        .order('created_at', { ascending: false });
+
+      if (!isAdmin && !hasOperationalOverride) {
+        closingQuery = closingQuery.or(`user_id.eq.${profile.id},current_responsible_id.eq.${profile.id}`);
+      }
+
+      const { data: closingRows } = await closingQuery;
+      closingData = closingRows?.find((item: any) => item.status === 'open') || closingRows?.[0] || null;
+    }
+
     setClosing(closingData);
     if (closingData) {
       setOpeningBalance(String(closingData.opening_balance));
@@ -104,14 +147,6 @@ export default function FechamentoPage() {
       setOpeningBalance('0');
       setCountedBalance('');
       setNotes('');
-
-      // Check if another user already has an open cash session for this date (bypass RLS)
-      if (!hasOperationalOverride) {
-        const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
-        if (sessions && sessions.length > 0 && sessions[0].current_responsible_id !== profile.id) {
-          setExistingOpenByOther({ responsibleName: sessions[0].responsible_name || 'outro operador' });
-        }
-      }
     }
 
     // Check for pending previous days
@@ -148,7 +183,7 @@ export default function FechamentoPage() {
 
     setStats({ sales, income, expense });
     setLoading(false);
-  }, [date, profile, isAdmin]);
+  }, [date, profile, isAdmin, hasOperationalOverride]);
 
   const fetchHistory = useCallback(async () => {
     if (!closing || !isAdmin) return;
