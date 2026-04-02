@@ -70,6 +70,7 @@ const App = () => (
             <Route path="/relatorios" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><RelatoriosPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/spr" element={<ProtectedRoute allowedRoles={['admin', 'cashier', 'cash_coordinator']}><LayoutWrapper><SPRPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/usuarios" element={<ProtectedRoute adminOnly><LayoutWrapper><UsuariosPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/empresa" element={<ProtectedRoute adminOnly><LayoutWrapper><EmpresaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/historico-transferencias" element={<ProtectedRoute adminOnly><LayoutWrapper><HistoricoTransferenciasPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
