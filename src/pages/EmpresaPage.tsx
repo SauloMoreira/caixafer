@@ -12,7 +12,8 @@ import { optimizeImage } from '@/lib/image-utils';
 import { toast } from 'sonner';
 
 export default function EmpresaPage() {
-  const { company, isLoading, updateCompany, isUpdating } = useCompany();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     name: '',
