@@ -364,7 +364,7 @@ export default function PDVPage() {
                   Você não pode operar enquanto outro operador estiver com o caixa aberto.
                 </p>
               ) : cashStatus === 'closed_today' ? (
-                <p className="text-sm text-muted-foreground">O caixa de hoje já foi fechado. Não é possível realizar novas vendas.</p>
+                <p className="text-sm text-muted-foreground">O caixa do dia já foi fechado. Para continuar o atendimento e registrar novas vendas, reabra o caixa.</p>
               ) : pendingDate ? (
                 <p className="text-sm text-muted-foreground">
                   Existe um caixa anterior em aberto. Feche o caixa antes de iniciar um novo dia.
