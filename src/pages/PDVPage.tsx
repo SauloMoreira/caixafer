@@ -18,7 +18,7 @@ import PendingTransferBanner from '@/components/PendingTransferBanner';
 import type { ManualItem } from '@/components/ManualItemDialog';
 import CashTransferDialog from '@/components/CashTransferDialog';
 import OverrideConfirmDialog from '@/components/OverrideConfirmDialog';
-import { logOverrideAction } from '@/hooks/useCashSession';
+import { useCashSession, logOverrideAction } from '@/hooks/useCashSession';
 import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 import { useNavigate } from 'react-router-dom';
@@ -40,6 +40,17 @@ const getCartItemPrice = (item: CartItem) => item.itemType === 'product' ? Numbe
 export default function PDVPage() {
   const { profile, hasOperationalOverride } = useAuth();
   const navigate = useNavigate();
+  const {
+    loading: sessionLoading,
+    cashStatus,
+    closingId,
+    isTransferredSession,
+    responsibleName: sessionResponsibleName,
+    isOverrideMode,
+    pendingDate,
+    refresh: refreshSession,
+  } = useCashSession();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState('');
@@ -49,12 +60,8 @@ export default function PDVPage() {
   const [loading, setLoading] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
-  // Cash register state
-  const [cashStatus, setCashStatus] = useState<'loading' | 'open' | 'closed_today' | 'none' | 'blocked'>('loading');
-  const [pendingDate, setPendingDate] = useState<string | null>(null);
+  // Opening dialog state
   const [openingDialogOpen, setOpeningDialogOpen] = useState(false);
-  const [closingId, setClosingId] = useState<string | null>(null);
-  const [isTransferredSession, setIsTransferredSession] = useState(false);
 
   // Receipt state
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -79,7 +86,6 @@ export default function PDVPage() {
   const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
   const [overrideAction, setOverrideAction] = useState<(() => void) | null>(null);
   const [overrideLabel, setOverrideLabel] = useState('');
-  const [sessionResponsibleName, setSessionResponsibleName] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
     const { data } = await supabase
@@ -128,76 +134,14 @@ export default function PDVPage() {
     });
   }, [closingId]);
 
-  const checkCashRegister = useCallback(async () => {
-    if (!profile) return;
-    setCashStatus('loading');
-    const today = todayISO();
-
-    // Use SECURITY DEFINER function to check open session (bypasses RLS)
-    const { data: sessions } = await supabase.rpc('get_open_cash_session_today');
-    const openSession = sessions?.[0];
-
-    if (openSession) {
-      const isCurrentResponsible = openSession.current_responsible_id === profile.id;
-
-      if (isCurrentResponsible || hasOperationalOverride) {
-        setCashStatus('open');
-        setClosingId(openSession.closing_id);
-        setIsTransferredSession(isCurrentResponsible && openSession.current_responsible_id !== openSession.user_id);
-        
-        if (!isCurrentResponsible && hasOperationalOverride) {
-          setSessionResponsibleName(openSession.responsible_name || 'outro operador');
-        } else {
-          setSessionResponsibleName(null);
-        }
-      } else {
-        // Session exists but user is not responsible and has no override
-        // Show blocking message with responsible name
-        setCashStatus('blocked');
-        setClosingId(null);
-        setIsTransferredSession(false);
-        setSessionResponsibleName(openSession.responsible_name || 'outro operador');
-      }
-      setPendingDate(null);
-    } else {
-      // Check for closed today (user's own)
-      const { data: closedToday } = await supabase
-        .from('cash_closings')
-        .select('id')
-        .eq('business_date', today)
-        .eq('user_id', profile.id)
-        .eq('status', 'closed')
-        .limit(1);
-
-      if (closedToday && closedToday.length > 0) {
-        setCashStatus('closed_today');
-      } else {
-        // Check for pending previous days
-        const { data: pendingClosings } = await supabase
-          .from('cash_closings')
-          .select('business_date')
-          .eq('user_id', profile.id)
-          .eq('status', 'open')
-          .lt('business_date', today)
-          .order('business_date', { ascending: false })
-          .limit(1);
-
-        setPendingDate(pendingClosings?.[0]?.business_date || null);
-        setCashStatus('none');
-      }
-      setClosingId(null);
-      setIsTransferredSession(false);
-      setSessionResponsibleName(null);
-    }
-  }, [profile, hasOperationalOverride]);
-
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
   useEffect(() => {
-    checkCashRegister();
-  }, [checkCashRegister]);
+    if (!transferOpen || !closingId) return;
+    fetchTransferSummary();
+  }, [transferOpen, closingId, fetchTransferSummary]);
 
   useEffect(() => {
     if (!transferOpen || !closingId) return;
@@ -314,7 +258,7 @@ export default function PDVPage() {
   };
 
   // Loading state
-  if (cashStatus === 'loading') {
+  if (sessionLoading) {
     return (
       <div className="flex justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -328,8 +272,8 @@ export default function PDVPage() {
       <div className="space-y-4">
         <h1 className="page-title">PDV</h1>
         <PendingTransferBanner
-          onTransferAccepted={checkCashRegister}
-          onTransferStatusChanged={checkCashRegister}
+          onTransferAccepted={refreshSession}
+          onTransferStatusChanged={refreshSession}
         />
 
         {/* Blocked: another cashier has the session */}
@@ -397,7 +341,7 @@ export default function PDVPage() {
             onOpenChange={setOpeningDialogOpen}
             userId={profile.id}
             pendingDate={pendingDate}
-            onOpened={checkCashRegister}
+            onOpened={refreshSession}
           />
         )}
       </div>
@@ -408,8 +352,8 @@ export default function PDVPage() {
     <div className="space-y-4">
       {/* Pending transfer banner */}
       <PendingTransferBanner
-        onTransferAccepted={checkCashRegister}
-        onTransferStatusChanged={checkCashRegister}
+        onTransferAccepted={refreshSession}
+        onTransferStatusChanged={refreshSession}
       />
 
       {/* Override mode banner */}
@@ -650,7 +594,7 @@ export default function PDVPage() {
           businessDate={todayISO()}
           currentStats={transferSummary.currentStats}
           openingBalance={transferSummary.openingBalance}
-          onTransferred={checkCashRegister}
+          onTransferred={refreshSession}
         />
       )}
 

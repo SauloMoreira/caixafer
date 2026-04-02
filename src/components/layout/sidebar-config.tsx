@@ -79,6 +79,22 @@ const cashierSections: NavSection[] = [
     title: 'Início',
     items: [{ to: '/', icon: LayoutDashboard, label: 'Início' }],
   },
+  {
+    title: 'Caixa',
+    items: [
+      { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
+      { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
+      { to: '/fechamento', icon: Lock, label: 'Fechamento' },
+    ],
+  },
+  {
+    title: 'SPR',
+    items: [{ to: '/spr', icon: Heart, label: 'SPR' }],
+  },
+  {
+    title: 'Análises',
+    items: [{ to: '/relatorios', icon: BarChart3, label: 'Relatórios' }],
+  },
 ];
 
 const coordinatorSections: NavSection[] = [
