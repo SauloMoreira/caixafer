@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock, Calendar, Wallet, Receipt, CreditCard, BookOpen, ShoppingBag } from 'lucide-react';
+import { useCompany } from '@/hooks/useCompany';
+import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
+import { printHtmlDocument } from '@/lib/print-window';
 
 interface Transfer {
   id: string;
@@ -115,6 +118,7 @@ export default function CashDayStatement({
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [nameMap, setNameMap] = useState<Record<string, string>>({});
   const printRef = useRef<HTMLDivElement>(null);
+  const { company } = useCompany();
 
   useEffect(() => {
     if (expanded && sales.length === 0) fetchStatementData();
@@ -212,19 +216,24 @@ export default function CashDayStatement({
 
   const totalSales = Object.values(salesByMethod).reduce((s, v) => s + v, 0);
   const expectedBalance = openingBalance + totalSales + totalIncome - totalExpense;
+  const companyData = getCompanyDocumentData(company);
+  const companyLegalLine = getCompanyLegalLine(companyData);
+  const companyHeaderLines = getCompanyHeaderLines(companyData);
+  const companyFooterLines = getCompanyFooterLines(companyData);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     const content = printRef.current;
     if (!content) return;
-    const printWindow = window.open('', '_blank', 'width=600,height=900');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>Extrato do Caixa - ${formatDate(businessDate)}</title>
-      <style>
+
+    await printHtmlDocument({
+      title: `Extrato do Caixa - ${formatDate(businessDate)}`,
+      bodyHtml: content.innerHTML,
+      styles: `
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11px; line-height: 1.5; padding: 12mm; color: #1a1a1a; }
         h2 { text-align: center; font-size: 14px; margin-bottom: 4px; }
         h3 { font-size: 12px; margin: 12px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+        img { display: block; margin: 0 auto 8px; max-width: 150px; max-height: 72px; object-fit: contain; }
         .subtitle { text-align: center; font-size: 10px; color: #666; margin-bottom: 8px; }
         .row { display: flex; justify-content: space-between; padding: 2px 0; }
         .row.bold { font-weight: 700; }
@@ -237,12 +246,9 @@ export default function CashDayStatement({
         .total-row { background: #f0f7ff; font-weight: 700; }
         .footer { text-align: center; font-size: 9px; color: #999; margin-top: 16px; }
         @media print { @page { size: A4; margin: 10mm; } }
-      </style></head><body>
-      ${content.innerHTML}
-      </body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
+      `,
+      windowFeatures: 'width=600,height=900',
+    });
   };
 
   return (
@@ -279,9 +285,23 @@ export default function CashDayStatement({
               {/* Printable content */}
               <div ref={printRef}>
                 {/* Header */}
-                <div className="print-header">
-                  <h2 style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700 }}>CANTINA DA FER</h2>
-                  <p className="subtitle" style={{ textAlign: 'center', fontSize: '10px', color: '#666' }}>Extrato de Conferência do Caixa</p>
+                <div className="print-header border-b border-border pb-3">
+                  {companyData.logoUrl && (
+                    <img
+                      src={companyData.logoUrl}
+                      alt={`Logo da empresa ${companyData.name}`}
+                      className="mx-auto mb-2 max-h-16 max-w-[160px] object-contain"
+                      crossOrigin="anonymous"
+                    />
+                  )}
+                  <h2 style={{ textAlign: 'center', fontSize: '14px', fontWeight: 700 }}>{companyData.name}</h2>
+                  {companyLegalLine && <p className="subtitle" style={{ textAlign: 'center', fontSize: '10px', color: '#666', marginBottom: '2px' }}>{companyLegalLine}</p>}
+                  {companyHeaderLines.map((line) => (
+                    <p key={line} className="subtitle" style={{ textAlign: 'center', fontSize: '10px', color: '#666', marginBottom: '2px' }}>
+                      {line}
+                    </p>
+                  ))}
+                  <p className="subtitle" style={{ textAlign: 'center', fontSize: '10px', color: '#666', marginTop: '6px' }}>Extrato de Conferência do Caixa</p>
                 </div>
 
                 <div className="rounded-lg border bg-muted/30 p-3 space-y-1 text-xs">
@@ -553,7 +573,10 @@ export default function CashDayStatement({
 
                 {/* Print footer */}
                 <div className="mt-4 text-center text-[10px] text-muted-foreground border-t pt-2">
-                  <p>Caixa da FER — Extrato gerado em {formatDateTime(new Date().toISOString())}</p>
+                  {companyFooterLines.map((line) => (
+                    <p key={line}>{line}</p>
+                  ))}
+                  <p>{companyData.name} — Extrato gerado em {formatDateTime(new Date().toISOString())}</p>
                 </div>
               </div>
 

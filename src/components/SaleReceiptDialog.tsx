@@ -7,6 +7,9 @@ import { Printer, FileText, Share2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 import BluetoothPrintButton from './BluetoothPrintButton';
 import { printReceipt } from '@/lib/bluetooth-printer';
+import { useCompany } from '@/hooks/useCompany';
+import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines } from '@/lib/company-documents';
+import { printHtmlDocument } from '@/lib/print-window';
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
@@ -20,30 +23,37 @@ interface Props {
 
 export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const { company } = useCompany();
 
   if (!data) return null;
 
-  const handlePrint = () => {
+  const companyData = getCompanyDocumentData(company);
+  const companyHeaderLines = getCompanyHeaderLines(companyData);
+  const companyFooterLines = getCompanyFooterLines(companyData);
+
+  const handlePrint = async () => {
     const content = receiptRef.current;
     if (!content) return;
-    const printWindow = window.open('', '_blank', 'width=400,height=700');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>Pedido #${data.saleNumber}</title>
-      <style>
+
+    await printHtmlDocument({
+      title: `Pedido #${data.saleNumber}`,
+      bodyHtml: content.innerHTML,
+      styles: `
         body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
+        img { display: block; margin: 0 auto 6px; max-width: 140px; max-height: 60px; object-fit: contain; }
         @media print { body { padding: 5mm; } @page { size: 80mm auto; margin: 0; } }
-      </style></head><body>${content.innerHTML}</body></html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
+      `,
+      windowFeatures: 'width=400,height=700',
+    });
   };
 
   const buildPlainText = () => {
     const lines = [
       '=============================',
-      '      CANTINA DA FER',
+      `      ${companyData.name.toUpperCase()}`,
       '=============================',
+      ...companyHeaderLines,
+      '',
       '',
       `Pedido: #${data.saleNumber}`,
       `Data: ${formatDateTime(data.createdAt)}`,
@@ -57,6 +67,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       `Pagamento: ${paymentLabel(data.paymentMethod)}`,
       '-----------------------------',
       'Obrigado pela preferência! 💚',
+      ...companyFooterLines,
     ];
     return lines.join('\n');
   };
@@ -85,7 +96,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
         </DialogHeader>
 
         <div className="overflow-x-auto">
-          <SaleReceipt ref={receiptRef} data={data} />
+          <SaleReceipt ref={receiptRef} data={data} company={company} />
         </div>
 
         <div className="grid grid-cols-4 gap-2 mt-4">
@@ -113,6 +124,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
                 total: data.total,
                 paymentMethod: data.paymentMethod,
                 paymentLabel: paymentLabel(data.paymentMethod),
+                company: companyData,
               });
             }}
           />
