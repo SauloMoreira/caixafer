@@ -115,6 +115,7 @@ export default function EmpresaPage() {
       address: form.address || null,
       logo_url: form.logo_url || null,
       receipt_footer: form.receipt_footer || null,
+      theme_color: form.theme_color || null,
     } as Partial<Company>);
   };
 
