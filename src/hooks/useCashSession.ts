@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { todayISO } from '@/lib/constants';
 import { logSecurityEvent } from '@/lib/security';
 
+export type CashStatus = 'loading' | 'open' | 'closed_today' | 'none' | 'blocked';
+
 interface CashSessionState {
   loading: boolean;
   sessionOpen: boolean;
@@ -14,16 +16,20 @@ interface CashSessionState {
   canOperate: boolean;
   isOverrideMode: boolean;
   isTransferredSession: boolean;
+  /** Convenience status derived from session state — used by PDV and other screens */
+  cashStatus: CashStatus;
+  /** business_date of a previous-day open session, if any */
+  pendingDate: string | null;
   refresh: () => Promise<void>;
 }
 
 /**
- * Hook to check if the current user can operate the cash session.
+ * Single source of truth for the current-day cash session.
  * Uses a SECURITY DEFINER function to bypass RLS so any cashier
  * can see if a session is already open today.
  */
 export function useCashSession(): CashSessionState {
-  const { profile } = useAuth();
+  const { profile, hasOperationalOverride } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sessionOpen, setSessionOpen] = useState(false);
   const [closingId, setClosingId] = useState<string | null>(null);
@@ -31,8 +37,8 @@ export function useCashSession(): CashSessionState {
   const [responsibleName, setResponsibleName] = useState<string | null>(null);
   const [isResponsible, setIsResponsible] = useState(false);
   const [isTransferredSession, setIsTransferredSession] = useState(false);
-
-  const hasOverride = !!(profile as any)?.has_operational_override;
+  const [cashStatus, setCashStatus] = useState<CashStatus>('loading');
+  const [pendingDate, setPendingDate] = useState<string | null>(null);
 
   const check = useCallback(async () => {
     if (!profile) return;
@@ -53,6 +59,14 @@ export function useCashSession(): CashSessionState {
       setIsTransferredSession(
         userIsResponsible && session.current_responsible_id !== session.user_id
       );
+      setPendingDate(null);
+
+      // Determine cashStatus
+      if (userIsResponsible || hasOperationalOverride) {
+        setCashStatus('open');
+      } else {
+        setCashStatus('blocked');
+      }
     } else {
       setSessionOpen(false);
       setClosingId(null);
@@ -60,17 +74,45 @@ export function useCashSession(): CashSessionState {
       setResponsibleName(null);
       setIsResponsible(false);
       setIsTransferredSession(false);
+
+      const today = todayISO();
+
+      // Check for closed today (any user — use RPC-less query filtered by profile)
+      const { data: closedToday } = await supabase
+        .from('cash_closings')
+        .select('id')
+        .eq('business_date', today)
+        .eq('status', 'closed')
+        .limit(1);
+
+      if (closedToday && closedToday.length > 0) {
+        setCashStatus('closed_today');
+        setPendingDate(null);
+      } else {
+        // Check for pending previous days
+        const { data: pendingClosings } = await supabase
+          .from('cash_closings')
+          .select('business_date')
+          .eq('status', 'open')
+          .lt('business_date', today)
+          .order('business_date', { ascending: false })
+          .limit(1);
+
+        const pd = pendingClosings?.[0]?.business_date || null;
+        setPendingDate(pd);
+        setCashStatus('none');
+      }
     }
 
     setLoading(false);
-  }, [profile]);
+  }, [profile, hasOperationalOverride]);
 
   useEffect(() => {
     check();
   }, [check]);
 
-  const canOperate = isResponsible || (sessionOpen && hasOverride);
-  const isOverrideMode = sessionOpen && !isResponsible && hasOverride;
+  const canOperate = isResponsible || (sessionOpen && hasOperationalOverride);
+  const isOverrideMode = sessionOpen && !isResponsible && hasOperationalOverride;
 
   return {
     loading,
@@ -82,6 +124,8 @@ export function useCashSession(): CashSessionState {
     canOperate,
     isOverrideMode,
     isTransferredSession,
+    cashStatus,
+    pendingDate,
     refresh: check,
   };
 }
