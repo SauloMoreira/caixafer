@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Building2, Save, Loader2, Upload, ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { optimizeImage } from '@/lib/image-utils';
+import { optimizeCompanyLogo } from '@/lib/logo-optimizer';
 import { toast } from 'sonner';
 
 export default function EmpresaPage() {
@@ -57,22 +57,44 @@ export default function EmpresaPage() {
 
     try {
       setUploading(true);
-      const optimized = await optimizeImage(file);
-      const fileName = `logo_${Date.now()}.jpg`;
-      const filePath = company?.id ? `${company.id}/${fileName}` : fileName;
+      const ts = Date.now();
+      const basePath = company?.id ? `${company.id}` : 'default';
 
-      const { error: uploadError } = await supabase.storage
+      // 1. Upload original (preserved)
+      const origExt = file.name.split('.').pop() || 'jpg';
+      const originalPath = `${basePath}/original_${ts}.${origExt}`;
+      await supabase.storage
         .from('company-logos')
-        .upload(filePath, optimized, { cacheControl: '0', upsert: true });
+        .upload(originalPath, file, { cacheControl: '3600', upsert: true });
 
-      if (uploadError) throw uploadError;
+      // 2. Generate optimized + thumbnail versions
+      const { optimized, thumbnail, isLowQuality } = await optimizeCompanyLogo(file);
 
+      // 3. Upload optimized version
+      const optimizedPath = `${basePath}/logo_${ts}.jpg`;
+      const { error: optError } = await supabase.storage
+        .from('company-logos')
+        .upload(optimizedPath, optimized, { cacheControl: '0', upsert: true });
+      if (optError) throw optError;
+
+      // 4. Upload thumbnail
+      const thumbPath = `${basePath}/thumb_${ts}.jpg`;
+      await supabase.storage
+        .from('company-logos')
+        .upload(thumbPath, thumbnail, { cacheControl: '0', upsert: true });
+
+      // 5. Use optimized URL
       const { data: urlData } = supabase.storage
         .from('company-logos')
-        .getPublicUrl(filePath);
+        .getPublicUrl(optimizedPath);
 
       handleChange('logo_url', urlData.publicUrl);
-      toast.success('Logo enviado com sucesso!');
+
+      if (isLowQuality) {
+        toast.warning('Logo enviado, mas a qualidade da imagem é baixa. Recomendamos enviar uma versão melhor.', { duration: 6000 });
+      } else {
+        toast.success('Logo enviado e otimizado com sucesso!');
+      }
     } catch (err: any) {
       toast.error('Erro ao enviar logo: ' + (err.message || 'Erro desconhecido'));
     } finally {
