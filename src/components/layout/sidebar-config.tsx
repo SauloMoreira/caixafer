@@ -91,10 +91,6 @@ const cashierSections: NavSection[] = [
     title: 'SPR',
     items: [{ to: '/spr', icon: Heart, label: 'SPR' }],
   },
-  {
-    title: 'Análises',
-    items: [{ to: '/relatorios', icon: BarChart3, label: 'Relatórios' }],
-  },
 ];
 
 const coordinatorSections: NavSection[] = [
