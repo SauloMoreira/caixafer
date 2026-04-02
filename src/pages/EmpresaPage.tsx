@@ -313,6 +313,203 @@ export default function EmpresaPage() {
 
       <Separator />
 
+      {/* Aparência do Sistema */}
+      <div className="flex items-center gap-3">
+        <Palette className="h-6 w-6 text-primary" />
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Aparência do Sistema</h2>
+          <p className="text-sm text-muted-foreground">
+            Personalize as cores e o visual do sistema
+          </p>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Cor Principal</CardTitle>
+            <CardDescription>Escolha a cor que representa sua marca</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <Label>Cor do Tema</Label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={form.theme_color || '#2a9d8f'}
+                  onChange={e => handleChange('theme_color', e.target.value)}
+                  className="h-10 w-14 cursor-pointer rounded-md border border-border bg-transparent p-0.5"
+                />
+                <Input
+                  value={form.theme_color || '#2a9d8f'}
+                  onChange={e => handleChange('theme_color', e.target.value)}
+                  placeholder="#2a9d8f"
+                  className="max-w-[140px] font-mono text-sm"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Esta cor será usada como referência principal do sistema em uma atualização futura.
+              </p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label>Paletas Sugeridas</Label>
+              <div className="grid grid-cols-6 gap-2">
+                {[
+                  { color: '#2a9d8f', name: 'Verde Teal' },
+                  { color: '#264653', name: 'Azul Escuro' },
+                  { color: '#e76f51', name: 'Laranja' },
+                  { color: '#6366f1', name: 'Indigo' },
+                  { color: '#8b5cf6', name: 'Violeta' },
+                  { color: '#0891b2', name: 'Ciano' },
+                  { color: '#059669', name: 'Esmeralda' },
+                  { color: '#d97706', name: 'Âmbar' },
+                  { color: '#dc2626', name: 'Vermelho' },
+                  { color: '#2563eb', name: 'Azul' },
+                  { color: '#7c3aed', name: 'Roxo' },
+                  { color: '#db2777', name: 'Rosa' },
+                ].map(p => (
+                  <button
+                    key={p.color}
+                    type="button"
+                    title={p.name}
+                    onClick={() => handleChange('theme_color', p.color)}
+                    className="group relative flex h-9 w-full items-center justify-center rounded-md border border-border transition-all hover:scale-110 hover:shadow-md"
+                    style={{ backgroundColor: p.color }}
+                  >
+                    {(form.theme_color || '#2a9d8f').toLowerCase() === p.color.toLowerCase() && (
+                      <Check className="h-4 w-4 text-white drop-shadow-md" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Preview</CardTitle>
+            <CardDescription>Visualize como ficará a aparência</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div
+              className="overflow-hidden rounded-lg border border-border"
+            >
+              {/* Mini header preview */}
+              <div
+                className="flex items-center gap-3 px-4 py-3"
+                style={{ backgroundColor: form.theme_color || '#2a9d8f' }}
+              >
+                {form.logo_url ? (
+                  <img src={form.logo_url} alt="Logo" className="h-8 w-8 rounded-md object-contain bg-white/20 p-0.5" />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/20">
+                    <Building2 className="h-4 w-4 text-white" />
+                  </div>
+                )}
+                <span className="text-sm font-semibold text-white">
+                  {form.name || 'Nome da Empresa'}
+                </span>
+              </div>
+
+              {/* Mini content preview */}
+              <div className="bg-card p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: form.theme_color || '#2a9d8f' }}
+                  />
+                  <div className="h-2 w-24 rounded bg-muted" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: form.theme_color || '#2a9d8f' }}
+                  />
+                  <div className="h-2 w-32 rounded bg-muted" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: form.theme_color || '#2a9d8f' }}
+                  />
+                  <div className="h-2 w-20 rounded bg-muted" />
+                </div>
+
+                <Separator />
+
+                <div className="flex gap-2">
+                  <button
+                    className="rounded-md px-3 py-1.5 text-xs font-medium text-white"
+                    style={{ backgroundColor: form.theme_color || '#2a9d8f' }}
+                  >
+                    Botão Primário
+                  </button>
+                  <button
+                    className="rounded-md border px-3 py-1.5 text-xs font-medium"
+                    style={{ borderColor: form.theme_color || '#2a9d8f', color: form.theme_color || '#2a9d8f' }}
+                  >
+                    Botão Secundário
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Prévia ilustrativa. A aplicação real das cores será feita em uma próxima atualização.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Separator />
+
+      {/* Sobre o Sistema */}
+      <div className="flex items-center gap-3">
+        <Info className="h-6 w-6 text-primary" />
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Sobre o Sistema</h2>
+          <p className="text-sm text-muted-foreground">
+            Informações técnicas e versão
+          </p>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Sistema</p>
+              <p className="text-sm font-semibold text-foreground">Caixa da FER</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Versão</p>
+              <p className="text-sm font-semibold text-foreground">1.0.0</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Plataforma</p>
+              <p className="text-sm font-semibold text-foreground">Lovable Cloud</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Empresa Ativa</p>
+              <p className="text-sm font-semibold text-foreground">{company?.name || '—'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Fuso Horário</p>
+              <p className="text-sm font-semibold text-foreground">{company?.timezone || 'America/Sao_Paulo'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Moeda</p>
+              <p className="text-sm font-semibold text-foreground">{company?.currency || 'BRL'}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Separator />
+
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={isUpdating || !form.name.trim()}>
           {isUpdating ? (
