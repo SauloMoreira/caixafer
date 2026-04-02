@@ -39,6 +39,7 @@ export default function EmpresaPage() {
         address: company.address || '',
         logo_url: company.logo_url || '',
         receipt_footer: company.receipt_footer || '',
+        theme_color: company.theme_color || '',
       });
     }
   }, [company]);
