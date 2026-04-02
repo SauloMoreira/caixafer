@@ -167,23 +167,61 @@ export default function EmpresaPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="logo_url">URL do Logo</Label>
-              <Input
-                id="logo_url"
-                value={form.logo_url}
-                onChange={e => handleChange('logo_url', e.target.value)}
-                placeholder="https://..."
-              />
-              {form.logo_url && (
-                <div className="mt-2 flex justify-center rounded-lg border border-border bg-muted/30 p-4">
+              <Label>Logo da Empresa</Label>
+              {form.logo_url ? (
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-border bg-muted/30 p-4">
                   <img
                     src={form.logo_url}
                     alt="Logo da empresa"
                     className="max-h-24 max-w-full object-contain"
                     onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="mr-1 h-3 w-3" />
+                      Trocar
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChange('logo_url', '')}
+                    >
+                      Remover
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled={uploading}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/20 p-8 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/40"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-8 w-8" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {uploading ? 'Enviando...' : 'Clique para enviar o logo'}
+                  </span>
+                  <span className="text-xs">PNG, JPG até 5MB</span>
+                </button>
               )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
             </div>
           </CardContent>
         </Card>
