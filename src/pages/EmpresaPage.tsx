@@ -25,6 +25,7 @@ export default function EmpresaPage() {
     address: '',
     logo_url: '',
     receipt_footer: '',
+    theme_color: '',
   });
 
   useEffect(() => {
