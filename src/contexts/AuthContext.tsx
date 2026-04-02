@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [mfaVerified, setMfaVerified] = useState(false);
   const [mfaLoading, setMfaLoading] = useState(true);
   const sessionCheckRef = useRef<ReturnType<typeof setInterval>>();
+  const lastValidateRef = useRef(0);
   
 
   const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
@@ -143,7 +144,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Periodic check: deactivation, role changes
+  // Only updates profile if data actually changed to prevent unnecessary re-renders
   const validateSession = useCallback(async (userId: string) => {
+    // Debounce: skip if called within last 5 seconds
+    const now = Date.now();
+    if (now - lastValidateRef.current < 5000) return true;
+    lastValidateRef.current = now;
+
     const { data } = await supabase
       .from('profiles')
       .select('is_active, approval_status, role')
@@ -158,8 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    // Update role if changed
-    setProfile(prev => prev ? { ...prev, role: data.role as any, is_active: data.is_active, approval_status: data.approval_status } : prev);
+    // Only update profile if something actually changed
+    setProfile(prev => {
+      if (!prev) return prev;
+      if (prev.role === data.role && prev.is_active === data.is_active && prev.approval_status === data.approval_status) {
+        return prev; // Same reference = no re-render
+      }
+      return { ...prev, role: data.role as any, is_active: data.is_active, approval_status: data.approval_status };
+    });
 
     return true;
   }, [secureSignOut]);
@@ -176,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, SESSION_CHECK_INTERVAL);
   }, [secureSignOut, validateSession]);
 
-  // Validate on visibility change (user returns to tab)
+  // Validate on visibility change (user returns to tab) - debounced
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible' && user) {
@@ -276,23 +289,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ? !!(profile && profile.full_name && profile.phone && profile.email)
     : !!(profile && profile.full_name && profile.phone && profile.email && profile.avatar_url);
   const isApproved = profile?.approval_status === 'approved' && profile?.is_active === true;
+  const isAdmin = profile?.role === 'admin';
+
+  // Memoize context value to prevent cascading re-renders
+  const contextValue = useMemo<AuthContextType>(() => ({
+    session, user, profile, loading,
+    isAdmin: isAdmin || false,
+    isPrimaryAdmin,
+    hasOperationalOverride,
+    isCashier: profile?.role === 'cashier' || profile?.role === 'cash_coordinator',
+    isCashCoordinator,
+    isVolunteer,
+    isApproved,
+    isProfileComplete,
+    mfaEnrolled,
+    mfaVerified,
+    mfaLoading,
+    signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus, updateProfile,
+  }), [
+    session, user, profile, loading,
+    isAdmin, isPrimaryAdmin, hasOperationalOverride, isCashCoordinator, isVolunteer,
+    isApproved, isProfileComplete, mfaEnrolled, mfaVerified, mfaLoading,
+    signIn, signUp, secureSignOut, refreshProfile, refreshMfaStatus, updateProfile,
+  ]);
 
   return (
-    <AuthContext.Provider value={{
-      session, user, profile, loading,
-      isAdmin: profile?.role === 'admin',
-      isPrimaryAdmin,
-      hasOperationalOverride,
-      isCashier: profile?.role === 'cashier' || profile?.role === 'cash_coordinator',
-      isCashCoordinator,
-      isVolunteer,
-      isApproved,
-      isProfileComplete,
-      mfaEnrolled,
-      mfaVerified,
-      mfaLoading,
-      signIn, signUp, signOut: secureSignOut, refreshProfile, refreshMfaStatus, updateProfile,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
