@@ -39,8 +39,17 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       title: `Pedido #${data.saleNumber}`,
       bodyHtml: content.innerHTML,
       styles: `
-        body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.5; }
+        body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.5; color: #000; }
+        * { color: #000 !important; }
         img { display: block; margin: 0 auto 6px; max-width: 140px; max-height: 60px; object-fit: contain; }
+        .receipt-company-name { font-size: 15px; font-weight: 700; text-transform: uppercase; }
+        .receipt-legal-name { font-weight: 600; }
+        .receipt-header-line { font-weight: 500; }
+        .receipt-order-highlight { font-size: 12px; font-weight: 700; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; text-align: center; display: flex; justify-content: center; }
+        .receipt-items-header { font-weight: 700; border-bottom: 1px solid #000; padding-bottom: 3px; }
+        .receipt-item-row { font-size: 11px; font-weight: 500; }
+        .receipt-total-line { font-size: 14px; font-weight: 700; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; }
+        .receipt-sep-secondary { border-bottom: 1px dashed #666; }
         @media print { body { padding: 5mm; } @page { size: 80mm auto; margin: 0; } }
       `,
       windowFeatures: 'width=400,height=700',
