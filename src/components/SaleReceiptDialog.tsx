@@ -80,22 +80,6 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     return lines.join('\n');
   };
 
-  const handleShare = async () => {
-    const text = buildPlainText();
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `Pedido #${data.saleNumber}`, text });
-      } catch { /* user cancelled */ }
-    } else {
-      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    }
-  };
-
-  const handleGeneratePDF = () => {
-    // Uses print-to-PDF approach (browser native)
-    handlePrint();
-  };
-
   const rawBtLines = buildPlainText().split('\n');
 
   return (
@@ -109,36 +93,16 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
           <SaleReceipt ref={receiptRef} data={data} company={company} />
         </div>
 
-        <div className="grid grid-cols-5 gap-2 mt-4">
-          <Button variant="outline" onClick={handlePrint} className="h-12 flex-col gap-1">
-            <Printer className="h-4 w-4" />
-            <span className="text-[10px]">Imprimir</span>
+        <div className="flex gap-3 w-full mt-4">
+          <Button
+            variant="outline"
+            onClick={handlePrint}
+            className="flex-1 flex flex-col items-center gap-1 h-16"
+          >
+            <Printer className="w-5 h-5" />
+            <span className="text-xs">Imprimir</span>
           </Button>
-          <Button variant="outline" onClick={handleGeneratePDF} className="h-12 flex-col gap-1">
-            <FileText className="h-4 w-4" />
-            <span className="text-[10px]">PDF</span>
-          </Button>
-          <Button variant="outline" onClick={handleShare} className="h-12 flex-col gap-1">
-            <Share2 className="h-4 w-4" />
-            <span className="text-[10px]">Compartilhar</span>
-          </Button>
-          <PrintButton lines={rawBtLines} label="RawBT" />
-          <BluetoothPrintButton
-            onPrint={async () => {
-              await printReceipt({
-                saleNumber: data.saleNumber,
-                createdAt: data.createdAt,
-                operatorName: data.operatorName,
-                items: data.items,
-                subtotal: data.subtotal,
-                discount: data.discount,
-                total: data.total,
-                paymentMethod: data.paymentMethod,
-                paymentLabel: paymentLabel(data.paymentMethod),
-                company: companyData,
-              });
-            }}
-          />
+          <PrintButton lines={rawBtLines} label="RawBT" className="flex-1 !h-16" />
         </div>
 
         <Button variant="default" className="h-12 w-full mt-2" onClick={() => onOpenChange(false)}>
