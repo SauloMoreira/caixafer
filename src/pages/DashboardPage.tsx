@@ -120,20 +120,18 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  const baseCards = [
+    { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, topColor: 'var(--color-success)', valueColor: 'var(--color-success-text)' },
+    { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, topColor: 'var(--color-success)', valueColor: 'var(--color-success-text)' },
+    { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, topColor: 'var(--color-danger)', valueColor: 'var(--color-danger-text)' },
+    { label: 'Saldo', value: stats.balanceToday, icon: Wallet, topColor: 'var(--color-text-faint)', valueColor: 'var(--color-text-primary)' },
+  ];
   const statCards = (isCashier && !isCashCoordinator)
-    ? [
-        { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
-        { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
-        { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
-        { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
-      ]
+    ? baseCards
     : [
-        { label: 'Vendas Hoje', value: stats.salesToday, icon: ShoppingCart, color: 'text-primary' },
-        { label: 'Entradas', value: stats.incomeToday, icon: TrendingUp, color: 'text-income' },
-        { label: 'Saídas', value: stats.expenseToday, icon: TrendingDown, color: 'text-expense' },
-        { label: 'Saldo', value: stats.balanceToday, icon: Wallet, color: stats.balanceToday >= 0 ? 'text-income' : 'text-expense' },
-        { label: 'Fiado em Aberto', value: stats.fiadoOpen, icon: Heart, color: 'text-warning' },
-        { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, color: 'text-primary' },
+        ...baseCards,
+        { label: 'Fiado em Aberto', value: stats.fiadoOpen, icon: Heart, topColor: 'var(--color-warning)', valueColor: 'var(--color-warning-text)' },
+        { label: 'Fiado Recebido', value: stats.fiadoReceived, icon: DollarSign, topColor: 'var(--color-accent)', valueColor: 'var(--color-accent)' },
       ];
 
   const COLORS = ['hsl(142, 60%, 40%)', 'hsl(168, 60%, 38%)', 'hsl(220, 25%, 10%)', 'hsl(38, 92%, 50%)', 'hsl(0, 72%, 51%)'];
@@ -146,23 +144,25 @@ export default function DashboardPage() {
     );
   }
 
+  const roleLabel = isAdmin ? 'Administrador' : isCashCoordinator ? 'Coordenador de Caixa' : 'Operador de Caixa';
+
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Greeting */}
-      <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-3 md:p-5">
+      <div className="flex items-center gap-3 p-1">
         {profile?.avatar_url ? (
-          <img key={profile.avatar_url} src={profile.avatar_url} alt={profile.full_name} className="h-14 w-14 rounded-full object-cover border-2 border-primary/30 shrink-0" />
+          <img key={profile.avatar_url} src={profile.avatar_url} alt={profile.full_name} className="h-11 w-11 rounded-full object-cover shrink-0" style={{ border: '1.5px solid #e2d9cc' }} />
         ) : (
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xl">
+          <div className="editorial-avatar flex h-11 w-11 shrink-0 items-center justify-center text-base">
             {profile?.full_name?.charAt(0)?.toUpperCase()}
           </div>
         )}
         <div className="min-w-0">
-          <p className="text-base md:text-lg font-semibold text-foreground truncate">
+          <p className="editorial-greeting-name truncate">
             {getGreeting(profile?.full_name?.split(' ')[0] || '')}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {isAdmin ? 'Administrador' : isCashCoordinator ? 'Coordenador de Caixa' : 'Operador de Caixa'} • Resumo do dia
+          <p className="editorial-greeting-sub">
+            <span className="editorial-greeting-role">{roleLabel}</span> • Resumo do dia
           </p>
         </div>
       </div>
@@ -178,9 +178,7 @@ export default function DashboardPage() {
       {/* ═══ CASHIER QUICK ACTIONS ═══ */}
       {(isCashier && !isCashCoordinator) && (
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 px-1">
-            Acesso Rápido
-          </p>
+          <p className="editorial-section-label px-1">Acesso Rápido</p>
           <div className="grid grid-cols-1 min-[400px]:grid-cols-2 sm:grid-cols-4 gap-3">
             {QUICK_ACTIONS.map(action => (
               <button
@@ -207,17 +205,15 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className={`grid grid-cols-2 gap-2.5 ${isAdmin ? 'md:grid-cols-3 lg:grid-cols-6' : 'md:grid-cols-4'}`}>
         {statCards.map(card => (
-          <Card key={card.label} className="stat-card">
-            <CardContent className="p-0">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <card.icon className={`h-3.5 w-3.5 ${card.color}`} />
-                <span className="text-[11px] text-muted-foreground leading-tight">{card.label}</span>
-              </div>
-              <p className={`financial-value text-base md:text-xl ${card.color}`}>
-                {formatCurrency(card.value)}
-              </p>
-            </CardContent>
-          </Card>
+          <div key={card.label} className="editorial-kpi" style={{ borderTopColor: card.topColor }}>
+            <div className="flex items-center gap-1.5">
+              <card.icon className="h-3 w-3" style={{ color: card.valueColor }} />
+              <span className="editorial-kpi-label">{card.label}</span>
+            </div>
+            <p className="editorial-kpi-value" style={{ color: card.valueColor }}>
+              {formatCurrency(card.value)}
+            </p>
+          </div>
         ))}
       </div>
 

@@ -192,17 +192,22 @@ export default function BalanceEvolutionChart() {
     ? `${format(customFrom, 'dd/MM/yyyy')} — ${format(customTo, 'dd/MM/yyyy')}`
     : `Últimos ${periodLabels[chartPeriod]}`;
 
+  const currentValue = chartData.length > 0 ? chartData[chartData.length - 1].saldo : 0;
+
   return (
-    <Card className="overflow-hidden border-primary/10 shadow-sm">
+    <Card className="editorial-chart-card overflow-hidden shadow-none">
       <CardHeader className="pb-2 space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <CardTitle className="text-base font-bold flex items-center gap-2">
-              <BarChart3 className="h-4.5 w-4.5 text-primary" />
+            <CardTitle className="editorial-chart-title flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" style={{ color: 'var(--color-accent)' }} />
               Evolução do Saldo
             </CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">{subtitleText}</p>
+            <p className="editorial-chart-subtitle mt-0.5">{subtitleText}</p>
           </div>
+          {chartData.length > 0 && (
+            <p className="editorial-chart-current shrink-0">{formatCurrency(currentValue)}</p>
+          )}
         </div>
 
         {/* Quick filters + custom date */}
@@ -211,12 +216,7 @@ export default function BalanceEvolutionChart() {
             <button
               key={f.key}
               onClick={() => { setChartPeriod(f.key); clearCustomRange(); }}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                !isCustom && chartPeriod === f.key
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              )}
+              className={cn('editorial-filter-btn', !isCustom && chartPeriod === f.key && 'is-active')}
             >
               {f.label}
             </button>
@@ -320,35 +320,37 @@ export default function BalanceEvolutionChart() {
               <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="saldoGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(168, 60%, 38%)" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="hsl(168, 60%, 38%)" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#2d9e6b" stopOpacity={0.18} />
+                    <stop offset="100%" stopColor="#2d9e6b" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} tickLine={false} axisLine={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#ece9e3" vertical={false} />
+                <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#c4bdb3', fontFamily: 'var(--font-mono)' }} tickLine={false} axisLine={false} />
                 <YAxis
-                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tick={{ fontSize: 9, fill: '#c4bdb3', fontFamily: 'var(--font-mono)' }}
                   tickLine={false} axisLine={false}
                   tickFormatter={v => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'hsl(var(--card))',
-                    borderColor: 'hsl(var(--border))',
-                    borderRadius: '12px',
-                    padding: '10px 14px',
-                    boxShadow: '0 8px 24px -4px rgba(0,0,0,0.12)',
-                    fontSize: '13px',
+                    backgroundColor: 'var(--color-success-bg)',
+                    border: '1px solid var(--color-success)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    boxShadow: 'none',
+                    fontSize: '12px',
+                    fontFamily: 'var(--font-mono)',
+                    color: 'var(--color-success-text)',
                   }}
                   formatter={(value: number) => [formatCurrency(value), 'Saldo']}
-                  labelStyle={{ fontWeight: 600, marginBottom: 4, color: 'hsl(var(--foreground))' }}
+                  labelStyle={{ fontWeight: 500, marginBottom: 2, color: 'var(--color-success-text)', fontFamily: 'var(--font-mono)' }}
                 />
                 <Area
                   type="monotone" dataKey="saldo"
-                  stroke="hsl(168, 60%, 38%)" strokeWidth={2.5}
+                  stroke="#2d9e6b" strokeWidth={2}
                   fill="url(#saldoGradient)"
-                  dot={{ r: 3, fill: 'hsl(168, 60%, 38%)', strokeWidth: 0 }}
-                  activeDot={{ r: 5, fill: 'hsl(168, 60%, 38%)', stroke: 'hsl(var(--card))', strokeWidth: 2 }}
+                  dot={{ r: 2.5, fill: '#2d9e6b', strokeWidth: 0 }}
+                  activeDot={{ r: 4, fill: '#2d9e6b', stroke: 'var(--color-surface)', strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
