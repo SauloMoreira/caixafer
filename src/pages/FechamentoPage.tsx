@@ -13,6 +13,7 @@ import { Lock, Unlock, Printer, Share2, FileText, AlertTriangle, RotateCcw, Hist
 import { Textarea } from '@/components/ui/textarea';
 import { logSecurityEvent } from '@/lib/security';
 import BluetoothPrintButton from '@/components/BluetoothPrintButton';
+import PrintButton from '@/components/PrintButton';
 import { printClosing } from '@/lib/bluetooth-printer';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 import CashCorrectionReview from '@/components/CashCorrectionReview';
@@ -804,10 +805,38 @@ export default function FechamentoPage() {
                 </Button>
               )}
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><Printer className="h-4 w-4" /><span className="text-[10px]">Imprimir</span></Button>
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><FileText className="h-4 w-4" /><span className="text-[10px]">PDF</span></Button>
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handleShare}><Share2 className="h-4 w-4" /><span className="text-[10px]">Compartilhar</span></Button>
+                <PrintButton
+                  label="RawBT"
+                  lines={(() => {
+                    const companyData = getCompanyDocumentData(company);
+                    const lines: string[] = [
+                      companyData.name.toUpperCase(),
+                      'FECHAMENTO DE CAIXA',
+                      ...getCompanyHeaderLines(companyData),
+                      '-----------------------------',
+                      `Data: ${formatDate(date)}`,
+                      `Operador: ${profile?.full_name || ''}`,
+                      '-----------------------------',
+                      `Saldo Inicial: ${formatCurrency(Number(openingBalance))}`,
+                      `Vendas: ${formatCurrency(stats.sales)}`,
+                      `Entradas: ${formatCurrency(stats.income)}`,
+                      `Saidas: ${formatCurrency(stats.expense)}`,
+                      '-----------------------------',
+                      `Saldo Esperado: ${formatCurrency(expectedBalance)}`,
+                    ];
+                    if (countedBalance) {
+                      lines.push(`Saldo Contado: ${formatCurrency(Number(countedBalance))}`);
+                      lines.push(`Diferenca: ${formatCurrency(difference || 0)}`);
+                    }
+                    if (notes) lines.push('', `Obs: ${notes}`);
+                    lines.push('-----------------------------', ...getCompanyFooterLines(companyData));
+                    return lines;
+                  })()}
+                />
                 <BluetoothPrintButton
                   onPrint={async () => {
                     const methodMap: Record<string, { label: string; value: number }> = {};
