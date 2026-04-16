@@ -51,19 +51,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sidebarContent = (
-    <div className="flex h-full flex-col overflow-hidden bg-sidebar-background/95">
+    <div className="editorial-sidebar flex h-full flex-col overflow-hidden">
       <div className="px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
-        <div className="rounded-[1.9rem] border border-sidebar-border/70 bg-card/90 p-4 shadow-sm backdrop-blur-sm">
+        <div className="p-3" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/60">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl" style={{ background: 'var(--color-accent-bg)' }}>
               <img src={logoImg} alt="Fraternidade Espírita Ramatis" className="h-9 w-9 object-contain" />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="inline-flex rounded-full bg-sidebar-accent px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-sidebar-accent-foreground">
-                Painel admin
-              </div>
-              <p className="mt-2 truncate font-heading text-base font-bold tracking-tight text-foreground">Caixa da FER</p>
-              <p className="text-[11px] leading-relaxed text-muted-foreground">Fraternidade Espírita Ramatis</p>
+              <span className="editorial-badge-admin">Painel admin</span>
+              <p className="editorial-brand-title mt-1.5 truncate">Caixa da FER</p>
+              <p className="editorial-brand-subtitle">Fraternidade Espírita Ramatis</p>
             </div>
           </div>
         </div>
@@ -157,8 +155,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden shrink-0 md:flex md:w-[19rem] md:flex-col md:border-r md:border-sidebar-border/70 md:bg-sidebar-background/95">
+    <div className="flex min-h-screen w-full" style={{ background: 'var(--color-page-bg)' }}>
+      <aside className="editorial-sidebar hidden shrink-0 md:flex md:w-[19rem] md:flex-col">
         {sidebarContent}
       </aside>
 
@@ -168,32 +166,33 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             className="absolute inset-0 bg-foreground/20 backdrop-blur-md transition-opacity"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="absolute left-2 top-2 h-[calc(100dvh-1rem)] w-[min(88vw,22rem)] overflow-hidden rounded-[2rem] border border-sidebar-border/70 bg-sidebar-background/95 shadow-2xl animate-slide-in-left">
+          <aside className="editorial-sidebar absolute left-2 top-2 h-[calc(100dvh-1rem)] w-[min(88vw,22rem)] overflow-hidden rounded-[2rem] shadow-2xl animate-slide-in-left">
             {sidebarContent}
           </aside>
         </div>
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/80 backdrop-blur-md px-4">
+        <header className="editorial-topbar sticky top-0 z-30 flex h-14 items-center justify-between px-4">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-muted transition-colors md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-xl hover:bg-[var(--color-surface-alt)] transition-colors md:hidden"
               aria-label="Abrir menu"
+              style={{ color: 'var(--color-text-secondary)' }}
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h1 className="font-heading text-base font-bold truncate">{currentTitle}</h1>
+            <h1 className="editorial-topbar-title truncate">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-2">
             {(isAdmin || isVolunteer || profile?.role === 'cash_coordinator') && <NotificationBell />}
             <NavLink to="/perfil" className="hidden md:flex h-9 w-9 items-center justify-center">
               {profile?.avatar_url ? (
-                <img key={profile.avatar_url} src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover ring-2 ring-transparent hover:ring-primary/20 transition-all" />
+                <img key={profile.avatar_url} src={profile.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" style={{ border: '1.5px solid #e2d9cc' }} />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                <div className="editorial-avatar flex h-8 w-8 items-center justify-center text-xs">
+                  {profile?.full_name?.charAt(0)?.toUpperCase() || <User className="h-4 w-4" />}
                 </div>
               )}
             </NavLink>
