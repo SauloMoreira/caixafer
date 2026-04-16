@@ -8,6 +8,7 @@ import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock,
 import { useCompany } from '@/hooks/useCompany';
 import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
+import { printReceipt as printReceiptRawBT } from '@/utils/printer';
 
 interface Transfer {
   id: string;
@@ -264,10 +265,33 @@ export default function CashDayStatement({
           </div>
           <div className="flex items-center gap-2">
             {expanded && (
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={e => { e.stopPropagation(); handlePrint(); }}>
-                <Printer className="h-3.5 w-3.5 mr-1" />
-                Imprimir
-              </Button>
+              <>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={e => { e.stopPropagation(); handlePrint(); }}>
+                  <Printer className="h-3.5 w-3.5 mr-1" />
+                  Imprimir
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={e => {
+                  e.stopPropagation();
+                  const lines: string[] = [
+                    companyData.name.toUpperCase(),
+                    'EXTRATO DE CONFERENCIA',
+                    `Data: ${formatDate(businessDate)}`,
+                    '-----------------------------',
+                    `Saldo Inicial: ${formatCurrency(openingBalance)}`,
+                    `Vendas: ${formatCurrency(totalSales)}`,
+                    `Entradas: ${formatCurrency(totalIncome)}`,
+                    `Saidas: ${formatCurrency(totalExpense)}`,
+                    '-----------------------------',
+                    `Saldo Esperado: ${formatCurrency(expectedBalance)}`,
+                    '-----------------------------',
+                    ...companyFooterLines,
+                  ];
+                  printReceiptRawBT(lines);
+                }}>
+                  <Printer className="h-3.5 w-3.5 mr-1" />
+                  RawBT
+                </Button>
+              </>
             )}
             {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
