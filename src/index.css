@@ -265,6 +265,95 @@
   .editorial-notif-dot {
     background: var(--color-danger);
   }
+
+  /* === Editorial KPI cards === */
+  .editorial-kpi {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    border-top-width: 2px;
+    padding: 12px 14px;
+  }
+
+  .editorial-kpi-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    font-family: var(--font-ui);
+    font-weight: 500;
+  }
+
+  .editorial-kpi-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 6px;
+  }
+
+  /* === Editorial Chart card === */
+  .editorial-chart-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+  }
+
+  .editorial-chart-title {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--color-text-primary);
+  }
+
+  .editorial-chart-subtitle {
+    font-size: 10px;
+    color: var(--color-text-muted);
+  }
+
+  .editorial-chart-current {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--color-success-text);
+  }
+
+  .editorial-filter-btn {
+    border: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+    background: transparent;
+    font-size: 10px;
+    font-family: var(--font-ui);
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+  }
+
+  .editorial-filter-btn:hover {
+    background: var(--color-surface-alt);
+  }
+
+  .editorial-filter-btn.is-active {
+    background: var(--color-accent-bg);
+    border-color: #d4a96a;
+    color: var(--color-accent);
+  }
+
+  /* === Editorial Greeting === */
+  .editorial-greeting-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--color-text-primary);
+  }
+
+  .editorial-greeting-sub {
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+
+  .editorial-greeting-role {
+    color: var(--color-accent);
+    font-weight: 500;
+  }
 }
 
 @layer components {
