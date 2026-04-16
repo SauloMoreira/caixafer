@@ -4,14 +4,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded text-[10px] font-medium uppercase tracking-[0.06em] px-2 py-[3px] border transition-colors font-[family-name:var(--font-ui)]",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+        // Pago / Ativo / Aberto
+        default:
+          "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border-[#b3e6cc]",
+        success:
+          "bg-[var(--color-success-bg)] text-[var(--color-success-text)] border-[#b3e6cc]",
+        // Pendente / Fiado
+        warning:
+          "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)] border-[#fcd48a]",
+        // Cancelado / Erro
+        destructive:
+          "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)] border-[#f5b8b8]",
+        danger:
+          "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)] border-[#f5b8b8]",
+        // Neutro / Rascunho
+        secondary:
+          "bg-[var(--color-accent-bg)] text-[var(--color-accent)] border-[#e2d9cc]",
+        outline:
+          "bg-transparent text-[var(--color-text-secondary)] border-[var(--color-border)]",
       },
     },
     defaultVariants: {

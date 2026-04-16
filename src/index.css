@@ -6,59 +6,60 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    /* Editorial palette mapped to shadcn HSL tokens */
+    --background: 46 22% 95%;          /* page bg #f5f4f0 */
+    --foreground: 30 12% 9%;           /* text primary #1a1714 */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 10%;
+    --card: 0 0% 100%;                 /* surface #ffffff */
+    --card-foreground: 30 12% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 10%;
+    --popover-foreground: 30 12% 9%;
 
-    --primary: 168 60% 38%;
+    --primary: 26 56% 46%;             /* accent copper #b87333 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 25% 10%;
+    --secondary: 40 33% 97%;           /* surface-alt #faf8f5 */
+    --secondary-foreground: 30 12% 9%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 40 33% 97%;
+    --muted-foreground: 35 11% 49%;    /* text muted */
 
-    --accent: 168 45% 94%;
-    --accent-foreground: 168 60% 28%;
+    --accent: 33 56% 92%;              /* accent-bg #f5ece0 */
+    --accent-foreground: 26 56% 46%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 70% 60%;          /* #e05252 */
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 60% 40%;
+    --success: 151 56% 40%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 26 95% 44%;
     --warning-foreground: 0 0% 100%;
 
-    --income: 142 60% 40%;
+    --income: 151 56% 40%;
     --income-foreground: 0 0% 100%;
 
-    --expense: 0 72% 51%;
+    --expense: 0 70% 60%;
     --expense-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 168 60% 38%;
+    --border: 40 19% 91%;              /* #ece9e3 */
+    --input: 40 19% 91%;
+    --ring: 26 56% 46%;
 
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 25% 10%;
-    --sidebar-primary: 168 60% 38%;
+    --sidebar-foreground: 30 12% 9%;
+    --sidebar-primary: 26 56% 46%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 168 45% 94%;
-    --sidebar-accent-foreground: 168 60% 28%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 168 60% 38%;
+    --sidebar-accent: 33 56% 92%;
+    --sidebar-accent-foreground: 26 56% 46%;
+    --sidebar-border: 40 19% 91%;
+    --sidebar-ring: 26 56% 46%;
 
-    --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-heading: 'Playfair Display', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
 
     --color-page-bg:      #f5f4f0;
     --color-surface:      #ffffff;
@@ -91,53 +92,15 @@
     --font-ui:      'DM Sans', system-ui, sans-serif;
     --font-mono:    'JetBrains Mono', 'Courier New', monospace;
   }
-
-  .dark {
-    --background: 220 25% 6%;
-    --foreground: 210 20% 98%;
-
-    --card: 220 25% 9%;
-    --card-foreground: 210 20% 98%;
-
-    --popover: 220 25% 9%;
-    --popover-foreground: 210 20% 98%;
-
-    --primary: 168 60% 45%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 20% 14%;
-    --secondary-foreground: 210 20% 98%;
-
-    --muted: 220 20% 14%;
-    --muted-foreground: 220 10% 60%;
-
-    --accent: 168 40% 14%;
-    --accent-foreground: 168 60% 65%;
-
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 210 20% 98%;
-
-    --border: 220 20% 16%;
-    --input: 220 20% 16%;
-    --ring: 168 60% 45%;
-
-    --sidebar-background: 220 25% 9%;
-    --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 168 60% 45%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 168 40% 14%;
-    --sidebar-accent-foreground: 168 60% 65%;
-    --sidebar-border: 220 20% 16%;
-    --sidebar-ring: 168 60% 45%;
-  }
 }
+
 
 @layer base {
   * {
     @apply border-border;
   }
 
-  body {
+  html, body {
     background-color: var(--color-page-bg);
     color: var(--color-text-primary);
     font-family: var(--font-ui);
@@ -145,9 +108,37 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading);
+  /* Editorial headings: Playfair Display, regular weight */
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--color-text-primary);
+    letter-spacing: -0.005em;
   }
+
+  h4, h5, h6 {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* Numeric values use mono */
+  .financial-value,
+  .num,
+  .mono {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  .financial-positive { color: var(--color-success-text); }
+  .financial-negative { color: var(--color-danger-text); }
 }
 
 @layer components {
@@ -358,20 +349,26 @@
 
 @layer components {
   .financial-value {
-    @apply font-bold tabular-nums tracking-tight;
-    font-family: var(--font-heading);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
   .financial-positive {
-    color: hsl(var(--income));
+    color: var(--color-success-text);
   }
 
   .financial-negative {
-    color: hsl(var(--expense));
+    color: var(--color-danger-text);
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border p-4 shadow-sm transition-all;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
   }
 
   .page-container {
@@ -379,12 +376,63 @@
   }
 
   .page-title {
-    @apply text-xl md:text-2xl font-bold text-foreground;
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--color-text-primary);
+    letter-spacing: -0.005em;
   }
 
   .section-title {
-    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  /* Editorial product card (PDV) */
+  .editorial-product-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: 2px solid var(--color-border);
+    border-radius: 10px;
+    padding: 12px;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .editorial-product-card:hover {
+    border-top-color: var(--color-accent);
+  }
+  .editorial-product-name {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .editorial-product-price {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-success-text);
+  }
+
+  /* SPR row aging > 30 days */
+  .editorial-spr-aged {
+    background: #fffbf0;
+    border-left: 3px solid var(--color-warning);
+  }
+
+  /* Closing total */
+  .editorial-closing-total {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 28px;
+    color: var(--color-text-primary);
+  }
+  .editorial-closing-subtotal {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-text-primary);
   }
 }
 
