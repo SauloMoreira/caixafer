@@ -3,11 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import SaleReceipt, { type ReceiptData } from './SaleReceipt';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS } from '@/lib/constants';
-import { Printer, FileText, Share2 } from 'lucide-react';
+import { Printer, Zap } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
-import BluetoothPrintButton from './BluetoothPrintButton';
 import PrintButton from './PrintButton';
-import { printReceipt } from '@/lib/bluetooth-printer';
 import { useCompany } from '@/hooks/useCompany';
 import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
