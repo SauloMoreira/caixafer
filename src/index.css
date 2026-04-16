@@ -59,6 +59,37 @@
 
     --font-heading: 'Plus Jakarta Sans', system-ui, sans-serif;
     --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+    --color-page-bg:      #f5f4f0;
+    --color-surface:      #ffffff;
+    --color-surface-alt:  #faf8f5;
+    --color-border:       #ece9e3;
+    --color-border-soft:  #e2ddd6;
+
+    --color-text-primary:   #1a1714;
+    --color-text-secondary: #8a8070;
+    --color-text-muted:     #b0a898;
+    --color-text-faint:     #c4bdb3;
+
+    --color-accent:       #b87333;
+    --color-accent-bg:    #f5ece0;
+    --color-accent-hover: #a06628;
+
+    --color-success:      #2d9e6b;
+    --color-success-bg:   #f0faf5;
+    --color-success-text: #1e7d52;
+
+    --color-danger:       #e05252;
+    --color-danger-bg:    #fdf2f2;
+    --color-danger-text:  #b83232;
+
+    --color-warning:      #d97706;
+    --color-warning-bg:   #fef9ec;
+    --color-warning-text: #92540a;
+
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-ui:      'DM Sans', system-ui, sans-serif;
+    --font-mono:    'JetBrains Mono', 'Courier New', monospace;
   }
 
   .dark {
