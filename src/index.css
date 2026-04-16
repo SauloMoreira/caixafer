@@ -349,20 +349,26 @@
 
 @layer components {
   .financial-value {
-    @apply font-bold tabular-nums tracking-tight;
-    font-family: var(--font-heading);
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 
   .financial-positive {
-    color: hsl(var(--income));
+    color: var(--color-success-text);
   }
 
   .financial-negative {
-    color: hsl(var(--expense));
+    color: var(--color-danger-text);
   }
 
   .stat-card {
-    @apply bg-card rounded-xl border p-4 shadow-sm transition-all;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: all 0.15s ease;
   }
 
   .page-container {
@@ -370,12 +376,63 @@
   }
 
   .page-title {
-    @apply text-xl md:text-2xl font-bold text-foreground;
-    font-family: var(--font-heading);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--color-text-primary);
+    letter-spacing: -0.005em;
   }
 
   .section-title {
-    @apply text-sm font-semibold uppercase tracking-wider text-muted-foreground;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  /* Editorial product card (PDV) */
+  .editorial-product-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: 2px solid var(--color-border);
+    border-radius: 10px;
+    padding: 12px;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+  .editorial-product-card:hover {
+    border-top-color: var(--color-accent);
+  }
+  .editorial-product-name {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+  .editorial-product-price {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-success-text);
+  }
+
+  /* SPR row aging > 30 days */
+  .editorial-spr-aged {
+    background: #fffbf0;
+    border-left: 3px solid var(--color-warning);
+  }
+
+  /* Closing total */
+  .editorial-closing-total {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 28px;
+    color: var(--color-text-primary);
+  }
+  .editorial-closing-subtotal {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-text-primary);
   }
 }
 
