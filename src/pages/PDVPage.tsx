@@ -248,7 +248,7 @@ export default function PDVPage() {
   };
 
   const finalizeSale = () => {
-    if (sessionResponsibleName && hasOperationalOverride) {
+    if (isOverrideMode) {
       setOverrideLabel('Finalizar venda no PDV');
       setOverrideAction(() => () => doFinalizeSale());
       setOverrideDialogOpen(true);
@@ -357,7 +357,7 @@ export default function PDVPage() {
       />
 
       {/* Override mode banner */}
-      {sessionResponsibleName && hasOperationalOverride && (
+      {isOverrideMode && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm flex items-start gap-2">
           <Lock className="h-4 w-4 shrink-0 mt-0.5 text-destructive" />
           <div>
@@ -380,7 +380,7 @@ export default function PDVPage() {
               Transferido
             </span>
           )}
-          {sessionResponsibleName && hasOperationalOverride && (
+          {isOverrideMode && (
             <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive">
               Override
             </span>
