@@ -31,7 +31,7 @@ export default function PrintButton({
       {isPrinting ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : (
-        <Printer className="h-4 w-4" />
+        <Zap className="h-4 w-4" />
       )}
       <span className="text-[10px]">{label}</span>
     </Button>
