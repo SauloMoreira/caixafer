@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Printer, Loader2 } from 'lucide-react';
+import { Zap, Loader2 } from 'lucide-react';
 import { usePrinter } from '@/hooks/usePrinter';
 
 interface Props {
