@@ -404,6 +404,30 @@ export default function PDVPage() {
         </div>
       </div>
 
+      {/* Mini cart banner — mobile, when cart has items and drawer is closed */}
+      {cart.length > 0 && !showCart && (
+        <button
+          type="button"
+          onClick={() => setShowCart(true)}
+          className="md:hidden flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 transition-colors"
+          style={{
+            background: 'var(--color-accent-bg)',
+            borderColor: '#e2d9cc',
+          }}
+        >
+          <span className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--color-accent)' }}>
+            <ShoppingCart className="h-4 w-4" />
+            {cart.length} {cart.length === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
+          </span>
+          <span
+            className="flex items-center justify-center rounded-full text-[11px] font-semibold text-white"
+            style={{ background: 'var(--color-accent)', width: 22, height: 22 }}
+          >
+            {cart.length}
+          </span>
+        </button>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row">
         {/* Products */}
         <div className="flex-1 space-y-3">
