@@ -563,6 +563,14 @@ export default function PDVPage() {
                     </SelectContent>
                   </Select>
                   <Input placeholder="Observações (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
+                  <Button
+                    variant="outline"
+                    className="h-10 w-full text-[13px]"
+                    onClick={() => setShowCart(false)}
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    Adicionar mais itens
+                  </Button>
                   <Button className="h-12 w-full text-base" onClick={finalizeSale} disabled={loading}>
                     {loading ? 'Finalizando...' : `Finalizar ${formatCurrency(total)}`}
                   </Button>
