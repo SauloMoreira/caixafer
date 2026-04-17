@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine, ArrowRightLeft } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine, ArrowRightLeft, ShoppingBag } from 'lucide-react';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
@@ -404,6 +404,30 @@ export default function PDVPage() {
         </div>
       </div>
 
+      {/* Mini cart banner — mobile, when cart has items and drawer is closed */}
+      {cart.length > 0 && !showCart && (
+        <button
+          type="button"
+          onClick={() => setShowCart(true)}
+          className="md:hidden flex w-full items-center justify-between rounded-lg border px-3.5 py-2.5 transition-colors"
+          style={{
+            background: 'var(--color-accent-bg)',
+            borderColor: '#e2d9cc',
+          }}
+        >
+          <span className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--color-accent)' }}>
+            <ShoppingCart className="h-4 w-4" />
+            {cart.length} {cart.length === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
+          </span>
+          <span
+            className="flex items-center justify-center rounded-full text-[11px] font-semibold text-white"
+            style={{ background: 'var(--color-accent)', width: 22, height: 22 }}
+          >
+            {cart.length}
+          </span>
+        </button>
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row">
         {/* Products */}
         <div className="flex-1 space-y-3">
@@ -563,6 +587,14 @@ export default function PDVPage() {
                     </SelectContent>
                   </Select>
                   <Input placeholder="Observações (opcional)" value={notes} onChange={e => setNotes(e.target.value)} />
+                  <Button
+                    variant="outline"
+                    className="h-10 w-full text-[13px]"
+                    onClick={() => setShowCart(false)}
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    Adicionar mais itens
+                  </Button>
                   <Button className="h-12 w-full text-base" onClick={finalizeSale} disabled={loading}>
                     {loading ? 'Finalizando...' : `Finalizar ${formatCurrency(total)}`}
                   </Button>
