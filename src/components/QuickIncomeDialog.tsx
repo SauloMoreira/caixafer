@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { BookOpen, ShoppingBag, CreditCard, HeartHandshake, Store } from 'lucide-react';
+import { BookOpen, ShoppingBag, Banknote, HeartHandshake, Store } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
@@ -17,7 +17,7 @@ type DocumentType = Database['public']['Enums']['document_type'];
 export const QUICK_INCOME_CATEGORIES = [
   { value: 'biblioteca', label: 'Biblioteca', icon: BookOpen },
   { value: 'bazar', label: 'Bazar', icon: ShoppingBag },
-  { value: 'mensalidade', label: 'Mensalidade', icon: CreditCard },
+  { value: 'mensalidade', label: 'Mensalidade', icon: Banknote },
   { value: 'doacao', label: 'Doação', icon: HeartHandshake },
   { value: 'balcao', label: 'Balcão', icon: Store },
 ] as const;
