@@ -394,11 +394,11 @@ export default function PDVPage() {
               Transferir
             </Button>
           )}
-          {cart.length > 0 && (
+          {totalQty > 0 && (
             <Button onClick={() => setShowCart(true)} className="md:hidden relative">
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
-                {cart.length}
+                {totalQty}
               </span>
             </Button>
           )}
