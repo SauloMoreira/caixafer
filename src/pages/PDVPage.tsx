@@ -373,7 +373,10 @@ export default function PDVPage() {
       <div className="flex items-center justify-between">
         <h1 className="page-title flex items-center gap-2">
           PDV
-          <span className="inline-flex items-center gap-1 rounded-full bg-income/10 px-2 py-0.5 text-[10px] font-medium text-income">
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            style={{ background: 'var(--color-accent-bg)', color: 'var(--color-accent)' }}
+          >
             <Unlock className="h-3 w-3" />Aberto
           </span>
           {isTransferredSession && (
