@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useCompany } from '@/hooks/useCompany';
+import { darkenHex, withAlphaHex } from '@/lib/colorUtils';
 
 /**
  * Convert a hex color string (#rrggbb) to HSL values string "H S% L%"
@@ -32,7 +33,6 @@ function hexToHsl(hex: string): string | null {
   return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
-/** Derive a lighter accent HSL from the base HSL */
 function deriveAccent(hsl: string): string {
   const parts = hsl.match(/(\d+)\s+(\d+)%\s+(\d+)%/);
   if (!parts) return hsl;
@@ -51,46 +51,38 @@ function deriveAccentForeground(hsl: string): string {
 }
 
 /**
- * Applies the company's theme_color to CSS custom properties on :root.
- * Falls back gracefully — if no theme_color is set, nothing changes.
+ * Apply an accent hex to all theme tokens (shadcn HSL + editorial hex).
+ * Exported so the Aparência preview can call it live before saving.
  */
+export function applyAccentColor(hexColor: string) {
+  const hsl = hexToHsl(hexColor);
+  if (!hsl) return;
+
+  const root = document.documentElement;
+  const accent = deriveAccent(hsl);
+  const accentFg = deriveAccentForeground(hsl);
+
+  root.style.setProperty('--primary', hsl);
+  root.style.setProperty('--ring', hsl);
+  root.style.setProperty('--accent', accent);
+  root.style.setProperty('--accent-foreground', accentFg);
+  root.style.setProperty('--sidebar-primary', hsl);
+  root.style.setProperty('--sidebar-accent', accent);
+  root.style.setProperty('--sidebar-accent-foreground', accentFg);
+  root.style.setProperty('--sidebar-ring', hsl);
+
+  // Editorial hex accent family (other tokens stay fixed)
+  root.style.setProperty('--color-accent', hexColor);
+  root.style.setProperty('--color-accent-bg', withAlphaHex(hexColor, 0.1));
+  root.style.setProperty('--color-accent-hover', darkenHex(hexColor, 12));
+}
+
 export function useThemeColor() {
   const { company } = useCompany();
 
   useEffect(() => {
     const themeColor = company?.theme_color;
     if (!themeColor) return;
-
-    const hsl = hexToHsl(themeColor);
-    if (!hsl) return;
-
-    const root = document.documentElement;
-    const accent = deriveAccent(hsl);
-    const accentFg = deriveAccentForeground(hsl);
-
-    // Primary family
-    root.style.setProperty('--primary', hsl);
-    root.style.setProperty('--ring', hsl);
-
-    // Accent family
-    root.style.setProperty('--accent', accent);
-    root.style.setProperty('--accent-foreground', accentFg);
-
-    // Sidebar family
-    root.style.setProperty('--sidebar-primary', hsl);
-    root.style.setProperty('--sidebar-accent', accent);
-    root.style.setProperty('--sidebar-accent-foreground', accentFg);
-    root.style.setProperty('--sidebar-ring', hsl);
-
-    return () => {
-      // Cleanup: remove overrides so CSS defaults apply again
-      const props = [
-        '--primary', '--ring',
-        '--accent', '--accent-foreground',
-        '--sidebar-primary', '--sidebar-accent',
-        '--sidebar-accent-foreground', '--sidebar-ring',
-      ];
-      props.forEach(p => root.style.removeProperty(p));
-    };
+    applyAccentColor(themeColor);
   }, [company?.theme_color]);
 }
