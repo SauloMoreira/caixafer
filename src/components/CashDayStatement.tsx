@@ -605,14 +605,38 @@ export default function CashDayStatement({
               </div>
 
               {/* Print button at bottom */}
-              <div className="flex gap-2 pt-2 border-t">
-                <Button variant="outline" className="flex-1 h-10" onClick={handlePrint}>
+              <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <Button variant="outline" className="flex-1 min-w-[140px] h-10" onClick={handlePrint}>
                   <Printer className="mr-2 h-4 w-4" />
                   Imprimir Extrato
                 </Button>
-                <Button variant="outline" className="flex-1 h-10" onClick={handlePrint}>
+                <Button variant="outline" className="flex-1 min-w-[140px] h-10" onClick={handlePrint}>
                   <FileText className="mr-2 h-4 w-4" />
                   Gerar PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 min-w-[140px] h-10"
+                  onClick={() => {
+                    const lines: string[] = [
+                      companyData.name.toUpperCase(),
+                      'EXTRATO DE CONFERENCIA',
+                      `Data: ${formatDate(businessDate)}`,
+                      '-----------------------------',
+                      `Saldo Inicial: ${formatCurrency(openingBalance)}`,
+                      `Vendas: ${formatCurrency(totalSales)}`,
+                      `Entradas: ${formatCurrency(totalIncome)}`,
+                      `Saidas: ${formatCurrency(totalExpense)}`,
+                      '-----------------------------',
+                      `Saldo Esperado: ${formatCurrency(expectedBalance)}`,
+                      '-----------------------------',
+                      ...companyFooterLines,
+                    ];
+                    printReceiptRawBT(lines);
+                  }}
+                >
+                  <Printer className="mr-2 h-4 w-4" />
+                  RawBT
                 </Button>
               </div>
             </>
