@@ -55,6 +55,9 @@ export default function EmpresaPage() {
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
+    if (field === 'theme_color' && /^#?[0-9a-fA-F]{6}$/.test(value)) {
+      applyAccentColor(value.startsWith('#') ? value : `#${value}`);
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
