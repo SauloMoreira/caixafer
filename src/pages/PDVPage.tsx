@@ -180,6 +180,7 @@ export default function PDVPage() {
 
   const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
+  const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   const doFinalizeSale = async () => {
     if (!profile || cart.length === 0) return;
