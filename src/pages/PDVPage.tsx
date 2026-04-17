@@ -514,7 +514,7 @@ export default function PDVPage() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-heading text-base font-bold flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  Carrinho ({cart.length})
+                  Carrinho ({totalQty})
                 </h2>
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowCart(false)}>
                   <X className="h-5 w-5" />
