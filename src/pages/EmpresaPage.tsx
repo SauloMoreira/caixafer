@@ -322,6 +322,31 @@ export default function EmpresaPage() {
                 Este texto será exibido no rodapé de recibos, fechamentos e documentos impressos.
               </p>
             </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="printer_ip">Endereço IP da Impressora</Label>
+              <Input
+                id="printer_ip"
+                value={form.printer_ip}
+                onChange={e => {
+                  handleChange('printer_ip', e.target.value);
+                  setPrinterIpError(null);
+                }}
+                placeholder="Ex: 192.168.0.10"
+                maxLength={15}
+                inputMode="decimal"
+                aria-invalid={!!printerIpError}
+              />
+              {printerIpError ? (
+                <p className="text-xs text-destructive">{printerIpError}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  IP da impressora na rede Wi-Fi local, conforme configurado no app RawBT.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
