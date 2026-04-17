@@ -1,37 +1,33 @@
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 import { printReceipt as printReceiptUtil } from '@/utils/printer';
-
-interface PrinterConfig {
-  ip: string | null;
-  port: number;
-  width: '58mm' | '80mm';
-  autocutter: boolean;
-}
-
-function readConfig(): PrinterConfig {
-  if (typeof window === 'undefined') {
-    return { ip: null, port: 9100, width: '80mm', autocutter: true };
-  }
-  return {
-    ip: localStorage.getItem('printer_ip'),
-    port: Number(localStorage.getItem('printer_port')) || 9100,
-    width: (localStorage.getItem('printer_width') as '58mm' | '80mm') || '80mm',
-    autocutter: localStorage.getItem('printer_autocutter') !== 'false',
-  };
-}
+import { useCompany } from '@/hooks/useCompany';
 
 export function usePrinter() {
+  const { company } = useCompany();
   const [isPrinting, setIsPrinting] = useState(false);
 
-  const printReceipt = useCallback((lines: string[]) => {
-    setIsPrinting(true);
-    printReceiptUtil(lines);
-    window.setTimeout(() => setIsPrinting(false), 1500);
-  }, []);
+  const printerIp = company?.printer_ip?.trim() || null;
+
+  const printReceipt = useCallback(
+    (lines: string[]) => {
+      if (!printerIp) {
+        toast.error(
+          'Impressora não configurada. Acesse Administração > Empresa e informe o IP da impressora.',
+          { duration: 6000 },
+        );
+        return;
+      }
+      setIsPrinting(true);
+      printReceiptUtil(lines);
+      window.setTimeout(() => setIsPrinting(false), 1500);
+    },
+    [printerIp],
+  );
 
   return {
     printReceipt,
     isPrinting,
-    printerConfig: readConfig(),
+    printerIp,
   };
 }
