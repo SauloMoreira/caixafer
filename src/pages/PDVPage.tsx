@@ -180,6 +180,7 @@ export default function PDVPage() {
 
   const subtotal = cart.reduce((sum, i) => sum + getCartItemPrice(i) * i.quantity, 0);
   const total = Math.max(0, subtotal - discount);
+  const totalQty = cart.reduce((sum, i) => sum + i.quantity, 0);
 
   const doFinalizeSale = async () => {
     if (!profile || cart.length === 0) return;
@@ -393,11 +394,11 @@ export default function PDVPage() {
               Transferir
             </Button>
           )}
-          {cart.length > 0 && (
+          {totalQty > 0 && (
             <Button onClick={() => setShowCart(true)} className="md:hidden relative">
               <ShoppingCart className="h-5 w-5" />
               <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-expense text-[10px] font-bold text-expense-foreground">
-                {cart.length}
+                {totalQty}
               </span>
             </Button>
           )}
@@ -405,7 +406,7 @@ export default function PDVPage() {
       </div>
 
       {/* Mini cart banner — mobile, when cart has items and drawer is closed */}
-      {cart.length > 0 && !showCart && (
+      {totalQty > 0 && !showCart && (
         <button
           type="button"
           onClick={() => setShowCart(true)}
@@ -417,13 +418,13 @@ export default function PDVPage() {
         >
           <span className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--color-accent)' }}>
             <ShoppingCart className="h-4 w-4" />
-            {cart.length} {cart.length === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
+            {totalQty} {totalQty === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
           </span>
           <span
             className="flex items-center justify-center rounded-full text-[11px] font-semibold text-white"
             style={{ background: 'var(--color-accent)', width: 22, height: 22 }}
           >
-            {cart.length}
+            {totalQty}
           </span>
         </button>
       )}
@@ -513,7 +514,7 @@ export default function PDVPage() {
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-heading text-base font-bold flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4" />
-                  Carrinho ({cart.length})
+                  Carrinho ({totalQty})
                 </h2>
                 <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setShowCart(false)}>
                   <X className="h-5 w-5" />
