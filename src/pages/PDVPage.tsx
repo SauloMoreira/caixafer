@@ -468,7 +468,7 @@ export default function PDVPage() {
               </div>
             </button>
             {QUICK_INCOME_CATEGORIES.map(cat => {
-              const Icon = cat.icon;
+              const Icon = cat.value === 'mensalidade' ? Banknote : cat.icon;
               return (
                 <button
                   key={cat.value}
@@ -490,7 +490,7 @@ export default function PDVPage() {
                   }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Icon size={14} color="currentColor" />
+                    <Icon size={14} color="currentColor" className="shrink-0" />
                     <p className="text-xs leading-tight" style={{ color: 'currentColor', fontWeight: 500 }}>{cat.label}</p>
                   </div>
                 </button>
