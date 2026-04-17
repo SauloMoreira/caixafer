@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Building2, Save, Loader2, Upload, ImageIcon, Palette, Info, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { optimizeCompanyLogo } from '@/lib/logo-optimizer';
+import { applyAccentColor } from '@/hooks/useThemeColor';
 import { toast } from 'sonner';
 
 export default function EmpresaPage() {
