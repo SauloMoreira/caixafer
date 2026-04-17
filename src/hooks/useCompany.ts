@@ -18,6 +18,7 @@ export interface Company {
   currency: string | null;
   receipt_footer: string | null;
   theme_color: string | null;
+  printer_ip: string | null;
   created_at: string;
   updated_at: string;
 }

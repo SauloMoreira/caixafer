@@ -26,7 +26,9 @@ export default function EmpresaPage() {
     logo_url: '',
     receipt_footer: '',
     theme_color: '',
+    printer_ip: '',
   });
+  const [printerIpError, setPrinterIpError] = useState<string | null>(null);
 
   useEffect(() => {
     if (company) {
@@ -40,9 +42,15 @@ export default function EmpresaPage() {
         logo_url: company.logo_url || '',
         receipt_footer: company.receipt_footer || '',
         theme_color: company.theme_color || '',
+        printer_ip: company.printer_ip || '',
       });
     }
   }, [company]);
+
+  const isValidIPv4 = (ip: string) => {
+    if (!ip) return true; // empty is allowed
+    return /^(25[0-5]|2[0-4]\d|[01]?\d?\d)(\.(25[0-5]|2[0-4]\d|[01]?\d?\d)){3}$/.test(ip.trim());
+  };
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -106,6 +114,12 @@ export default function EmpresaPage() {
   };
 
   const handleSave = () => {
+    if (form.printer_ip && !isValidIPv4(form.printer_ip)) {
+      setPrinterIpError('IP inválido. Use o formato 192.168.0.10');
+      toast.error('IP da impressora inválido');
+      return;
+    }
+    setPrinterIpError(null);
     updateCompany({
       name: form.name,
       legal_name: form.legal_name || null,
@@ -116,6 +130,7 @@ export default function EmpresaPage() {
       logo_url: form.logo_url || null,
       receipt_footer: form.receipt_footer || null,
       theme_color: form.theme_color || null,
+      printer_ip: form.printer_ip.trim() || null,
     } as Partial<Company>);
   };
 
