@@ -448,18 +448,16 @@ export default function PDVPage() {
               onClick={() => setSprPaymentOpen(true)}
               className="stat-card text-left transition-transform active:scale-95"
               style={{
-                background: '#e6f4ee',
-                color: '#0f5c38',
-                border: '1.5px solid #7dc4a0',
+                background: 'var(--color-accent-bg)',
+                color: 'var(--color-accent)',
+                border: '1.5px solid var(--color-accent)',
                 fontWeight: 500,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#d0eadb';
-                e.currentTarget.style.color = '#0a4229';
+                e.currentTarget.style.color = 'var(--color-accent-hover)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#e6f4ee';
-                e.currentTarget.style.color = '#0f5c38';
+                e.currentTarget.style.color = 'var(--color-accent)';
               }}
             >
               <div className="flex items-center gap-1.5">
@@ -475,18 +473,16 @@ export default function PDVPage() {
                   onClick={() => { setQuickIncomeCategory(cat.value); setQuickIncomeOpen(true); }}
                   className="stat-card text-left transition-transform active:scale-95"
                   style={{
-                    background: '#e6f4ee',
-                    color: '#0f5c38',
-                    border: '1.5px solid #7dc4a0',
+                    background: 'var(--color-accent-bg)',
+                    color: 'var(--color-accent)',
+                    border: '1.5px solid var(--color-accent)',
                     fontWeight: 500,
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = '#d0eadb';
-                    e.currentTarget.style.color = '#0a4229';
+                    e.currentTarget.style.color = 'var(--color-accent-hover)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = '#e6f4ee';
-                    e.currentTarget.style.color = '#0f5c38';
+                    e.currentTarget.style.color = 'var(--color-accent)';
                   }}
                 >
                   <div className="flex items-center gap-1.5">
