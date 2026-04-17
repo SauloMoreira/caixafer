@@ -406,7 +406,7 @@ export default function PDVPage() {
       </div>
 
       {/* Mini cart banner — mobile, when cart has items and drawer is closed */}
-      {cart.length > 0 && !showCart && (
+      {totalQty > 0 && !showCart && (
         <button
           type="button"
           onClick={() => setShowCart(true)}
@@ -418,13 +418,13 @@ export default function PDVPage() {
         >
           <span className="flex items-center gap-2 text-[13px] font-medium" style={{ color: 'var(--color-accent)' }}>
             <ShoppingCart className="h-4 w-4" />
-            {cart.length} {cart.length === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
+            {totalQty} {totalQty === 1 ? 'item' : 'itens'} · {formatCurrency(total)}
           </span>
           <span
             className="flex items-center justify-center rounded-full text-[11px] font-semibold text-white"
             style={{ background: 'var(--color-accent)', width: 22, height: 22 }}
           >
-            {cart.length}
+            {totalQty}
           </span>
         </button>
       )}
