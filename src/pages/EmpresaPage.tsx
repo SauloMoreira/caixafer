@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Building2, Save, Loader2, Upload, ImageIcon, Palette, Info, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { optimizeCompanyLogo } from '@/lib/logo-optimizer';
+import { applyAccentColor } from '@/hooks/useThemeColor';
 import { toast } from 'sonner';
 
 export default function EmpresaPage() {
@@ -54,6 +55,9 @@ export default function EmpresaPage() {
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
+    if (field === 'theme_color' && /^#?[0-9a-fA-F]{6}$/.test(value)) {
+      applyAccentColor(value.startsWith('#') ? value : `#${value}`);
+    }
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
