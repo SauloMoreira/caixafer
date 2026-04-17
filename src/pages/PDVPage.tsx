@@ -459,11 +459,25 @@ export default function PDVPage() {
                 <button
                   key={cat.value}
                   onClick={() => { setQuickIncomeCategory(cat.value); setQuickIncomeOpen(true); }}
-                  className="stat-card text-left transition-transform active:scale-95 hover:border-primary/30 border-2 border-dashed border-primary/20 bg-primary/5"
+                  className="stat-card text-left transition-transform active:scale-95"
+                  style={{
+                    background: '#e6f4ee',
+                    color: '#0f5c38',
+                    border: '1.5px solid #7dc4a0',
+                    fontWeight: 500,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#d0eadb';
+                    e.currentTarget.style.color = '#0a4229';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#e6f4ee';
+                    e.currentTarget.style.color = '#0f5c38';
+                  }}
                 >
                   <div className="flex items-center gap-1.5">
-                    <Icon className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium leading-tight text-primary">{cat.label}</p>
+                    <Icon style={{ width: 14, height: 14, color: 'currentColor' }} />
+                    <p className="text-xs leading-tight" style={{ color: 'currentColor', fontWeight: 500 }}>{cat.label}</p>
                   </div>
                 </button>
               );
