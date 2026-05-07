@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart } from 'lucide-react';
+import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart, KeyRound } from 'lucide-react';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 interface UserProfile {
