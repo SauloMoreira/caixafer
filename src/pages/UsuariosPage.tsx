@@ -342,6 +342,11 @@ export default function UsuariosPage() {
                   <Button size="sm" variant="outline" onClick={() => { setDialogOpen(false); navigate(`/perfil?user=${selectedUser.id}`); }} className="gap-1.5">
                     <Pencil className="h-4 w-4" /> Editar Perfil
                   </Button>
+                  {selectedUser.email && (
+                    <Button size="sm" variant="outline" onClick={() => handleResetPassword(selectedUser.email)} className="gap-1.5">
+                      <KeyRound className="h-4 w-4" /> Resetar Senha
+                    </Button>
+                  )}
                   {selectedUser.approval_status === 'pending_approval' && (
                     <>
                       <Button size="sm" onClick={() => handleApprove(selectedUser.id)} className="gap-1.5">
