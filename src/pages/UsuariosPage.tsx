@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart } from 'lucide-react';
+import { Shield, UserCheck, Clock, XCircle, UserX, Search, User, Pencil, Heart, KeyRound } from 'lucide-react';
 import CriticalActionDialog from '@/components/CriticalActionDialog';
 
 interface UserProfile {
@@ -156,6 +156,18 @@ export default function UsuariosPage() {
         setSelectedUser(prev => prev ? { ...prev, volunteer_id: volunteerId } : null);
       }
     }
+  };
+
+  const handleResetPassword = async (email: string | null) => {
+    if (!email) {
+      toast.error('Usuário sem e-mail cadastrado.');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success(`E-mail de redefinição enviado para ${email}`);
   };
 
   const filtered = users.filter(u => {
@@ -330,6 +342,11 @@ export default function UsuariosPage() {
                   <Button size="sm" variant="outline" onClick={() => { setDialogOpen(false); navigate(`/perfil?user=${selectedUser.id}`); }} className="gap-1.5">
                     <Pencil className="h-4 w-4" /> Editar Perfil
                   </Button>
+                  {selectedUser.email && (
+                    <Button size="sm" variant="outline" onClick={() => handleResetPassword(selectedUser.email)} className="gap-1.5">
+                      <KeyRound className="h-4 w-4" /> Resetar Senha
+                    </Button>
+                  )}
                   {selectedUser.approval_status === 'pending_approval' && (
                     <>
                       <Button size="sm" onClick={() => handleApprove(selectedUser.id)} className="gap-1.5">
