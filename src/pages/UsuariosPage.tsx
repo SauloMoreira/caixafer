@@ -158,6 +158,18 @@ export default function UsuariosPage() {
     }
   };
 
+  const handleResetPassword = async (email: string | null) => {
+    if (!email) {
+      toast.error('Usuário sem e-mail cadastrado.');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success(`E-mail de redefinição enviado para ${email}`);
+  };
+
   const filtered = users.filter(u => {
     if (filterStatus !== 'all' && u.approval_status !== filterStatus) return false;
     if (filterRole !== 'all' && u.role !== filterRole) return false;
