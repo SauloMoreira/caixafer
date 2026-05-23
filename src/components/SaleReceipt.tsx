@@ -121,7 +121,7 @@ const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData; company?: Pa
       <div className="receipt-sep-secondary border-b border-dashed border-gray-400 mb-4" />
 
       {/* Footer */}
-      <div className="text-center text-[10px] text-gray-500 space-y-1">
+      <div className="text-center text-[11px] text-gray-700 space-y-1">
         <p className="font-bold text-black text-xs">Obrigado pela preferência! 💚</p>
         {companyFooterLines.map((line) => (
           <p key={line}>{line}</p>

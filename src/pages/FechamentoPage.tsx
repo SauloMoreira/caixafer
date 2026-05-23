@@ -347,9 +347,9 @@ export default function FechamentoPage() {
       <div style="text-align:center;margin-bottom:10px;">
         ${companyData.logoUrl ? `<img src="${escapeHtml(companyData.logoUrl)}" alt="Logo da empresa ${escapeHtml(companyData.name)}" style="display:block;margin:0 auto 8px;max-width:140px;max-height:70px;object-fit:contain;" />` : ''}
         <h2>${escapeHtml(companyData.name)}</h2>
-        ${companyLegalLine ? `<p style="text-align:center;font-size:10px;color:#666;margin:2px 0;">${escapeHtml(companyLegalLine)}</p>` : ''}
-        ${companyHeaderLines.map((line) => `<p style="text-align:center;font-size:10px;color:#666;margin:2px 0;">${escapeHtml(line)}</p>`).join('')}
-        <p style="text-align:center;font-size:11px;color:#666;margin-top:6px;">Fechamento de Caixa</p>
+        ${companyLegalLine ? `<p style="text-align:center;font-size:13px;color:#000;font-weight:600;margin:2px 0;">${escapeHtml(companyLegalLine)}</p>` : ''}
+        ${companyHeaderLines.map((line) => `<p style="text-align:center;font-size:13px;color:#000;font-weight:600;margin:2px 0;">${escapeHtml(line)}</p>`).join('')}
+        <p style="text-align:center;font-size:14px;color:#000;font-weight:700;margin-top:6px;">Fechamento de Caixa</p>
       </div>
     `;
 
@@ -373,18 +373,19 @@ export default function FechamentoPage() {
         ` : ''}
         ${notes ? `<div class="sep"></div><p>Obs: ${escapeHtml(notes)}</p>` : ''}
         <div class="sep"></div>
-        <div style="text-align:center;font-size:10px;color:#666;display:flex;flex-direction:column;gap:4px;">
+        <div style="text-align:center;font-size:13px;color:#000;font-weight:600;display:flex;flex-direction:column;gap:4px;">
           ${companyFooterLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
         </div>
       `,
       styles: `
-        body { margin: 0; padding: 15mm; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.6; }
-        h2 { text-align: center; margin-bottom: 4px; }
-        .row { display: flex; justify-content: space-between; gap: 12px; }
-        .sep { border-bottom: 1px dashed #999; margin: 8px 0; }
-        .bold { font-weight: bold; }
-        img { display: block; margin: 0 auto 8px; }
-        @media print { @page { size: 80mm auto; margin: 5mm; } }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
+        body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.7; color: #000; }
+        h2 { text-align: center; font-size: 19px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+        .sep { border-bottom: 2px dashed #333; margin: 8px 0; }
+        .bold { font-weight: 800; }
+        img { display: block; margin: 0 auto 8px; max-width: 140px; max-height: 70px; object-fit: contain; }
+        @media print { @page { size: 80mm auto; margin: 0; } body { padding: 5mm; } }
       `,
       windowFeatures: 'width=500,height=700',
     });
