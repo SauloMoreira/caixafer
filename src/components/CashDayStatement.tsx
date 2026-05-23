@@ -230,22 +230,22 @@ export default function CashDayStatement({
       title: `Extrato do Caixa - ${formatDate(businessDate)}`,
       bodyHtml: content.innerHTML,
       styles: `
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 11px; line-height: 1.5; padding: 12mm; color: #1a1a1a; }
-        h2 { text-align: center; font-size: 14px; margin-bottom: 4px; }
-        h3 { font-size: 12px; margin: 12px 0 6px; border-bottom: 1px solid #ccc; padding-bottom: 3px; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; padding: 12mm; color: #000; }
+        h2 { text-align: center; font-size: 18px; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+        h3 { font-size: 15px; font-weight: 700; margin: 14px 0 6px; border-bottom: 2px solid #555; padding-bottom: 4px; }
         img { display: block; margin: 0 auto 8px; max-width: 150px; max-height: 72px; object-fit: contain; }
-        .subtitle { text-align: center; font-size: 10px; color: #666; margin-bottom: 8px; }
-        .row { display: flex; justify-content: space-between; padding: 2px 0; }
-        .row.bold { font-weight: 700; }
-        .sep { border-bottom: 1px dashed #bbb; margin: 8px 0; }
-        .section { margin-bottom: 10px; }
-        table { width: 100%; border-collapse: collapse; margin: 4px 0; }
-        th, td { padding: 3px 6px; text-align: left; font-size: 10px; border-bottom: 1px solid #eee; }
-        th { background: #f5f5f5; font-weight: 600; }
+        .subtitle { text-align: center; font-size: 13px; color: #000; font-weight: 600; margin-bottom: 8px; }
+        .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; }
+        .row.bold { font-weight: 800; font-size: 15px; }
+        .sep { border-bottom: 2px dashed #444; margin: 8px 0; }
+        .section { margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+        th, td { padding: 5px 8px; text-align: left; font-size: 13px; border-bottom: 1px solid #bbb; color: #000; }
+        th { background: #e0e0e0; font-weight: 800; border-bottom: 2px solid #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
         td.right, th.right { text-align: right; }
-        .total-row { background: #f0f7ff; font-weight: 700; }
-        .footer { text-align: center; font-size: 9px; color: #999; margin-top: 16px; }
+        .total-row td { background: #c8dff5; font-weight: 800; font-size: 14px; }
+        .footer { text-align: center; font-size: 12px; color: #000; font-weight: 600; margin-top: 16px; }
         @media print { @page { size: A4; margin: 10mm; } }
       `,
       windowFeatures: 'width=600,height=900',
