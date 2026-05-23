@@ -1744,6 +1744,31 @@ export type Database = {
         }
         Returns: boolean
       }
+      log_security_event: {
+        Args: {
+          _action: string
+          _business_date?: string
+          _entity_id?: string
+          _entity_type: string
+          _event_type: string
+          _new_data?: Json
+          _notes?: string
+          _old_data?: Json
+          _route?: string
+          _severity?: string
+          _target_user_id?: string
+        }
+        Returns: undefined
+      }
+      log_security_incident: {
+        Args: {
+          _context?: Json
+          _incident_type: string
+          _route?: string
+          _severity?: string
+        }
+        Returns: undefined
+      }
       refresh_spr_notifications: { Args: never; Returns: undefined }
       user_belongs_to_company: {
         Args: { _company_id: string; _user_id: string }
