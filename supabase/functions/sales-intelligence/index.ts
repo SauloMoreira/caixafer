@@ -10,8 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { period_days = 90, category_filter, product_filter, role } = await req.json();
-    const isCoordinator = role === 'cash_coordinator';
+    const { period_days = 90, category_filter, product_filter } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -20,15 +19,30 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Validar e sanitizar period_days (evitar DoS com valores absurdos)
+    const safePeriodDays = Math.min(Math.max(Number(period_days) || 90, 1), 365);
+
+    // Extrair role do JWT autenticado (não confiar em parâmetro do body)
+    const authHeader = req.headers.get("Authorization");
+    let isCoordinator = false;
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) {
+        const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+        isCoordinator = profile?.role === 'cash_coordinator';
+      }
+    }
+
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - period_days);
+    startDate.setDate(startDate.getDate() - safePeriodDays);
     const startISO = startDate.toISOString().split("T")[0];
     const endISO = endDate.toISOString().split("T")[0];
 
     // Previous period for comparison
     const prevStart = new Date(startDate);
-    prevStart.setDate(prevStart.getDate() - period_days);
+    prevStart.setDate(prevStart.getDate() - safePeriodDays);
     const prevStartISO = prevStart.toISOString().split("T")[0];
 
     // Fetch all sales in current period
@@ -213,7 +227,7 @@ serve(async (req) => {
     // Build data summary for AI
     const dataSummary = {
       period: `${startISO} a ${endISO}`,
-      period_days,
+      safePeriodDays,
       total_revenue: Math.round(totalRevenue * 100) / 100,
       total_sales: totalSalesCount,
       active_days: activeDays,
@@ -242,10 +256,10 @@ Analise os dados abaixo e gere insights e sugestões EXCLUSIVAMENTE OPERACIONAIS
 NUNCA mencione faturamento, receita, ticket médio em R$, valores monetários ou desempenho financeiro.
 Foque em: quantidade vendida, giro de produtos, estoque, reposição, exposição, ruptura e consumo.
 
-DADOS DO PERÍODO (${period_days} dias):
+DADOS DO PERÍODO (${safePeriodDays} dias):
 ${JSON.stringify({
   period: dataSummary.period,
-  period_days: dataSummary.period_days,
+  safePeriodDays: dataSummary.safePeriodDays,
   total_sales: dataSummary.total_sales,
   active_days: dataSummary.active_days,
   sales_change_pct: dataSummary.sales_change_pct,
@@ -287,7 +301,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
 
 Analise os dados abaixo e gere insights e sugestões práticas para o administrador melhorar vendas e faturamento.
 
-DADOS DO PERÍODO (${period_days} dias):
+DADOS DO PERÍODO (${safePeriodDays} dias):
 ${JSON.stringify(dataSummary, null, 2)}
 
 REGRAS:
@@ -399,7 +413,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
           day_of_week: dayOfWeekData.map((d: any) => ({ day: d.day, day_index: d.day_index, total_sales: d.total_sales, avg_sales: d.avg_sales })),
           champion_quantity: topByQuantity[0] ? { name: topByQuantity[0].name, quantity_sold: topByQuantity[0].quantity_sold } : null,
         },
-        period: { start: startISO, end: endISO, days: period_days },
+        period: { start: startISO, end: endISO, days: safePeriodDays },
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -433,7 +447,7 @@ FORMATO DE RESPOSTA (JSON puro, sem markdown):
         champion_revenue: topByRevenue[0] || null,
         worst_turnover: lowTurnover[0] || null,
       },
-      period: { start: startISO, end: endISO, days: period_days },
+      period: { start: startISO, end: endISO, days: safePeriodDays },
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -36,6 +36,8 @@ export default function SPRPage() {
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
   const [search, setSearch] = useState('');
+  const [loadingVol, setLoadingVol] = useState(false);
+  const [loadingCharges, setLoadingCharges] = useState(false);
 
   // Volunteer form
   const [volDialogOpen, setVolDialogOpen] = useState(false);
@@ -74,13 +76,19 @@ export default function SPRPage() {
   }, [canAccessOperationalSpr]);
 
   const fetchVolunteers = async () => {
-    const { data } = await supabase.from('spr_volunteers').select('*').order('full_name');
-    if (data) setVolunteers(data as Volunteer[]);
+    setLoadingVol(true);
+    const { data, error } = await supabase.from('spr_volunteers').select('*').order('full_name');
+    if (error) toast.error('Erro ao carregar voluntários.');
+    else if (data) setVolunteers(data as Volunteer[]);
+    setLoadingVol(false);
   };
 
   const fetchCharges = async () => {
-    const { data } = await supabase.from('spr_fiado_charges').select('*, spr_volunteers(full_name)').order('created_at', { ascending: false });
-    if (data) setCharges(data.map((c: any) => ({ ...c, volunteer_name: c.spr_volunteers?.full_name })));
+    setLoadingCharges(true);
+    const { data, error } = await supabase.from('spr_fiado_charges').select('*, spr_volunteers(full_name)').order('created_at', { ascending: false });
+    if (error) toast.error('Erro ao carregar fiados.');
+    else if (data) setCharges(data.map((c: any) => ({ ...c, volunteer_name: c.spr_volunteers?.full_name })));
+    setLoadingCharges(false);
   };
 
   const openNewVolunteer = () => {
@@ -160,14 +168,33 @@ export default function SPRPage() {
       toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
       return;
     }
-    const { error } = await supabase.from('spr_fiado_payments').insert({
+    const amountPaid = Number(payAmount);
+    if (!amountPaid || amountPaid <= 0) { toast.error('Informe um valor válido.'); return; }
+    if (amountPaid > Number(payCharge.amount)) { toast.error('Valor não pode ser maior que o total do fiado.'); return; }
+
+    const { error: payError } = await supabase.from('spr_fiado_payments').insert({
       fiado_charge_id: payCharge.id, volunteer_id: payCharge.volunteer_id,
-      payment_date: todayISO(), amount_paid: Number(payAmount),
+      payment_date: todayISO(), amount_paid: amountPaid,
       payment_method: payMethod, document_type: payDocType,
       document_reference: payDocRef || null, created_by: profile.id,
     });
-    if (error) toast.error(error.message);
-    else { toast.success('Pagamento registrado!'); setPayDialogOpen(false); fetchCharges(); }
+    if (payError) { toast.error(payError.message); return; }
+
+    // Calcular total pago incluindo pagamentos anteriores para atualizar status
+    const { data: allPayments } = await supabase
+      .from('spr_fiado_payments')
+      .select('amount_paid')
+      .eq('fiado_charge_id', payCharge.id);
+
+    const totalPaid = (allPayments || []).reduce((s, p) => s + Number(p.amount_paid), 0);
+    const chargeAmount = Number(payCharge.amount);
+    const newStatus = totalPaid >= chargeAmount ? 'paid' : totalPaid > 0 ? 'partial' : 'open';
+
+    await supabase.from('spr_fiado_charges').update({ status: newStatus }).eq('id', payCharge.id);
+
+    toast.success('Pagamento registrado!');
+    setPayDialogOpen(false);
+    fetchCharges();
   };
 
   const totalOpen = charges.filter(c => c.status !== 'paid').reduce((s, c) => s + Number(c.amount), 0);
@@ -197,7 +224,7 @@ export default function SPRPage() {
             </CardContent>
           </Card>
 
-          <Tabs value={tab} onValueChange={setTab}>
+          <Tabs value={tab} onValueChange={v => { setTab(v); setSearch(''); }}>
             <TabsList className="w-full">
               <TabsTrigger value="volunteers" className="flex-1">Voluntários</TabsTrigger>
               <TabsTrigger value="charges" className="flex-1">Fiados</TabsTrigger>
@@ -213,7 +240,8 @@ export default function SPRPage() {
                 <div className="flex justify-end">
                   <Button size="sm" onClick={openNewVolunteer}><Plus className="mr-1 h-4 w-4" />Voluntário</Button>
                 </div>
-                {filteredVol.map(v => (
+                {loadingVol && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
+                {!loadingVol && filteredVol.map(v => (
                   <Card key={v.id} className="cursor-pointer hover:border-primary/30 transition-all" onClick={() => openEditVolunteer(v)}>
                     <CardContent className="flex items-center justify-between p-3">
                       <div className="flex items-center gap-3 min-w-0">
@@ -233,14 +261,15 @@ export default function SPRPage() {
                     </CardContent>
                   </Card>
                 ))}
-                {filteredVol.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>}
+                {!loadingVol && filteredVol.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>}
               </TabsContent>
 
               <TabsContent value="charges" className="mt-0 space-y-2">
                 <div className="flex justify-end">
                   <Button size="sm" onClick={() => setChargeDialogOpen(true)}><Plus className="mr-1 h-4 w-4" />Fiado</Button>
                 </div>
-                {filteredCharges.map(c => (
+                {loadingCharges && <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}
+                {!loadingCharges && filteredCharges.map(c => (
                   <Card key={c.id}>
                     <CardContent className="flex items-center justify-between p-3">
                       <div>
@@ -261,7 +290,7 @@ export default function SPRPage() {
                     </CardContent>
                   </Card>
                 ))}
-                {filteredCharges.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum fiado encontrado.</p>}
+                {!loadingCharges && filteredCharges.length === 0 && <p className="text-center text-sm text-muted-foreground py-6">Nenhum fiado encontrado.</p>}
               </TabsContent>
             </div>
           </Tabs>
@@ -329,8 +358,27 @@ export default function SPRPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Valor do fiado: {payCharge && formatCurrency(Number(payCharge.amount))}</p>
-            <div><Label>Valor Pago (R$)</Label><Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} className="h-12" /></div>
+            {payCharge && (
+              <div className="rounded-lg bg-muted/50 p-3 space-y-1">
+                <p className="text-sm font-medium">{(payCharge as any).volunteer_name || 'Voluntário'}</p>
+                <p className="text-xs text-muted-foreground">
+                  Total do fiado: <span className="font-semibold text-foreground">{formatCurrency(Number(payCharge.amount))}</span>
+                </p>
+              </div>
+            )}
+            <div>
+              <Label>Valor Pago (R$)</Label>
+              <Input
+                type="number"
+                value={payAmount}
+                onChange={e => setPayAmount(e.target.value)}
+                className="h-12"
+                placeholder={payCharge ? `Máx: ${formatCurrency(Number(payCharge.amount))}` : '0,00'}
+                min="0.01"
+                max={payCharge ? String(payCharge.amount) : undefined}
+                autoFocus
+              />
+            </div>
             <div><Label>Forma de Pagamento</Label>
               <Select value={payMethod} onValueChange={v => setPayMethod(v as PaymentMethod)}>
                 <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
