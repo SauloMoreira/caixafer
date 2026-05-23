@@ -1,8 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Log a security audit event from the frontend.
- * Used for events not captured by DB triggers (e.g. route access attempts).
+ * Log a security audit event from the frontend via a SECURITY DEFINER RPC.
+ * Direct inserts into security_audit_logs are no longer allowed.
  */
 export async function logSecurityEvent(params: {
   event_type: string;
@@ -18,22 +18,18 @@ export async function logSecurityEvent(params: {
   business_date?: string;
 }) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase.from('security_audit_logs').insert({
-      event_type: params.event_type,
-      entity_type: params.entity_type,
-      entity_id: params.entity_id,
-      user_id: user.id,
-      action: params.action,
-      route: params.route || window.location.pathname,
-      notes: params.notes,
-      severity: params.severity || 'info',
-      old_data: params.old_data,
-      new_data: params.new_data,
-      target_user_id: params.target_user_id,
-      business_date: params.business_date,
+    await supabase.rpc('log_security_event', {
+      _event_type: params.event_type,
+      _entity_type: params.entity_type,
+      _action: params.action,
+      _entity_id: params.entity_id ?? null,
+      _route: params.route ?? window.location.pathname,
+      _notes: params.notes ?? null,
+      _severity: params.severity ?? 'info',
+      _old_data: params.old_data ?? null,
+      _new_data: params.new_data ?? null,
+      _target_user_id: params.target_user_id ?? null,
+      _business_date: params.business_date ?? null,
     });
   } catch (e) {
     // Fail silently — audit should never break the app
@@ -42,7 +38,7 @@ export async function logSecurityEvent(params: {
 }
 
 /**
- * Log a security incident (unauthorized access attempt, etc.)
+ * Log a security incident (unauthorized access attempt, etc.) via RPC.
  */
 export async function logSecurityIncident(params: {
   incident_type: string;
@@ -51,15 +47,11 @@ export async function logSecurityIncident(params: {
   severity?: 'low' | 'medium' | 'high' | 'critical';
 }) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase.from('security_incidents').insert({
-      incident_type: params.incident_type,
-      user_id: user.id,
-      route: params.route || window.location.pathname,
-      context: params.context,
-      severity: params.severity || 'medium',
+    await supabase.rpc('log_security_incident', {
+      _incident_type: params.incident_type,
+      _route: params.route ?? window.location.pathname,
+      _context: params.context ?? null,
+      _severity: params.severity ?? 'medium',
     });
   } catch (e) {
     console.error('Incident log error:', e);
