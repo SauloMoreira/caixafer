@@ -773,7 +773,7 @@ export default function FechamentoPage() {
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
-                    <Button className="flex-1 h-12" onClick={() => setShowCloseConfirmDialog(true)}>Fechar Caixa</Button>
+                    <Button className="flex-1 h-12" onClick={() => setShowCloseConfirmDialog(true)} disabled={!countedBalance}>Fechar Caixa</Button>
                   </div>
                   {/* Transfer button */}
                   <Button

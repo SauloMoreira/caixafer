@@ -38,6 +38,8 @@ export default function SPRPage() {
   const [search, setSearch] = useState('');
   const [loadingVol, setLoadingVol] = useState(false);
   const [loadingCharges, setLoadingCharges] = useState(false);
+  const [savingVol, setSavingVol] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
 
   // Volunteer form
   const [volDialogOpen, setVolDialogOpen] = useState(false);
@@ -111,7 +113,8 @@ export default function SPRPage() {
     if (!file.type.startsWith('image/')) { toast.error('Selecione uma imagem válida.'); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error('Máximo 5MB.'); return; }
     setVolAvatarFile(file);
-    setVolPreviewUrl(URL.createObjectURL(file));
+    const objectUrl = URL.createObjectURL(file);
+    setVolPreviewUrl(prev => { if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev); return objectUrl; });
   };
 
   const uploadVolAvatar = async (volunteerId: string): Promise<string | null> => {
@@ -128,31 +131,33 @@ export default function SPRPage() {
 
   const saveVolunteer = async () => {
     if (!volName.trim()) { toast.error('Nome é obrigatório.'); return; }
-
-    if (editingVol) {
-      let avatarUrl = editingVol.avatar_url;
-      if (volAvatarFile) {
-        avatarUrl = await uploadVolAvatar(editingVol.id);
-        if (volAvatarFile && !avatarUrl) return;
+    setSavingVol(true);
+    try {
+      if (editingVol) {
+        let avatarUrl = editingVol.avatar_url;
+        if (volAvatarFile) {
+          avatarUrl = await uploadVolAvatar(editingVol.id);
+          if (!avatarUrl) return;
+        }
+        const { error } = await supabase.from('spr_volunteers').update({
+          full_name: volName, phone: volPhone || null,
+          is_active: volActive, avatar_url: avatarUrl,
+        } as any).eq('id', editingVol.id);
+        if (error) toast.error(error.message);
+        else { toast.success('Voluntário atualizado!'); setVolDialogOpen(false); fetchVolunteers(); }
+      } else {
+        const tempId = crypto.randomUUID();
+        let avatarUrl: string | null = null;
+        if (volAvatarFile) avatarUrl = await uploadVolAvatar(tempId);
+        const { error } = await supabase.from('spr_volunteers').insert({
+          id: tempId, full_name: volName,
+          phone: volPhone || null, avatar_url: avatarUrl,
+        } as any);
+        if (error) toast.error(error.message);
+        else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); fetchVolunteers(); }
       }
-      const { error } = await supabase.from('spr_volunteers').update({
-        full_name: volName, phone: volPhone || null,
-        is_active: volActive, avatar_url: avatarUrl,
-      } as any).eq('id', editingVol.id);
-      if (error) toast.error(error.message);
-      else { toast.success('Voluntário atualizado!'); setVolDialogOpen(false); fetchVolunteers(); }
-    } else {
-      const tempId = crypto.randomUUID();
-      let avatarUrl: string | null = null;
-      if (volAvatarFile) {
-        avatarUrl = await uploadVolAvatar(tempId);
-      }
-      const { error } = await supabase.from('spr_volunteers').insert({
-        id: tempId, full_name: volName,
-        phone: volPhone || null, avatar_url: avatarUrl,
-      } as any);
-      if (error) toast.error(error.message);
-      else { toast.success('Voluntário cadastrado!'); setVolDialogOpen(false); fetchVolunteers(); }
+    } finally {
+      setSavingVol(false);
     }
   };
 
@@ -163,7 +168,7 @@ export default function SPRPage() {
   const openPayment = (charge: FiadoCharge) => { setPayCharge(charge); setPayAmount(''); setPayDialogOpen(true); };
 
   const savePayment = async () => {
-    if (!profile || !payCharge) return;
+    if (!profile || !payCharge || savingPayment) return;
     if (!canAccessOperationalSpr) {
       toast.error(`Operação bloqueada. O caixa está sob responsabilidade de ${responsibleName || 'outro operador'}.`);
       return;
@@ -171,6 +176,7 @@ export default function SPRPage() {
     const amountPaid = Number(payAmount);
     if (!amountPaid || amountPaid <= 0) { toast.error('Informe um valor válido.'); return; }
     if (amountPaid > Number(payCharge.amount)) { toast.error('Valor não pode ser maior que o total do fiado.'); return; }
+    setSavingPayment(true);
 
     const { error: payError } = await supabase.from('spr_fiado_payments').insert({
       fiado_charge_id: payCharge.id, volunteer_id: payCharge.volunteer_id,
@@ -178,7 +184,7 @@ export default function SPRPage() {
       payment_method: payMethod, document_type: payDocType,
       document_reference: payDocRef || null, created_by: profile.id,
     });
-    if (payError) { toast.error(payError.message); return; }
+    if (payError) { toast.error(payError.message); setSavingPayment(false); return; }
 
     // Calcular total pago incluindo pagamentos anteriores para atualizar status
     const { data: allPayments } = await supabase
@@ -194,6 +200,7 @@ export default function SPRPage() {
 
     toast.success('Pagamento registrado!');
     setPayDialogOpen(false);
+    setSavingPayment(false);
     fetchCharges();
   };
 
@@ -343,8 +350,8 @@ export default function SPRPage() {
               )}
             </div>
 
-            <Button className="h-12 w-full" onClick={saveVolunteer} disabled={volUploading}>
-              {volUploading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Enviando...</> : 'Salvar'}
+            <Button className="h-12 w-full" onClick={saveVolunteer} disabled={volUploading || savingVol}>
+              {(volUploading || savingVol) ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{volUploading ? 'Enviando...' : 'Salvando...'}</> : 'Salvar'}
             </Button>
           </div>
         </DialogContent>
@@ -392,7 +399,9 @@ export default function SPRPage() {
               </Select>
             </div>
             <div><Label>Referência</Label><Input value={payDocRef} onChange={e => setPayDocRef(e.target.value)} className="h-12" /></div>
-            <Button className="h-12 w-full" onClick={savePayment}>Confirmar Pagamento</Button>
+            <Button className="h-12 w-full" onClick={savePayment} disabled={savingPayment || !payAmount}>
+              {savingPayment ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Registrando...</> : 'Confirmar Pagamento'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
