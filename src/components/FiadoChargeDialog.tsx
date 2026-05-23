@@ -197,6 +197,7 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
   }, [cart]);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 max-h-[92vh] flex flex-col overflow-hidden">
         {/* Header */}
@@ -427,5 +428,6 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
     </Dialog>
 
     <SaleReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
+    </>
   );
 }
