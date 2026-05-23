@@ -63,7 +63,8 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       ...companyHeaderLines,
       '',
       '',
-      `Pedido: #${data.saleNumber}`,
+      data.isFiado ? `FIADO: #${data.saleNumber}` : `Pedido: #${data.saleNumber}`,
+      ...(data.isFiado && data.volunteerName ? [`Voluntário: ${data.volunteerName}`] : []),
       `Data: ${formatDateTime(data.createdAt)}`,
       `Operador: ${data.operatorName}`,
       '-----------------------------',
@@ -72,7 +73,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
       `Subtotal: ${formatCurrency(data.subtotal)}`,
       ...(data.discount > 0 ? [`Desconto: -${formatCurrency(data.discount)}`] : []),
       `TOTAL: ${formatCurrency(data.total)}`,
-      `Pagamento: ${paymentLabel(data.paymentMethod)}`,
+      `Pagamento: ${data.isFiado ? 'FIADO' : data.paymentMethod ? paymentLabel(data.paymentMethod) : '—'}`,
       '-----------------------------',
       'Obrigado pela preferência! 💚',
       ...companyFooterLines,
@@ -86,7 +87,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">Pedido</DialogTitle>
+          <DialogTitle className="text-center">{data.isFiado ? 'Fiado Registrado' : 'Pedido'}</DialogTitle>
         </DialogHeader>
 
         <div className="overflow-x-auto">
@@ -106,7 +107,7 @@ export default function SaleReceiptDialog({ open, onOpenChange, data }: Props) {
         </div>
 
         <Button variant="default" className="h-12 w-full mt-2" onClick={() => onOpenChange(false)}>
-          Nova Venda
+          {data.isFiado ? 'Fechar' : 'Nova Venda'}
         </Button>
       </DialogContent>
     </Dialog>
