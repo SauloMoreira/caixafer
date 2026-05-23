@@ -14,8 +14,10 @@ export interface ReceiptData {
   subtotal: number;
   discount: number;
   total: number;
-  paymentMethod: PaymentMethod;
+  paymentMethod?: PaymentMethod | null;
   notes?: string | null;
+  isFiado?: boolean;
+  volunteerName?: string | null;
 }
 
 const paymentLabel = (m: PaymentMethod) => PAYMENT_METHODS.find(p => p.value === m)?.label || m;
@@ -51,8 +53,16 @@ const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData; company?: Pa
       {/* Sale info */}
       <div className="mb-3 space-y-0.5">
         <div className="receipt-order-highlight flex justify-center py-1.5 my-1 border-y-2 border-black">
-          <span className="text-xs font-bold">Pedido #{data.saleNumber}</span>
+          <span className="text-xs font-bold">
+            {data.isFiado ? `FIADO #${data.saleNumber}` : `Pedido #${data.saleNumber}`}
+          </span>
         </div>
+        {data.isFiado && data.volunteerName && (
+          <div className="flex justify-between font-bold">
+            <span>Voluntário:</span>
+            <span>{data.volunteerName}</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span>Data:</span>
           <span>{formatDateTime(data.createdAt)}</span>
@@ -105,7 +115,7 @@ const SaleReceipt = forwardRef<HTMLDivElement, { data: ReceiptData; company?: Pa
 
       <div className="flex justify-between mb-3">
         <span>Pagamento:</span>
-        <span className="font-bold">{paymentLabel(data.paymentMethod)}</span>
+        <span className="font-bold">{data.isFiado ? 'FIADO' : data.paymentMethod ? paymentLabel(data.paymentMethod) : '—'}</span>
       </div>
 
       <div className="receipt-sep-secondary border-b border-dashed border-gray-400 mb-4" />

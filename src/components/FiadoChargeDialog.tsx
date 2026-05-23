@@ -10,7 +10,9 @@ import { toast } from 'sonner';
 import { Search, Plus, Minus, Trash2, ShoppingCart, User, ArrowLeft, PenLine, ChevronRight } from 'lucide-react';
 import ProductImage from '@/components/ProductImage';
 import ManualItemDialog from '@/components/ManualItemDialog';
+import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import type { ManualItem } from '@/components/ManualItemDialog';
+import type { ReceiptData } from '@/components/SaleReceipt';
 import type { Database } from '@/integrations/supabase/types';
 
 type Product = Database['public']['Tables']['products']['Row'];
@@ -49,6 +51,8 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
   const [loading, setLoading] = useState(false);
   const [manualItemOpen, setManualItemOpen] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -146,6 +150,27 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
 
       toast.success(`Fiado de ${formatCurrency(total)} registrado para ${selectedVolunteer.full_name}!`);
       onChargeCreated?.();
+
+      // Montar dados do recibo (número = últimos 4 chars do UUID como referência)
+      const refNumber = parseInt(charge.id.replace(/-/g, '').slice(-6), 16) % 100000;
+      setReceiptData({
+        saleNumber: refNumber,
+        createdAt: charge.created_at,
+        operatorName: profile.full_name,
+        items: cart.map(i => ({
+          name: getItemName(i),
+          quantity: i.quantity,
+          unitPrice: getItemPrice(i),
+          lineTotal: getItemPrice(i) * i.quantity,
+        })),
+        subtotal: total,
+        discount: 0,
+        total,
+        isFiado: true,
+        volunteerName: selectedVolunteer.full_name,
+        notes: notes || null,
+      });
+      setReceiptOpen(true);
       onOpenChange(false);
     } catch (err: any) {
       toast.error('Erro ao registrar fiado: ' + err.message);
@@ -400,5 +425,7 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
 
       <ManualItemDialog open={manualItemOpen} onOpenChange={setManualItemOpen} onAdd={addManualToCart} />
     </Dialog>
+
+    <SaleReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} data={receiptData} />
   );
 }
