@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // \"\"' | { read -r f; if echo \"$f\" | grep -qE '\\.(tsx|jsx|html|vue|svelte)$'; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"Tailwind CSS esta instalado neste projeto (tailwindcss ^3.4.17 + tailwind-merge + shadcn/ui). Use classes utilitarias Tailwind para TODA estilizacao em componentes UI. Nunca use inline styles ou arquivos CSS separados. Prefira classes como flex, grid, gap-*, p-*, text-*, bg-*, rounded-*, shadow-* etc.\"}}'; fi; } 2>/dev/null || true",
+            "statusMessage": "Verificando estilo Tailwind..."
+          }
+        ]
+      }
+    ]
+  }
+}
