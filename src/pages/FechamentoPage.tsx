@@ -70,6 +70,9 @@ export default function FechamentoPage() {
   const [showCorrectionReview, setShowCorrectionReview] = useState(false);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
 
+  // Normal close confirmation
+  const [showCloseConfirmDialog, setShowCloseConfirmDialog] = useState(false);
+
   // Admin override close state
   const [showAdminCloseDialog, setShowAdminCloseDialog] = useState(false);
   const [adminCloseReason, setAdminCloseReason] = useState('');
@@ -769,7 +772,7 @@ export default function FechamentoPage() {
                 <div className="space-y-2">
                   <div className="flex gap-2">
                     <Button variant="outline" className="flex-1 h-12" onClick={() => saveClosing(false)}>Salvar</Button>
-                    <Button className="flex-1 h-12" onClick={() => saveClosing(true)}>Fechar Caixa</Button>
+                    <Button className="flex-1 h-12" onClick={() => setShowCloseConfirmDialog(true)}>Fechar Caixa</Button>
                   </div>
                   {/* Transfer button */}
                   <Button
@@ -1099,6 +1102,17 @@ export default function FechamentoPage() {
           </div>
         </div>
       </CriticalActionDialog>
+
+      {/* Confirmação de fechamento normal */}
+      <CriticalActionDialog
+        open={showCloseConfirmDialog}
+        onOpenChange={setShowCloseConfirmDialog}
+        title="Fechar Caixa"
+        description="Você está prestes a encerrar o caixa do dia. Esta ação irá registrar o fechamento com o saldo contado informado. Tem certeza que deseja fechar o caixa?"
+        severity="warning"
+        confirmLabel="Sim, Fechar Caixa"
+        onConfirm={() => { setShowCloseConfirmDialog(false); saveClosing(true); }}
+      />
     </div>
   );
 }
