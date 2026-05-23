@@ -143,11 +143,6 @@ export default function PDVPage() {
     fetchTransferSummary();
   }, [transferOpen, closingId, fetchTransferSummary]);
 
-  useEffect(() => {
-    if (!transferOpen || !closingId) return;
-    fetchTransferSummary();
-  }, [transferOpen, closingId, fetchTransferSummary]);
-
   const filteredProducts = useMemo(() => {
     if (!search) return products;
     const s = search.toLowerCase();
