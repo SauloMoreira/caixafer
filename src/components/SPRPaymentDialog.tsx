@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, User, ArrowLeft, DollarSign, Heart, ChevronRight } from 'lucide-react';
+import { Search, User, ArrowLeft, DollarSign, Heart, ChevronRight, X } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Volunteer = Database['public']['Tables']['spr_volunteers']['Row'];
@@ -146,152 +146,232 @@ export default function SPRPaymentDialog({ open, onOpenChange, onPaymentComplete
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {step !== 'select_volunteer' && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setStep(step === 'confirm_payment' ? 'view_balance' : 'select_volunteer')}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <Heart className="h-4 w-4 text-primary" />
-            {step === 'select_volunteer' && 'Receber SPR'}
-            {step === 'view_balance' && 'Saldo SPR'}
-            {step === 'confirm_payment' && 'Confirmar Pagamento'}
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Step 1: Select volunteer */}
-        {step === 'select_volunteer' && (
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Buscar voluntário..." value={search} onChange={e => setSearch(e.target.value)} className="h-12 pl-10" />
-            </div>
-            <div className="space-y-2 max-h-[50vh] overflow-y-auto">
-              {filteredVolunteers.map(v => (
-                <Card key={v.id} className="cursor-pointer hover:border-primary/30 transition-all" onClick={() => selectVolunteer(v)}>
-                  <CardContent className="flex items-center justify-between p-3">
-                    <div className="flex items-center gap-3">
-                      {v.avatar_url ? (
-                        <img src={v.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-                      ) : (
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                          <User className="h-5 w-5 text-primary" />
-                        </div>
-                      )}
-                      <p className="text-sm font-medium">{v.full_name}</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </CardContent>
-                </Card>
-              ))}
-              {filteredVolunteers.length === 0 && (
-                <p className="text-center text-sm text-muted-foreground py-6">Nenhum voluntário encontrado.</p>
+      <DialogContent className="max-w-full sm:max-w-5xl w-[95vw] max-h-[95vh] p-0 gap-0 overflow-hidden flex flex-col">
+        {/* Fixed Header */}
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0 bg-[var(--color-surface)]">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+              {step !== 'select_volunteer' && (
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setStep(step === 'confirm_payment' ? 'view_balance' : 'select_volunteer')}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: View balance */}
-        {step === 'view_balance' && selectedVolunteer && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-              {selectedVolunteer.avatar_url ? (
-                <img src={selectedVolunteer.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-              )}
-              <div>
-                <p className="font-medium">{selectedVolunteer.full_name}</p>
-                <p className="text-xs text-muted-foreground">{selectedVolunteer.phone || 'Sem telefone'}</p>
-              </div>
-            </div>
-
-            <Card className="stat-card">
-              <CardContent className="p-0">
-                <p className="text-xs text-muted-foreground">Saldo em Aberto</p>
-                <p className={`financial-value text-xl ${totalOpen > 0 ? 'text-warning' : 'text-income'}`}>
-                  {formatCurrency(totalOpen)}
-                </p>
-              </CardContent>
-            </Card>
-
-            {charges.length > 0 ? (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lançamentos em aberto</p>
-                {charges.map(c => (
-                  <div key={c.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-2">
-                    <div>
-                      <p className="text-sm font-medium">{c.description || 'Fiado'}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(c.business_date)}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="financial-value text-sm">{formatCurrency(Number(c.amount))}</p>
-                      <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(c.status)}`}>
-                        {statusLabel(c.status)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-sm text-muted-foreground py-4">
-                Este voluntário não possui saldo em aberto. 🎉
-              </p>
-            )}
-
-            {totalOpen > 0 && (
-              <Button className="h-12 w-full" onClick={goToPayment}>
-                <DollarSign className="mr-2 h-4 w-4" />
-                Registrar Pagamento
-              </Button>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Confirm payment */}
-        {step === 'confirm_payment' && selectedVolunteer && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-              <p className="text-sm font-medium">{selectedVolunteer.full_name}</p>
-              <p className="financial-value text-sm text-warning">{formatCurrency(totalOpen)}</p>
-            </div>
-
-            <div>
-              <Label>Valor do Pagamento (R$)</Label>
-              <Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} className="h-12" placeholder="0,00" />
-            </div>
-            <div>
-              <Label>Forma de Pagamento</Label>
-              <Select value={payMethod} onValueChange={v => setPayMethod(v as PaymentMethod)}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Tipo de Documento</Label>
-              <Select value={payDocType} onValueChange={v => setPayDocType(v as DocumentType)}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
-                <SelectContent>{DOCUMENT_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Referência do Documento</Label>
-              <Input value={payDocRef} onChange={e => setPayDocRef(e.target.value)} className="h-12" placeholder="Opcional" />
-            </div>
-            <div>
-              <Label>Observações</Label>
-              <Input value={payNotes} onChange={e => setPayNotes(e.target.value)} className="h-12" placeholder="Opcional" />
-            </div>
-
-            <Button className="h-12 w-full" onClick={confirmPayment} disabled={loading}>
-              {loading ? 'Processando...' : `Confirmar ${formatCurrency(Number(payAmount) || 0)}`}
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-primary shrink-0" />
+              {step === 'select_volunteer' && 'Receber SPR'}
+              {step === 'view_balance' && 'Saldo SPR'}
+              {step === 'confirm_payment' && 'Confirmar Pagamento'}
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0 rounded-full hover:bg-[var(--color-surface-alt)]"
+              onClick={() => onOpenChange(false)}
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5 text-[var(--color-text-muted)]" />
             </Button>
           </div>
-        )}
+        </DialogHeader>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          {/* Step 1: Select volunteer */}
+          {step === 'select_volunteer' && (
+            <div className="max-w-3xl mx-auto space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar voluntário..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="h-12 pl-10 text-sm sm:text-base"
+                  autoFocus
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredVolunteers.map(v => (
+                  <Card
+                    key={v.id}
+                    className="cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-[0.98]"
+                    onClick={() => selectVolunteer(v)}
+                  >
+                    <CardContent className="flex items-center gap-3 p-4">
+                      {v.avatar_url ? (
+                        <img src={v.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                          <User className="h-6 w-6 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm sm:text-base font-medium truncate">{v.full_name}</p>
+                        <p className="text-xs text-muted-foreground">{v.phone || 'Sem telefone'}</p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+                    </CardContent>
+                  </Card>
+                ))}
+                {filteredVolunteers.length === 0 && (
+                  <div className="col-span-full flex flex-col items-center justify-center py-12 text-muted-foreground gap-3">
+                    <User className="h-10 w-10 opacity-30" />
+                    <p className="text-sm sm:text-base">Nenhum voluntário encontrado.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: View balance */}
+          {step === 'view_balance' && selectedVolunteer && (
+            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+              {/* Left: Volunteer info + Summary */}
+              <div className="lg:col-span-1 space-y-4">
+                <Card className="border">
+                  <CardContent className="flex items-center gap-4 p-4">
+                    {selectedVolunteer.avatar_url ? (
+                      <img src={selectedVolunteer.avatar_url} alt="" className="h-16 w-16 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                        <User className="h-8 w-8 text-primary" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-lg font-medium truncate">{selectedVolunteer.full_name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedVolunteer.phone || 'Sem telefone'}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="stat-card border">
+                  <CardContent className="p-4">
+                    <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider">Saldo em Aberto</p>
+                    <p className={`financial-value text-2xl sm:text-3xl mt-1 ${totalOpen > 0 ? 'text-warning' : 'text-income'}`}>
+                      {formatCurrency(totalOpen)}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {totalOpen > 0 && (
+                  <Button className="h-12 w-full text-sm sm:text-base" onClick={goToPayment}>
+                    <DollarSign className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    Registrar Pagamento
+                  </Button>
+                )}
+              </div>
+
+              {/* Right: Charges list */}
+              <div className="lg:col-span-2">
+                {charges.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs sm:text-sm font-medium text-muted-foreground uppercase tracking-wider px-1">
+                      Lançamentos em aberto ({charges.length})
+                    </p>
+                    <div className="space-y-2">
+                      {charges.map(c => (
+                        <Card key={c.id} className="border hover:border-primary/20 transition-colors">
+                          <CardContent className="flex items-center justify-between p-3 sm:p-4">
+                            <div className="min-w-0">
+                              <p className="text-sm sm:text-base font-medium">{c.description || 'Fiado'}</p>
+                              <p className="text-xs sm:text-sm text-muted-foreground">{formatDate(c.business_date)}</p>
+                            </div>
+                            <div className="text-right shrink-0 ml-4">
+                              <p className="financial-value text-sm sm:text-base">{formatCurrency(Number(c.amount))}</p>
+                              <span className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] sm:text-xs font-medium ${statusColor(c.status)}`}>
+                                {statusLabel(c.status)}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                    <Heart className="h-10 w-10 opacity-30" />
+                    <p className="text-sm sm:text-base text-center">
+                      Este voluntário não possui saldo em aberto. 🎉
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Confirm payment */}
+          {step === 'confirm_payment' && selectedVolunteer && (
+            <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+              {/* Left: Summary */}
+              <div className="space-y-4">
+                <Card className="border">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      {selectedVolunteer.avatar_url ? (
+                        <img src={selectedVolunteer.avatar_url} alt="" className="h-12 w-12 rounded-full object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                          <User className="h-6 w-6 text-primary" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-base font-medium">{selectedVolunteer.full_name}</p>
+                        <p className="text-sm text-muted-foreground">{selectedVolunteer.phone || 'Sem telefone'}</p>
+                      </div>
+                    </div>
+                    <div className="border-t pt-3">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Saldo em aberto</p>
+                      <p className="financial-value text-2xl text-warning">{formatCurrency(totalOpen)}</p>
+                    </div>
+                    {charges.length > 0 && (
+                      <div className="border-t pt-3 space-y-1.5 max-h-[30vh] overflow-y-auto">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lançamentos a quitar</p>
+                        {charges.map(c => (
+                          <div key={c.id} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground truncate max-w-[60%]">{c.description || 'Fiado'}</span>
+                            <span className="financial-value text-sm">{formatCurrency(Number(c.amount))}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right: Payment form */}
+              <div className="space-y-3 sm:space-y-4">
+                <div>
+                  <Label className="text-sm sm:text-base">Valor do Pagamento (R$)</Label>
+                  <Input type="number" value={payAmount} onChange={e => setPayAmount(e.target.value)} className="h-12 sm:h-14 text-sm sm:text-base mt-1.5" placeholder="0,00" />
+                </div>
+                <div>
+                  <Label className="text-sm sm:text-base">Forma de Pagamento</Label>
+                  <Select value={payMethod} onValueChange={v => setPayMethod(v as PaymentMethod)}>
+                    <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base mt-1.5"><SelectValue /></SelectTrigger>
+                    <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm sm:text-base">Tipo de Documento</Label>
+                  <Select value={payDocType} onValueChange={v => setPayDocType(v as DocumentType)}>
+                    <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base mt-1.5"><SelectValue /></SelectTrigger>
+                    <SelectContent>{DOCUMENT_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-sm sm:text-base">Referência do Documento</Label>
+                  <Input value={payDocRef} onChange={e => setPayDocRef(e.target.value)} className="h-12 sm:h-14 text-sm sm:text-base mt-1.5" placeholder="Opcional" />
+                </div>
+                <div>
+                  <Label className="text-sm sm:text-base">Observações</Label>
+                  <Input value={payNotes} onChange={e => setPayNotes(e.target.value)} className="h-12 sm:h-14 text-sm sm:text-base mt-1.5" placeholder="Opcional" />
+                </div>
+
+                <Button className="h-12 sm:h-14 w-full text-sm sm:text-base mt-2" onClick={confirmPayment} disabled={loading}>
+                  {loading ? 'Processando...' : `Confirmar ${formatCurrency(Number(payAmount) || 0)}`}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
