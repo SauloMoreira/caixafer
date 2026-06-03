@@ -306,8 +306,10 @@ export default function SPRPage() {
 
       {/* Volunteer Dialog */}
       <Dialog open={volDialogOpen} onOpenChange={setVolDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{editingVol ? 'Editar Voluntário' : 'Novo Voluntário'}</DialogTitle></DialogHeader>
+        <DialogContent className="max-w-full sm:max-w-lg w-[95vw]">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle>{editingVol ? 'Editar Voluntário' : 'Novo Voluntário'}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             {/* Avatar */}
             <div className="flex flex-col items-center gap-3">
