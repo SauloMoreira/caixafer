@@ -364,44 +364,51 @@ export default function SPRPage() {
 
       {/* Payment Dialog */}
       <Dialog open={payDialogOpen} onOpenChange={setPayDialogOpen}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
-          <div className="space-y-3">
+        <DialogContent className="max-w-full sm:max-w-2xl w-[95vw]">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle>Registrar Pagamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 sm:space-y-5">
             {payCharge && (
-              <div className="rounded-lg bg-muted/50 p-3 space-y-1">
-                <p className="text-sm font-medium">{(payCharge as any).volunteer_name || 'Voluntário'}</p>
-                <p className="text-xs text-muted-foreground">
+              <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                <p className="text-sm sm:text-base font-medium">{(payCharge as any).volunteer_name || 'Voluntário'}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Total do fiado: <span className="font-semibold text-foreground">{formatCurrency(Number(payCharge.amount))}</span>
                 </p>
               </div>
             )}
             <div>
-              <Label>Valor Pago (R$)</Label>
+              <Label className="text-sm sm:text-base">Valor Pago (R$)</Label>
               <Input
                 type="number"
                 value={payAmount}
                 onChange={e => setPayAmount(e.target.value)}
-                className="h-12"
+                className="h-12 sm:h-14 text-sm sm:text-base mt-1.5"
                 placeholder={payCharge ? `Máx: ${formatCurrency(Number(payCharge.amount))}` : '0,00'}
                 min="0.01"
                 max={payCharge ? String(payCharge.amount) : undefined}
                 autoFocus
               />
             </div>
-            <div><Label>Forma de Pagamento</Label>
+            <div>
+              <Label className="text-sm sm:text-base">Forma de Pagamento</Label>
               <Select value={payMethod} onValueChange={v => setPayMethod(v as PaymentMethod)}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Tipo de Documento</Label>
+            <div>
+              <Label className="text-sm sm:text-base">Tipo de Documento</Label>
               <Select value={payDocType} onValueChange={v => setPayDocType(v as DocumentType)}>
-                <SelectTrigger className="h-12"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-12 sm:h-14 text-sm sm:text-base mt-1.5"><SelectValue /></SelectTrigger>
                 <SelectContent>{DOCUMENT_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Referência</Label><Input value={payDocRef} onChange={e => setPayDocRef(e.target.value)} className="h-12" /></div>
-            <Button className="h-12 w-full" onClick={savePayment} disabled={savingPayment || !payAmount}>
+            <div>
+              <Label className="text-sm sm:text-base">Referência</Label>
+              <Input value={payDocRef} onChange={e => setPayDocRef(e.target.value)} className="h-12 sm:h-14 text-sm sm:text-base mt-1.5" />
+            </div>
+            <Button className="h-12 sm:h-14 w-full text-sm sm:text-base" onClick={savePayment} disabled={savingPayment || !payAmount}>
               {savingPayment ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Registrando...</> : 'Confirmar Pagamento'}
             </Button>
           </div>
