@@ -146,7 +146,7 @@ export default function SPRPaymentDialog({ open, onOpenChange, onPaymentComplete
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full sm:max-w-5xl w-[95vw] max-h-[95vh] p-0 gap-0 overflow-hidden flex flex-col">
+      <DialogContent hideClose className="max-w-full sm:max-w-5xl w-[95vw] max-h-[95vh] p-0 gap-0 overflow-hidden flex flex-col">
         {/* Fixed Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0 bg-[var(--color-surface)]">
           <div className="flex items-center justify-between">

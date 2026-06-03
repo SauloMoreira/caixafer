@@ -199,7 +199,7 @@ export default function FiadoChargeDialog({ open, onOpenChange, onChargeCreated,
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full sm:max-w-4xl w-[95vw] p-0 gap-0 max-h-[95vh] flex flex-col overflow-hidden">
+      <DialogContent hideClose className="max-w-full sm:max-w-4xl w-[95vw] p-0 gap-0 max-h-[95vh] flex flex-col overflow-hidden">
         {/* Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b shrink-0 bg-[var(--color-surface)]">
           <div className="flex items-center justify-between">
