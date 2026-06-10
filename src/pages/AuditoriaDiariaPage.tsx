@@ -9,6 +9,9 @@ import { DailySummaryCards } from "@/components/audit/DailySummaryCards";
 import { DailyAIAnalysis } from "@/components/audit/DailyAIAnalysis";
 import { DailyMovementsTable } from "@/components/audit/DailyMovementsTable";
 import { MovementDetailSheet } from "@/components/audit/MovementDetailSheet";
+import { PersonSummaryCards } from "@/components/audit/PersonSummaryCards";
+import { PersonDetailDialog } from "@/components/audit/PersonDetailDialog";
+import { buildPersonSummaries, type PersonSummary } from "@/lib/person-audit-summary";
 import { exportCSV, exportPDF } from "@/lib/audit-export";
 import { supabase } from "@/integrations/supabase/client";
 
