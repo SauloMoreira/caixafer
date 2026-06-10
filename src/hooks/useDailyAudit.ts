@@ -76,7 +76,7 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
   const dayStart = `${date}T00:00:00`;
   const dayEnd = `${date}T23:59:59.999`;
 
-  const [salesRes, saleItemsRes, entriesRes, chargesRes, paymentsRes, stockRes, profilesRes, volunteersRes] =
+  const [salesRes, saleItemsRes, entriesRes, chargesRes, paymentsRes, stockRes, profilesRes, volunteersRes, prevChargesRes, prevPaymentsRes] =
     await Promise.all([
       supabase.from("sales").select("*").eq("business_date", date),
       supabase.from("sale_items").select("*, products(name)"),
@@ -93,6 +93,8 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
         .lte("created_at", dayEnd),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("spr_volunteers").select("id, full_name"),
+      supabase.from("spr_fiado_charges").select("volunteer_id, amount").lt("business_date", date),
+      supabase.from("spr_fiado_payments").select("volunteer_id, amount_paid").lt("payment_date", date),
     ]);
 
   const sales = salesRes.data ?? [];
