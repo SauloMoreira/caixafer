@@ -1504,6 +1504,7 @@ export type Database = {
           is_deleted: boolean
           notes: string | null
           payment_date: string
+          payment_group_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
           updated_at: string
           updated_by: string | null
@@ -1524,6 +1525,7 @@ export type Database = {
           is_deleted?: boolean
           notes?: string | null
           payment_date?: string
+          payment_group_id?: string
           payment_method: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
           updated_by?: string | null
@@ -1544,6 +1546,7 @@ export type Database = {
           is_deleted?: boolean
           notes?: string | null
           payment_date?: string
+          payment_group_id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
           updated_by?: string | null
