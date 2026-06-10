@@ -7,6 +7,7 @@ import {
   Boxes,
   Brain,
   Building2,
+  ClipboardCheck,
   Heart,
   LayoutDashboard,
   Lightbulb,
@@ -69,6 +70,7 @@ const adminSections: NavSection[] = [
     items: [
       { to: '/empresa', icon: Building2, label: 'Empresa' },
       { to: '/usuarios', icon: Users, label: 'Usuários' },
+      { to: '/auditoria-diaria', icon: ClipboardCheck, label: 'Auditoria Diária' },
       { to: '/seguranca', icon: Shield, label: 'Segurança' },
       { to: '/historico-transferencias', icon: ArrowRightLeft, label: 'Hist. Transferências' },
       { to: '/notificacoes', icon: AlertTriangle, label: 'Pendências' },
@@ -146,6 +148,7 @@ export const pageTitles: Record<string, string> = {
   '/seguranca': 'Segurança',
   '/empresa': 'Dados da Empresa',
   '/historico-transferencias': 'Histórico de Transferências',
+  '/auditoria-diaria': 'Auditoria Diária',
   '/meu-consumo': 'Meu Consumo',
   '/perfil': 'Perfil',
 };
