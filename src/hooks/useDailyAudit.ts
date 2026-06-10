@@ -195,24 +195,42 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
     });
   }
 
-  // Fiado payments
-  for (const p of payments) {
+  // Fiado payments — consolidate by payment_group_id so a single payment that
+  // settled multiple charges shows as ONE row in the audit table.
+  const paymentGroups = new Map<string, any[]>();
+  for (const p of payments as any[]) {
+    const gid = p.payment_group_id ?? p.id;
+    const arr = paymentGroups.get(gid) ?? [];
+    arr.push(p);
+    paymentGroups.set(gid, arr);
+  }
+  for (const [gid, group] of paymentGroups) {
+    // Use the most recent payment in the group for header timestamp / status.
+    const sorted = [...group].sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+    const head = sorted[0];
+    const totalPaid = group.reduce((s, p) => s + Number(p.amount_paid), 0);
+    const anyDeleted = group.some((p) => p.is_deleted);
     rows.push({
-      key: `payment-${p.id}`,
-      occurred_at: p.created_at,
+      key: `payment-group-${gid}`,
+      occurred_at: head.created_at,
       origin: "SPR",
       type: "recebimento",
-      ref_id: p.id,
-      ref_label: "Pagamento SPR",
-      client: p.spr_volunteers?.full_name ?? null,
-      description: "Pagamento de fiado",
-      payment_method: p.payment_method,
-      amount: Number(p.amount_paid),
-      status: p.is_deleted ? "excluído" : "ativo",
-      user_id: p.created_by,
-      user_name: nameById.get(p.created_by) ?? null,
-      notes: p.notes,
-      raw: p,
+      ref_id: gid,
+      ref_label: `Pagamento SPR · ${gid.slice(0, 8)}`,
+      client: head.spr_volunteers?.full_name ?? null,
+      description:
+        group.length > 1
+          ? `Pagamento consolidado · ${group.length} lançamento(s) baixado(s)`
+          : "Pagamento de fiado",
+      payment_method: head.payment_method,
+      amount: totalPaid,
+      status: anyDeleted ? "excluído" : "ativo",
+      user_id: head.created_by,
+      user_name: nameById.get(head.created_by) ?? null,
+      notes: group.map((p) => p.notes).filter(Boolean).join(" | ") || null,
+      raw: { payment_group_id: gid, payments: group, total_paid: totalPaid },
+      items_count: group.length,
+      group_items: group,
       source_table: "spr_fiado_payments",
     });
   }
