@@ -39,6 +39,8 @@ export interface MovementRow {
   user_name?: string | null;
   notes?: string | null;
   raw: any;
+  items_count?: number;
+  group_items?: any[];
   source_table:
     | "sales"
     | "cash_entries"
