@@ -17,9 +17,10 @@ interface AIAnalysis {
 interface Props {
   date: string;
   data: DailyAuditData;
+  people?: PersonSummary[];
 }
 
-export function DailyAIAnalysis({ date, data }: Props) {
+export function DailyAIAnalysis({ date, data, people = [] }: Props) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
