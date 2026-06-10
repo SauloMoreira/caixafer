@@ -27,10 +27,26 @@ export function DailyAIAnalysis({ date, data }: Props) {
     setLoading(true);
     setError(null);
     try {
+      // Consolidated SPR/Fiado payment stats
+      const sprRows = data.rows.filter((r) => r.source_table === "spr_fiado_payments");
+      const totalPaidConsolidated = sprRows.reduce((s, r) => s + r.amount, 0);
+      const totalItemsSettled = sprRows.reduce((s, r) => s + (r.items_count ?? 1), 0);
+      const multiItemPayments = sprRows.filter((r) => (r.items_count ?? 1) > 1).length;
+      const missingGroupId = sprRows.filter(
+        (r) => !r.raw?.payment_group_id || r.raw.payment_group_id === r.raw?.payments?.[0]?.id,
+      ).length;
+
       // Trim payload for token safety
       const payload = {
         date,
         summary: data.summary,
+        consolidated_payments: {
+          total_payments: sprRows.length,
+          total_amount: totalPaidConsolidated,
+          total_items_settled: totalItemsSettled,
+          multi_item_payments: multiItemPayments,
+          payments_without_group_id: missingGroupId,
+        },
         movements_sample: data.rows.slice(0, 200).map((r) => ({
           time: r.occurred_at,
           origin: r.origin,
@@ -41,6 +57,7 @@ export function DailyAIAnalysis({ date, data }: Props) {
           client: r.client,
           user: r.user_name,
           desc: r.description,
+          items_count: r.items_count ?? null,
         })),
       };
       const { data: res, error: invokeErr } = await supabase.functions.invoke(

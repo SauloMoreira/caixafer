@@ -96,6 +96,12 @@ export default function SPRPaymentDialog({ open, onOpenChange, onPaymentComplete
 
     setLoading(true);
     try {
+      // Single payment_group_id: all charges quitadas nesta operação ficam
+      // consolidadas como UM único pagamento na Auditoria Diária.
+      const paymentGroupId =
+        globalThis.crypto && 'randomUUID' in globalThis.crypto
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       // Distribute payment across open charges (oldest first)
       let remaining = amount;
       for (const charge of charges) {
@@ -121,7 +127,8 @@ export default function SPRPaymentDialog({ open, onOpenChange, onPaymentComplete
           document_reference: payDocRef || null,
           notes: payNotes || null,
           created_by: profile.id,
-        });
+          payment_group_id: paymentGroupId,
+        } as any);
         if (error) throw error;
         remaining -= payForThis;
       }

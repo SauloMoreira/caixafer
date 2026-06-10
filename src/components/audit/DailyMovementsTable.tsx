@@ -175,6 +175,7 @@ export function DailyMovementsTable({ rows, onSelect, onFiltered }: Props) {
               <TableHead>Descrição</TableHead>
               <TableHead>Pgto</TableHead>
               <TableHead className="text-right">Valor</TableHead>
+              <TableHead className="text-right">Itens</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Usuário</TableHead>
               <TableHead></TableHead>
@@ -183,7 +184,7 @@ export function DailyMovementsTable({ rows, onSelect, onFiltered }: Props) {
           <TableBody>
             {pageRows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} className="text-center text-[var(--color-text-muted)] py-8">
+                <TableCell colSpan={12} className="text-center text-[var(--color-text-muted)] py-8">
                   Nenhum movimento.
                 </TableCell>
               </TableRow>
@@ -200,6 +201,13 @@ export function DailyMovementsTable({ rows, onSelect, onFiltered }: Props) {
                 <TableCell className="max-w-[260px] truncate">{r.description ?? "—"}</TableCell>
                 <TableCell>{r.payment_method ?? "—"}</TableCell>
                 <TableCell className="text-right font-medium">{fmtBRL(r.amount)}</TableCell>
+                <TableCell className="text-right">
+                  {r.items_count && r.items_count > 1 ? (
+                    <Badge variant="secondary">{r.items_count}</Badge>
+                  ) : (
+                    <span className="text-[var(--color-text-muted)]">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="capitalize">{r.status}</TableCell>
                 <TableCell>{r.user_name ?? "—"}</TableCell>
                 <TableCell>
