@@ -423,6 +423,13 @@ export default function SPRPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <VolunteerFiadoDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        volunteerId={detailVolunteerId}
+        mode="admin"
+      />
     </div>
   );
 }
