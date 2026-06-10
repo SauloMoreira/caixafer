@@ -60,6 +60,7 @@ export default function MeuSPRPage() {
   const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayGroup | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [volunteerName, setVolunteerName] = useState('');
 
   const volunteerId = profile?.volunteer_id;
