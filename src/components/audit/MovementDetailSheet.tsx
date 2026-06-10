@@ -67,6 +67,46 @@ export function MovementDetailSheet({ row, open, onOpenChange }: Props) {
               </div>
             )}
 
+            {row.source_table === "spr_fiado_payments" && row.group_items && row.group_items.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Lançamentos baixados ({row.group_items.length})
+                  </div>
+                  <div className="text-[10px] text-[var(--color-text-muted)] font-mono">
+                    grp: {String(row.ref_id).slice(0, 8)}
+                  </div>
+                </div>
+                <ul className="space-y-2">
+                  {row.group_items.map((p: any) => {
+                    const charge = p.spr_fiado_charges;
+                    const chargeAmt = Number(charge?.amount ?? 0);
+                    const paidNow = Number(p.amount_paid);
+                    return (
+                      <li key={p.id} className="rounded border border-[var(--color-border)] p-2">
+                        <div className="flex justify-between gap-2">
+                          <span className="truncate">
+                            {charge?.description ?? "Fiado"}
+                          </span>
+                          <span className="font-medium">{fmtBRL(paidNow)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-[var(--color-text-muted)] mt-1">
+                          <span>ID: <span className="font-mono">{String(p.fiado_charge_id).slice(0, 8)}</span></span>
+                          <span>
+                            Saldo lançamento: {fmtBRL(chargeAmt)}
+                          </span>
+                        </div>
+                        {p.notes && (
+                          <div className="text-[11px] mt-1">{p.notes}</div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+
+
             <div>
               <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
                 Dados brutos
