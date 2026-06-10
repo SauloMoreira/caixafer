@@ -5,6 +5,7 @@ import { Sparkles, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { DailyAuditData } from "@/hooks/useDailyAudit";
+import type { PersonSummary } from "@/lib/person-audit-summary";
 
 interface AIAnalysis {
   resumo: string;
