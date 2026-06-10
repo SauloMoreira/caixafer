@@ -81,7 +81,7 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
       supabase.from("spr_fiado_charges").select("*, spr_volunteers(full_name)").eq("business_date", date),
       supabase
         .from("spr_fiado_payments")
-        .select("*, spr_volunteers(full_name)")
+        .select("*, spr_volunteers(full_name), spr_fiado_charges(id, description, amount, business_date)")
         .eq("payment_date", date),
       supabase
         .from("stock_movements")
