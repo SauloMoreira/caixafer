@@ -295,6 +295,19 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
     ...stocks.map((m: any) => m.created_by),
   ]).size;
 
+  // Previous outstanding balance per volunteer (entering the selected day)
+  const previousBalanceByVolunteer: Record<string, number> = {};
+  for (const c of (prevChargesRes.data ?? []) as any[]) {
+    if (!c.volunteer_id) continue;
+    previousBalanceByVolunteer[c.volunteer_id] =
+      (previousBalanceByVolunteer[c.volunteer_id] ?? 0) + Number(c.amount);
+  }
+  for (const p of (prevPaymentsRes.data ?? []) as any[]) {
+    if (!p.volunteer_id) continue;
+    previousBalanceByVolunteer[p.volunteer_id] =
+      (previousBalanceByVolunteer[p.volunteer_id] ?? 0) - Number(p.amount_paid);
+  }
+
   return {
     rows,
     summary: {
@@ -313,6 +326,7 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
       sales_count: sales.filter((s: any) => !s.is_deleted).length,
       active_users,
     },
+    previousBalanceByVolunteer,
   };
 }
 
