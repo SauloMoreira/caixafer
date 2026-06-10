@@ -11,9 +11,11 @@ export interface PersonSummary {
   person_id: string;
   person_name: string;
   origins: ("SPR" | "Fiado")[];
+  previous_balance: number;
   acquired_total: number;
   paid_total: number;
-  net_balance: number;
+  net_balance: number; // adquirido - pago (movimento do dia)
+  final_balance: number; // saldo devedor após o dia
   charges_count: number;
   payments_count: number;
   charges: MovementRow[];
@@ -45,6 +47,7 @@ function getRowPersonName(row: MovementRow): string {
 
 export function buildPersonSummaries(data: DailyAuditData): PersonSummary[] {
   const map = new Map<string, PersonSummary>();
+  const prev = data.previousBalanceByVolunteer ?? {};
 
   for (const row of data.rows) {
     if (
@@ -62,9 +65,11 @@ export function buildPersonSummaries(data: DailyAuditData): PersonSummary[] {
         person_id: personId,
         person_name: getRowPersonName(row),
         origins: [],
+        previous_balance: prev[personId] ?? 0,
         acquired_total: 0,
         paid_total: 0,
         net_balance: 0,
+        final_balance: 0,
         charges_count: 0,
         payments_count: 0,
         charges: [],
@@ -89,6 +94,7 @@ export function buildPersonSummaries(data: DailyAuditData): PersonSummary[] {
 
   const list = Array.from(map.values()).map((p) => {
     p.net_balance = p.acquired_total - p.paid_total;
+    p.final_balance = p.previous_balance + p.net_balance;
     if (p.charges_count > 0 && p.payments_count > 0) {
       p.status =
         p.paid_total < p.acquired_total

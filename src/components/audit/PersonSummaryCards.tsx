@@ -72,16 +72,21 @@ export function PersonSummaryCards({ people, onSelect }: Props) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1 text-[11px]">
-                    <Metric label="Adquirido" value={fmt(p.acquired_total)} />
-                    <Metric label="Pago" value={fmt(p.paid_total)} />
+                  <div className="grid grid-cols-2 gap-1 text-[11px]">
                     <Metric
-                      label="Saldo"
-                      value={fmt(p.net_balance)}
+                      label="Devido anterior"
+                      value={fmt(p.previous_balance)}
+                      tone={p.previous_balance > 0 ? "warn" : "ok"}
+                    />
+                    <Metric label="Adquirido (dia)" value={fmt(p.acquired_total)} />
+                    <Metric label="Pago (dia)" value={fmt(p.paid_total)} />
+                    <Metric
+                      label="Saldo final"
+                      value={fmt(p.final_balance)}
                       tone={
-                        p.net_balance > 0
+                        p.final_balance > 0
                           ? "warn"
-                          : p.net_balance < 0
+                          : p.final_balance < 0
                             ? "info"
                             : "ok"
                       }
@@ -92,6 +97,8 @@ export function PersonSummaryCards({ people, onSelect }: Props) {
                     <span>{p.charges_count} lançamento(s)</span>
                     <span>·</span>
                     <span>{p.payments_count} pagamento(s)</span>
+                    <span>·</span>
+                    <span>Mov. dia: {fmt(p.net_balance)}</span>
                   </div>
 
                   <div

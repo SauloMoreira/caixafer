@@ -69,13 +69,14 @@ export interface DailySummary {
 export interface DailyAuditData {
   rows: MovementRow[];
   summary: DailySummary;
+  previousBalanceByVolunteer: Record<string, number>;
 }
 
 async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
   const dayStart = `${date}T00:00:00`;
   const dayEnd = `${date}T23:59:59.999`;
 
-  const [salesRes, saleItemsRes, entriesRes, chargesRes, paymentsRes, stockRes, profilesRes, volunteersRes] =
+  const [salesRes, saleItemsRes, entriesRes, chargesRes, paymentsRes, stockRes, profilesRes, volunteersRes, prevChargesRes, prevPaymentsRes] =
     await Promise.all([
       supabase.from("sales").select("*").eq("business_date", date),
       supabase.from("sale_items").select("*, products(name)"),
@@ -92,6 +93,8 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
         .lte("created_at", dayEnd),
       supabase.from("profiles").select("id, full_name"),
       supabase.from("spr_volunteers").select("id, full_name"),
+      supabase.from("spr_fiado_charges").select("volunteer_id, amount").lt("business_date", date),
+      supabase.from("spr_fiado_payments").select("volunteer_id, amount_paid").lt("payment_date", date),
     ]);
 
   const sales = salesRes.data ?? [];
@@ -292,6 +295,19 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
     ...stocks.map((m: any) => m.created_by),
   ]).size;
 
+  // Previous outstanding balance per volunteer (entering the selected day)
+  const previousBalanceByVolunteer: Record<string, number> = {};
+  for (const c of (prevChargesRes.data ?? []) as any[]) {
+    if (!c.volunteer_id) continue;
+    previousBalanceByVolunteer[c.volunteer_id] =
+      (previousBalanceByVolunteer[c.volunteer_id] ?? 0) + Number(c.amount);
+  }
+  for (const p of (prevPaymentsRes.data ?? []) as any[]) {
+    if (!p.volunteer_id) continue;
+    previousBalanceByVolunteer[p.volunteer_id] =
+      (previousBalanceByVolunteer[p.volunteer_id] ?? 0) - Number(p.amount_paid);
+  }
+
   return {
     rows,
     summary: {
@@ -310,6 +326,7 @@ async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
       sales_count: sales.filter((s: any) => !s.is_deleted).length,
       active_users,
     },
+    previousBalanceByVolunteer,
   };
 }
 
