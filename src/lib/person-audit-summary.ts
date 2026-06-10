@@ -94,6 +94,7 @@ export function buildPersonSummaries(data: DailyAuditData): PersonSummary[] {
 
   const list = Array.from(map.values()).map((p) => {
     p.net_balance = p.acquired_total - p.paid_total;
+    p.final_balance = p.previous_balance + p.net_balance;
     if (p.charges_count > 0 && p.payments_count > 0) {
       p.status =
         p.paid_total < p.acquired_total
