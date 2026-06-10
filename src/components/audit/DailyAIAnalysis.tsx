@@ -5,6 +5,7 @@ import { Sparkles, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import type { DailyAuditData } from "@/hooks/useDailyAudit";
+import type { PersonSummary } from "@/lib/person-audit-summary";
 
 interface AIAnalysis {
   resumo: string;
@@ -16,9 +17,10 @@ interface AIAnalysis {
 interface Props {
   date: string;
   data: DailyAuditData;
+  people?: PersonSummary[];
 }
 
-export function DailyAIAnalysis({ date, data }: Props) {
+export function DailyAIAnalysis({ date, data, people = [] }: Props) {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,17 @@ export function DailyAIAnalysis({ date, data }: Props) {
           multi_item_payments: multiItemPayments,
           payments_without_group_id: missingGroupId,
         },
+        per_person: people.map((p) => ({
+          id: p.person_id,
+          name: p.person_name,
+          origins: p.origins,
+          acquired_total: p.acquired_total,
+          paid_total: p.paid_total,
+          net_balance: p.net_balance,
+          charges_count: p.charges_count,
+          payments_count: p.payments_count,
+          status: p.status,
+        })),
         movements_sample: data.rows.slice(0, 200).map((r) => ({
           time: r.occurred_at,
           origin: r.origin,

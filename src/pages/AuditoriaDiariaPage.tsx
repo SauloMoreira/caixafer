@@ -9,6 +9,9 @@ import { DailySummaryCards } from "@/components/audit/DailySummaryCards";
 import { DailyAIAnalysis } from "@/components/audit/DailyAIAnalysis";
 import { DailyMovementsTable } from "@/components/audit/DailyMovementsTable";
 import { MovementDetailSheet } from "@/components/audit/MovementDetailSheet";
+import { PersonSummaryCards } from "@/components/audit/PersonSummaryCards";
+import { PersonDetailDialog } from "@/components/audit/PersonDetailDialog";
+import { buildPersonSummaries, type PersonSummary } from "@/lib/person-audit-summary";
 import { exportCSV, exportPDF } from "@/lib/audit-export";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,9 +22,12 @@ export default function AuditoriaDiariaPage() {
   const [selected, setSelected] = useState<MovementRow | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [filtered, setFiltered] = useState<MovementRow[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<PersonSummary | null>(null);
+  const [personOpen, setPersonOpen] = useState(false);
 
   const rows = data?.rows ?? [];
   const summary = data?.summary;
+  const people = useMemo(() => (data ? buildPersonSummaries(data) : []), [data]);
 
   const visibleRows = useMemo(() => (filtered.length ? filtered : rows), [filtered, rows]);
 
@@ -96,7 +102,17 @@ export default function AuditoriaDiariaPage() {
 
       {summary && <DailySummaryCards summary={summary} />}
 
-      {data && <DailyAIAnalysis date={date} data={data} />}
+      {data && (
+        <PersonSummaryCards
+          people={people}
+          onSelect={(p) => {
+            setSelectedPerson(p);
+            setPersonOpen(true);
+          }}
+        />
+      )}
+
+      {data && <DailyAIAnalysis date={date} data={data} people={people} />}
 
       {data && (
         <DailyMovementsTable
@@ -110,6 +126,12 @@ export default function AuditoriaDiariaPage() {
       )}
 
       <MovementDetailSheet row={selected} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <PersonDetailDialog
+        person={selectedPerson}
+        date={date}
+        open={personOpen}
+        onOpenChange={setPersonOpen}
+      />
     </div>
   );
 }
