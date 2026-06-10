@@ -29,6 +29,20 @@ ${JSON.stringify(summary, null, 2)}
 AMOSTRA DE MOVIMENTOS (até 200):
 ${JSON.stringify(movements_sample ?? [], null, 2)}
 
+PAGAMENTOS CONSOLIDADOS (SPR/Fiado):
+${JSON.stringify(consolidated_payments ?? {}, null, 2)}
+
+RESUMO POR PESSOA (SPR/Fiado):
+${JSON.stringify(per_person ?? [], null, 2)}
+
+USE O RESUMO POR PESSOA para destacar:
+- Pessoas com maior valor adquirido no dia.
+- Pessoas com maior valor pago no dia.
+- Pessoas que adquiriram e não pagaram.
+- Pessoas que pagaram sem lançamento correspondente.
+- Pessoas com muitos lançamentos pequenos ou pagamentos fracionados.
+- Divergências entre total adquirido, total pago e saldo líquido.
+
 REGRAS:
 - Você NÃO altera dados. Apenas analisa e sugere conferências.
 - Aponte divergências entre PDV, SPR, Fiado, pagamentos e estoque.
