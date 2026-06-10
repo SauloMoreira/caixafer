@@ -47,6 +47,7 @@ function getRowPersonName(row: MovementRow): string {
 
 export function buildPersonSummaries(data: DailyAuditData): PersonSummary[] {
   const map = new Map<string, PersonSummary>();
+  const prev = data.previousBalanceByVolunteer ?? {};
 
   for (const row of data.rows) {
     if (
