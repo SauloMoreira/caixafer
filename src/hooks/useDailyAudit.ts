@@ -69,6 +69,7 @@ export interface DailySummary {
 export interface DailyAuditData {
   rows: MovementRow[];
   summary: DailySummary;
+  previousBalanceByVolunteer: Record<string, number>;
 }
 
 async function fetchDailyAudit(date: string): Promise<DailyAuditData> {
