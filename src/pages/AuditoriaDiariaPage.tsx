@@ -102,7 +102,17 @@ export default function AuditoriaDiariaPage() {
 
       {summary && <DailySummaryCards summary={summary} />}
 
-      {data && <DailyAIAnalysis date={date} data={data} />}
+      {data && (
+        <PersonSummaryCards
+          people={people}
+          onSelect={(p) => {
+            setSelectedPerson(p);
+            setPersonOpen(true);
+          }}
+        />
+      )}
+
+      {data && <DailyAIAnalysis date={date} data={data} people={people} />}
 
       {data && (
         <DailyMovementsTable
@@ -116,6 +126,12 @@ export default function AuditoriaDiariaPage() {
       )}
 
       <MovementDetailSheet row={selected} open={sheetOpen} onOpenChange={setSheetOpen} />
+      <PersonDetailDialog
+        person={selectedPerson}
+        date={date}
+        open={personOpen}
+        onOpenChange={setPersonOpen}
+      />
     </div>
   );
 }
