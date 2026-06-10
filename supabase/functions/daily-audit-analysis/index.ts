@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { date, summary, movements_sample } = await req.json();
+    const { date, summary, movements_sample, consolidated_payments, per_person } = await req.json();
     if (!date || !summary) {
       return new Response(JSON.stringify({ error: "date e summary obrigatórios" }), {
         status: 400,
