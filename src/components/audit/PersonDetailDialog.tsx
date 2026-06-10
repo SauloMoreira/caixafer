@@ -44,11 +44,16 @@ export function PersonDetailDialog({ person, date, open, onOpenChange }: Props) 
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-2">
-          <Stat label="Adquirido" value={fmt(person.acquired_total)} />
-          <Stat label="Pago" value={fmt(person.paid_total)} />
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 mt-2">
           <Stat
-            label="Saldo líquido"
+            label="Devido anterior"
+            value={fmt(person.previous_balance)}
+            tone={person.previous_balance > 0 ? "warn" : "ok"}
+          />
+          <Stat label="Adquirido (dia)" value={fmt(person.acquired_total)} />
+          <Stat label="Pago (dia)" value={fmt(person.paid_total)} />
+          <Stat
+            label="Mov. do dia"
             value={fmt(person.net_balance)}
             tone={
               person.net_balance > 0
@@ -58,8 +63,21 @@ export function PersonDetailDialog({ person, date, open, onOpenChange }: Props) 
                   : "ok"
             }
           />
-          <Stat label="Lançamentos" value={String(person.charges_count)} />
-          <Stat label="Pagamentos" value={String(person.payments_count)} />
+          <Stat
+            label="Saldo final"
+            value={fmt(person.final_balance)}
+            tone={
+              person.final_balance > 0
+                ? "warn"
+                : person.final_balance < 0
+                  ? "info"
+                  : "ok"
+            }
+          />
+          <Stat
+            label="Lanç. / Pag."
+            value={`${person.charges_count} / ${person.payments_count}`}
+          />
         </div>
 
         <Tabs defaultValue="adquiridos" className="mt-4">
