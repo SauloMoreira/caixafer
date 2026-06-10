@@ -22,9 +22,12 @@ export default function AuditoriaDiariaPage() {
   const [selected, setSelected] = useState<MovementRow | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [filtered, setFiltered] = useState<MovementRow[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<PersonSummary | null>(null);
+  const [personOpen, setPersonOpen] = useState(false);
 
   const rows = data?.rows ?? [];
   const summary = data?.summary;
+  const people = useMemo(() => (data ? buildPersonSummaries(data) : []), [data]);
 
   const visibleRows = useMemo(() => (filtered.length ? filtered : rows), [filtered, rows]);
 
