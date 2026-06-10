@@ -31,6 +31,7 @@ import MfaSetupPage from "@/pages/MfaSetupPage";
 import MfaVerifyPage from "@/pages/MfaVerifyPage";
 import HistoricoTransferenciasPage from "@/pages/HistoricoTransferenciasPage";
 import EmpresaPage from "@/pages/EmpresaPage";
+import AuditoriaDiariaPage from "@/pages/AuditoriaDiariaPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/empresa" element={<ProtectedRoute adminOnly><LayoutWrapper><EmpresaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/seguranca" element={<ProtectedRoute adminOnly><LayoutWrapper><SegurancaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/historico-transferencias" element={<ProtectedRoute adminOnly><LayoutWrapper><HistoricoTransferenciasPage /></LayoutWrapper></ProtectedRoute>} />
+            <Route path="/auditoria-diaria" element={<ProtectedRoute adminOnly><LayoutWrapper><AuditoriaDiariaPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/insights" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InsightsPage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/estoque" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><EstoquePage /></LayoutWrapper></ProtectedRoute>} />
             <Route path="/inteligencia" element={<ProtectedRoute allowedRoles={['admin', 'cash_coordinator']}><LayoutWrapper><InteligenciaPage /></LayoutWrapper></ProtectedRoute>} />
