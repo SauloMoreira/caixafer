@@ -35,6 +35,8 @@ export default function SPRPage() {
   const showBlockedCard = (profile?.role === 'cashier' || profile?.role === 'cash_coordinator') && !canAccessOperationalSpr;
   const [tab, setTab] = useState('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailVolunteerId, setDetailVolunteerId] = useState<string | null>(null);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
   const [search, setSearch] = useState('');
   const [loadingVol, setLoadingVol] = useState(false);
