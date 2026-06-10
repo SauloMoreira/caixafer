@@ -395,6 +395,13 @@ export default function MeuSPRPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <VolunteerFiadoDetailDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        volunteerId={volunteerId ?? null}
+        mode="self"
+      />
     </div>
   );
 }
