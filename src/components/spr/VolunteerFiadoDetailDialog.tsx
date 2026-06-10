@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { ChevronDown, Download, Loader2, Sparkles, ArrowDownToLine, ArrowUpFromLine, User, AlertTriangle } from 'lucide-react';
 import { useVolunteerFiadoHistory, PeriodRange } from '@/hooks/useVolunteerFiadoHistory';
 import { formatCurrency } from '@/lib/constants';
@@ -70,8 +70,8 @@ export default function VolunteerFiadoDetailDialog({ open, onOpenChange, volunte
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-full sm:max-w-5xl w-[98vw] max-h-[calc(100dvh-1rem)] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-4 pt-4 pb-2 border-b">
+      <DialogContent className="max-w-full sm:max-w-5xl w-[98vw] max-h-[90dvh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="shrink-0 px-4 pt-4 pb-2 border-b bg-[var(--color-surface)] z-10">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="text-base sm:text-lg truncate">
@@ -122,38 +122,40 @@ export default function VolunteerFiadoDetailDialog({ open, onOpenChange, volunte
         )}
 
         {!isLoading && data && (
-          <ScrollArea className="flex-1">
-            <div className="px-4 pb-4">
+          <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="shrink-0 px-4 pt-3 space-y-2">
               {/* Summary cards */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <SummaryCard label="Devido anterior" value={data.previousBalance} tone="warning" />
                 <SummaryCard label="Adquirido (período)" value={data.summary.acquired_total} tone="expense" />
                 <SummaryCard label="Pago (período)" value={data.summary.paid_total} tone="income" />
                 <SummaryCard label="Saldo atual" value={data.summary.current_balance} tone={data.summary.current_balance > 0 ? 'expense' : 'income'} />
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2 text-xs text-muted-foreground">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
                 <div>Lançamentos no período: <strong className="text-foreground">{data.charges.length}</strong></div>
                 <div>Pagamentos no período: <strong className="text-foreground">{data.paymentGroups.length}</strong></div>
                 <div>Último pagamento: <strong className="text-foreground">{data.summary.last_payment_at ? fmtDateTime(data.summary.last_payment_at) : '—'}</strong></div>
               </div>
 
               {/* AI / Summary block */}
-              <Card className="mt-3 border-primary/30 bg-primary/5">
+              <Card className="border-primary/30 bg-primary/5">
                 <CardContent className="p-3 flex gap-2">
                   <Sparkles className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <p className="text-xs sm:text-sm leading-relaxed">{aiSummary}</p>
                 </CardContent>
               </Card>
+            </div>
 
-              <Tabs defaultValue="resumo" className="mt-3">
-                <TabsList className="w-full flex-wrap h-auto">
-                  <TabsTrigger value="resumo" className="flex-1">Resumo</TabsTrigger>
-                  <TabsTrigger value="adquiridos" className="flex-1">Fiados ({data.charges.length})</TabsTrigger>
-                  <TabsTrigger value="pagamentos" className="flex-1">Pagamentos ({data.paymentGroups.length})</TabsTrigger>
-                  <TabsTrigger value="timeline" className="flex-1">Linha do tempo</TabsTrigger>
-                  {isAdmin && <TabsTrigger value="auditoria" className="flex-1">Auditoria</TabsTrigger>}
-                </TabsList>
+            <Tabs defaultValue="resumo" className="flex-1 flex flex-col overflow-hidden mt-3">
+              <TabsList className="shrink-0 w-full flex-wrap h-auto px-4 pb-2">
+                <TabsTrigger value="resumo" className="flex-1">Resumo</TabsTrigger>
+                <TabsTrigger value="adquiridos" className="flex-1">Fiados ({data.charges.length})</TabsTrigger>
+                <TabsTrigger value="pagamentos" className="flex-1">Pagamentos ({data.paymentGroups.length})</TabsTrigger>
+                <TabsTrigger value="timeline" className="flex-1">Linha do tempo</TabsTrigger>
+                {isAdmin && <TabsTrigger value="auditoria" className="flex-1">Auditoria</TabsTrigger>}
+              </TabsList>
 
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
                 <TabsContent value="resumo" className="mt-3 space-y-2">
                   <p className="text-xs text-muted-foreground">Últimos movimentos do período:</p>
                   {data.timeline.slice(-8).reverse().map((t, i) => (
@@ -304,9 +306,9 @@ export default function VolunteerFiadoDetailDialog({ open, onOpenChange, volunte
                     )}
                   </TabsContent>
                 )}
-              </Tabs>
-            </div>
-          </ScrollArea>
+              </div>
+            </Tabs>
+          </div>
         )}
       </DialogContent>
     </Dialog>
