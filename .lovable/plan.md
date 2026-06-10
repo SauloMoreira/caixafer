@@ -1,63 +1,77 @@
-# Auditoria Diária / Movimento do Dia
+# Detalhe de Fiado por Pessoa — SPR Ramatis
 
-Nova página administrativa que consolida, em um único lugar, tudo que aconteceu no sistema em uma data — PDV, SPR, Fiado, pagamentos, entradas/saídas, cancelamentos, estornos, ajustes e estoque — com análise de IA e exportação.
+Adicionar um modal de detalhe completo ao clicar no nome da pessoa na aba **Fiados** da tela `SPR Ramatis`, com histórico, consolidação por operação de pagamento, linha do tempo do saldo e análise por IA (admin).
 
-## Acesso e navegação
-- Rota: `/auditoria-diaria`, protegida por `ProtectedRoute adminOnly` (somente admin).
-- Item de menu "Auditoria Diária" no grupo Administração da sidebar (visível só p/ admin).
-- Não altera nenhuma rota ou permissão existente.
+## Escopo
 
-## Estrutura da página
-1. **Cabeçalho** — título, seletor de data (default hoje), botão "Atualizar", botões "Exportar PDF" e "Exportar CSV".
-2. **Cards de resumo do dia** (grid responsivo): Vendido PDV, SPR movimentado, Fiado lançado, Recebido, Em aberto, Entradas, Saídas, Cancelamentos, Estornos, Descontos, Ajustes manuais, Qtde de vendas, Usuários ativos no dia.
-3. **Análise da IA** — card destacado acima da tabela com resumo executivo, pontos de atenção, divergências PDV/SPR/Fiado, movimentações suspeitas, sugestões de conferência. Botão "Gerar análise" (on-demand) + reuso de cache por data. Mensagem clara: "A IA apenas analisa — não altera dados".
-4. **Filtros da tabela** — Origem (PDV/SPR/Fiado/Estoque/Pagamento/Ajuste/Cancelamento/Estorno), Tipo, Usuário, Cliente, Forma de pagamento, Status, faixa de valor, busca por texto, toggles "Somente manuais" e "Somente cancelados/estornados".
-5. **Tabela consolidada** — colunas: Data/hora, Origem, Tipo, ID, Cliente, Produto/descrição, Forma de pgto, Valor, Status, Usuário, Observação, Ação ("Ver detalhes"). Paginação client-side + ordenação.
-6. **Painel de detalhe** — `Sheet` lateral em desktop / drawer full em mobile com todos os dados da operação + histórico (via `security_audit_logs` da entidade) + link para tela original (PDV, SPR, Movimentos…).
+### 1. Clique no nome (lista de Fiados — `src/pages/SPRPage.tsx`)
+- Hoje o card de fiado mostra `volunteer_name`. Tornar o nome clicável → abre `VolunteerFiadoDetailDialog` com `volunteerId`.
+- Não alterar lógica de pagamento existente nem listagem.
 
-## Fonte dos dados (somente leitura)
-Consultas paralelas por `business_date = data selecionada`:
-- `sales` + `sale_items` (com `is_deleted` para cancelamentos).
-- `cash_entries` (entradas/saídas/ajustes manuais; `source_type` identifica origem fiado_payment etc.).
-- `spr_fiado_charges` + `spr_fiado_charge_items`.
-- `spr_fiado_payments`.
-- `stock_movements` (filtrado por `created_at::date`).
-- `security_audit_logs` (para histórico/alterações por entidade no detalhe).
-- `profiles` para nomes de usuário; `spr_volunteers` para clientes SPR.
+### 2. Novo componente `VolunteerFiadoDetailDialog`
+Modal full-screen em mobile / `max-w-4xl` em desktop, com botão **X** e **Voltar**.
 
-Todos os dados são normalizados num único array `MovementRow` no cliente (já temos RLS adequado; nada novo no banco).
+**Cabeçalho:**
+- Nome, status geral (Em aberto / Parcial / Quitado)
+- Cards: Saldo devedor atual, Total adquirido (período), Total pago (período), Último pagamento, Qtd lançamentos em aberto, Qtd pagamentos
+- Filtro de período: Hoje · 7 dias · 30 dias · Mês atual · Personalizado (date range)
 
-## Análise de IA
-- Nova edge function `daily-audit-analysis` (Lovable AI, modelo `google/gemini-3-flash-preview`).
-- Input: payload já agregado pelo front (resumo + amostra dos movimentos relevantes — limitado em tamanho).
-- Output: JSON estruturado `{ resumo, pontos_de_atencao[], divergencias[], sugestoes[] }` renderizado no card.
-- Tratamento explícito de 429 (limite) e 402 (créditos).
-- Não escreve em nenhuma tabela.
+**Abas (`Tabs`):**
+1. **Resumo** — totais + lista compacta dos últimos movimentos
+2. **Fiados adquiridos** — todos lançamentos com data/hora, descrição, qtde, valor, usuário, status, observações
+3. **Pagamentos** — consolidados por `payment_group_id`; uma linha por operação com expand (Collapsible) mostrando os itens baixados, IDs, forma de pagamento, valor, usuário receptor
+4. **Linha do tempo** — cronologia com Débito / Crédito / Saldo após (calculado incrementalmente)
+5. **Auditoria** (somente admin) — usuários que lançaram/receberam, cancelamentos, ajustes, pagamentos sem `payment_group_id`
 
-## Exportação
-- **CSV**: gerado no cliente (resumo + linhas da tabela atual respeitando filtros).
-- **PDF**: gerado no cliente com `jspdf` + `jspdf-autotable` (já instaláveis) — capa com resumo, bloco da análise da IA, tabela de movimentos.
-- Loga evento `daily_audit_exported` via `log_security_event` (RPC já existente).
+**Análise IA (admin)** — bloco acima/dentro de Resumo, reutilizando a edge function `daily-audit-analysis` com um payload focado na pessoa (ou novo prompt local). Vamos estender a função existente para aceitar `scope: 'volunteer'` com dados pré-agregados; sem alteração de regras de negócio.
 
-## Componentização
-Novos arquivos:
-- `src/pages/AuditoriaDiariaPage.tsx` — orquestra estado/filtros/data.
-- `src/components/audit/DailySummaryCards.tsx`
-- `src/components/audit/DailyAIAnalysis.tsx`
-- `src/components/audit/DailyMovementsTable.tsx`
-- `src/components/audit/MovementDetailSheet.tsx`
-- `src/hooks/useDailyAudit.ts` — busca + normalização (React Query).
-- `src/lib/audit-export.ts` — helpers CSV/PDF.
-- `supabase/functions/daily-audit-analysis/index.ts` + entrada em `supabase/config.toml`.
+### 3. Hook `useVolunteerFiadoHistory(volunteerId, range)`
+Centraliza consultas:
+- `spr_fiado_charges` da pessoa no período (com `spr_fiado_charge_items` para descrição/qtd)
+- `spr_fiado_payments` da pessoa no período, ordenado por `payment_group_id`
+- Saldo anterior ao início do período (charges - payments anteriores) → seed da linha do tempo
+- Perfis dos usuários (`created_by`) via `get_user_names`
 
-Alterações mínimas:
-- `src/App.tsx` — registra rota `/auditoria-diaria`.
-- `src/components/layout/sidebar-config.tsx` — novo item admin.
+Retorna: `summary`, `charges[]`, `paymentGroups[]`, `timeline[]`, `previousBalance`, `loading`.
 
-## O que NÃO muda
-- Sem mudanças em schema, RLS, triggers ou regras de negócio.
-- IA é estritamente read-only.
-- Nenhum fluxo existente (PDV, SPR, Fechamento, Movimentos) é tocado.
+### 4. Visão do colaborador
+- Rota atual `/meu-spr` (`MeuSPRPage`) já existe. Reaproveitar o mesmo dialog passando `volunteerId = profile.volunteer_id` e `mode="self"`:
+  - Esconde aba Auditoria
+  - Esconde análise IA detalhada; mostra frase simples: "Seu saldo atual é R$ X. No período você adquiriu R$ Y e pagou R$ Z."
+  - Sem botões de edição
+- Adicionar botão "Ver meu histórico completo" em `MeuSPRPage`.
 
-## Critérios de aceite cobertos
-Seleção de data, consolidação multi-origem, análise de IA acima da tabela, filtros, detalhe sem perder contexto, exportação PDF/CSV, restrito a admin, responsivo.
+### 5. Permissões
+- Admin: pode abrir qualquer pessoa.
+- Cashier/Coordinator: abrir qualquer pessoa (somente leitura no dialog — já é só leitura).
+- Volunteer: apenas próprio `volunteer_id`. Bloquear no componente (já é restringido por RLS).
+- Nada muta dados no dialog — 100% consultivo.
+
+### 6. Consolidação
+- Usa `payment_group_id` já existente em `spr_fiado_payments` (migração feita anteriormente).
+- Pagamentos sem `payment_group_id` aparecem em **Auditoria** com flag "sem agrupamento".
+
+### 7. Export (admin)
+- Botões CSV e PDF dentro do dialog (admin only).
+- CSV: reaproveitar utilitário de `src/lib/audit-export.ts` com pequena extensão para `volunteerExportCsv`.
+- PDF: usar `print-window` existente (impressão do conteúdo do dialog).
+
+## Arquivos
+
+**Novos:**
+- `src/components/spr/VolunteerFiadoDetailDialog.tsx` (modal + abas)
+- `src/components/spr/VolunteerTimelineTable.tsx`
+- `src/components/spr/VolunteerPaymentsList.tsx` (linha consolidada + Collapsible)
+- `src/hooks/useVolunteerFiadoHistory.ts`
+- `src/lib/volunteer-history-export.ts`
+
+**Editados:**
+- `src/pages/SPRPage.tsx` — nome clicável + state do dialog
+- `src/pages/MeuSPRPage.tsx` — botão "Ver meu histórico"
+- `supabase/functions/daily-audit-analysis/index.ts` — aceitar `scope: 'volunteer'` com payload pré-agregado (opcional, fallback para resumo local se vier vazio)
+
+## Fora de escopo
+- Não alterar lógica de criação/baixa de fiado.
+- Não alterar RLS (já cobre).
+- Não criar nova tabela/coluna — `payment_group_id` já existe.
+- Cancelamentos/estornos: exibir se existirem em `audit_logs`, sem nova feature de execução.
