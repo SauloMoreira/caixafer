@@ -281,7 +281,13 @@ export default function SPRPage() {
                   <Card key={c.id}>
                     <CardContent className="flex items-center justify-between p-3">
                       <div>
-                        <p className="text-sm font-medium">{c.volunteer_name}</p>
+                        <button
+                          type="button"
+                          onClick={() => { setDetailVolunteerId(c.volunteer_id); setDetailOpen(true); }}
+                          className="text-sm font-medium text-left hover:text-primary hover:underline transition-colors"
+                        >
+                          {c.volunteer_name}
+                        </button>
                         <p className="text-xs text-muted-foreground">{c.description || 'Fiado'} • {formatDate(c.business_date)}</p>
                         <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(c.status)}`}>
                           {c.status === 'paid' ? 'Pago' : c.status === 'partial' ? 'Parcial' : 'Em Aberto'}
