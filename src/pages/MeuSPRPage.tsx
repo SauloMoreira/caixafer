@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, DollarSign, Calendar, ChevronRight, ShoppingBag, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import VolunteerFiadoDetailDialog from '@/components/spr/VolunteerFiadoDetailDialog';
 
 interface ChargeItem {
   id: string;
@@ -60,6 +61,7 @@ export default function MeuSPRPage() {
   const [dayGroups, setDayGroups] = useState<DayGroup[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayGroup | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [volunteerName, setVolunteerName] = useState('');
 
   const volunteerId = profile?.volunteer_id;
@@ -231,6 +233,16 @@ export default function MeuSPRPage() {
           </CardContent>
         </Card>
 
+        {volunteerId && (
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            className="sm:col-span-3 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-sm font-medium text-primary text-center"
+          >
+            Ver meu histórico completo →
+          </button>
+        )}
+
         {/* Today's spending */}
         <Card className="stat-card">
           <CardContent className="p-0">
@@ -384,6 +396,13 @@ export default function MeuSPRPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <VolunteerFiadoDetailDialog
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        volunteerId={volunteerId ?? null}
+        mode="self"
+      />
     </div>
   );
 }

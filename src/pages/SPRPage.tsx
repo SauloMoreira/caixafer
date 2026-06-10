@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import PhoneInput from '@/components/PhoneInput';
 import FiadoChargeDialog from '@/components/FiadoChargeDialog';
 import SPROperationalBlockCard from '@/components/SPROperationalBlockCard';
+import VolunteerFiadoDetailDialog from '@/components/spr/VolunteerFiadoDetailDialog';
 import { toast } from 'sonner';
 import { Heart, Plus, DollarSign, Search, Camera, Upload, User, Pencil, Loader2 } from 'lucide-react';
 import { applyPhoneMask, isValidPhone, phoneDigits } from '@/lib/masks';
@@ -34,6 +35,8 @@ export default function SPRPage() {
   const showBlockedCard = (profile?.role === 'cashier' || profile?.role === 'cash_coordinator') && !canAccessOperationalSpr;
   const [tab, setTab] = useState('volunteers');
   const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailVolunteerId, setDetailVolunteerId] = useState<string | null>(null);
   const [charges, setCharges] = useState<(FiadoCharge & { volunteer_name?: string })[]>([]);
   const [search, setSearch] = useState('');
   const [loadingVol, setLoadingVol] = useState(false);
@@ -280,7 +283,13 @@ export default function SPRPage() {
                   <Card key={c.id}>
                     <CardContent className="flex items-center justify-between p-3">
                       <div>
-                        <p className="text-sm font-medium">{c.volunteer_name}</p>
+                        <button
+                          type="button"
+                          onClick={() => { setDetailVolunteerId(c.volunteer_id); setDetailOpen(true); }}
+                          className="text-sm font-medium text-left hover:text-primary hover:underline transition-colors"
+                        >
+                          {c.volunteer_name}
+                        </button>
                         <p className="text-xs text-muted-foreground">{c.description || 'Fiado'} • {formatDate(c.business_date)}</p>
                         <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColor(c.status)}`}>
                           {c.status === 'paid' ? 'Pago' : c.status === 'partial' ? 'Parcial' : 'Em Aberto'}
@@ -414,6 +423,13 @@ export default function SPRPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <VolunteerFiadoDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        volunteerId={detailVolunteerId}
+        mode="admin"
+      />
     </div>
   );
 }
