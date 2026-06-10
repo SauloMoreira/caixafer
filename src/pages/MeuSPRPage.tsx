@@ -231,6 +231,16 @@ export default function MeuSPRPage() {
           </CardContent>
         </Card>
 
+        {volunteerId && (
+          <button
+            type="button"
+            onClick={() => setHistoryOpen(true)}
+            className="sm:col-span-3 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-colors p-3 text-sm font-medium text-primary text-center"
+          >
+            Ver meu histórico completo →
+          </button>
+        )}
+
         {/* Today's spending */}
         <Card className="stat-card">
           <CardContent className="p-0">
