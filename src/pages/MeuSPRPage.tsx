@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, DollarSign, Calendar, ChevronRight, ShoppingBag, Package } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import VolunteerFiadoDetailDialog from '@/components/spr/VolunteerFiadoDetailDialog';
 
 interface ChargeItem {
   id: string;
