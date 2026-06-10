@@ -11,9 +11,11 @@ export interface PersonSummary {
   person_id: string;
   person_name: string;
   origins: ("SPR" | "Fiado")[];
+  previous_balance: number;
   acquired_total: number;
   paid_total: number;
-  net_balance: number;
+  net_balance: number; // adquirido - pago (movimento do dia)
+  final_balance: number; // saldo devedor após o dia
   charges_count: number;
   payments_count: number;
   charges: MovementRow[];
