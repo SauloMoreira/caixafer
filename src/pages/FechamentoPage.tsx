@@ -372,25 +372,45 @@ export default function FechamentoPage() {
       </div>
     `;
 
+    const diffStatus = difference == null ? null
+      : Math.abs(difference) < 0.005 ? 'OK · Caixa conferido'
+      : difference > 0 ? 'SOBRA de caixa'
+      : 'FALTA de caixa';
+
     await printHtmlDocument({
       title: `Fechamento ${formatDate(date)}`,
       bodyHtml: `
         ${companyHeaderHtml}
         <div class="sep"></div>
         <div class="row"><span>Data:</span><span class="bold">${escapeHtml(formatDate(date))}</span></div>
-        <div class="row"><span>Operador:</span><span>${escapeHtml(profile?.full_name || '—')}</span></div>
+        <div class="row"><span>Operador:</span><span class="bold">${escapeHtml(profile?.full_name || '—')}</span></div>
         <div class="sep"></div>
-        <div class="row"><span>Saldo Inicial:</span><span>${escapeHtml(formatCurrency(Number(openingBalance)))}</span></div>
-        <div class="row"><span>Vendas:</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
-        <div class="row"><span>Entradas:</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
-        <div class="row"><span>Saídas:</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
-        <div class="sep"></div>
-        <div class="row bold"><span>Saldo Esperado:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
+        <p class="section-title">A) Caixa Físico (Dinheiro)</p>
+        <div class="row"><span>Saldo inicial:</span><span>${escapeHtml(formatCurrency(physicalCash.openingBalance))}</span></div>
+        <div class="row"><span>Entradas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashIn))}</span></div>
+        <div class="row"><span>Saídas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashOut))}</span></div>
+        <div class="row bold-row"><span>SALDO ESPERADO:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
         ${countedBalance ? `
-          <div class="row"><span>Saldo Contado:</span><span>${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
-          <div class="row bold"><span>Diferença:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
+          <div class="row"><span>Saldo contado:</span><span class="bold">${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
+          <div class="row diff-row"><span>DIFERENÇA:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
+          <p class="status-line">${escapeHtml(diffStatus || '')}</p>
         ` : ''}
-        ${notes ? `<div class="sep"></div><p>Obs: ${escapeHtml(notes)}</p>` : ''}
+        <div class="sep"></div>
+        <p class="section-title">B) Movimento Financeiro</p>
+        <div class="row"><span>Vendas (todas):</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
+        <div class="row"><span>Entradas (todas):</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
+        <div class="row"><span>Saídas (todas):</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
+        ${financialMovement.cancelledTotal > 0 ? `<div class="row"><span>Cancelados:</span><span>${escapeHtml(formatCurrency(financialMovement.cancelledTotal))}</span></div>` : ''}
+        ${Object.keys(salesByMethod).length > 0 ? `
+          <p class="subsection">Vendas por forma de pagamento</p>
+          ${PAYMENT_METHODS.map(pm => {
+            const val = salesByMethod[pm.value] || 0;
+            if (val === 0) return '';
+            return `<div class="row small"><span>${escapeHtml(pm.label)}:</span><span>${escapeHtml(formatCurrency(val))}</span></div>`;
+          }).join('')}
+        ` : ''}
+        <p class="note">PIX, cartões e transferências NÃO compõem o dinheiro físico.</p>
+        ${notes ? `<div class="sep"></div><p class="obs"><strong>Obs:</strong> ${escapeHtml(notes)}</p>` : ''}
         <div class="sep"></div>
         <div style="text-align:center;font-size:13px;color:#000;font-weight:600;display:flex;flex-direction:column;gap:4px;">
           ${companyFooterLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
@@ -399,10 +419,18 @@ export default function FechamentoPage() {
       styles: `
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
         body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.7; color: #000; }
-        h2 { text-align: center; font-size: 19px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
-        .sep { border-bottom: 2px dashed #333; margin: 8px 0; }
+        h2 { text-align: center; font-size: 20px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 1px 0; }
+        .row.small { font-size: 14px; padding-left: 8px; }
+        .sep { border-bottom: 2px dashed #000; margin: 8px 0; }
         .bold { font-weight: 800; }
+        .bold-row { font-weight: 900; font-size: 17px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; margin: 4px 0; }
+        .diff-row { font-weight: 900; font-size: 18px; border: 2px solid #000; padding: 6px 8px; margin: 6px 0; }
+        .status-line { text-align: center; font-weight: 900; font-size: 16px; margin: 4px 0 8px; text-transform: uppercase; }
+        .section-title { font-weight: 900; font-size: 16px; text-transform: uppercase; margin: 4px 0 6px; border-bottom: 1px solid #000; }
+        .subsection { font-weight: 800; font-size: 14px; margin: 6px 0 2px; }
+        .note { font-size: 12px; font-style: italic; margin-top: 4px; }
+        .obs { font-size: 14px; }
         img { display: block; margin: 0 auto 8px; max-width: 140px; max-height: 70px; object-fit: contain; }
         @media print { @page { size: 80mm auto; margin: 0; } body { padding: 5mm; } }
       `,
