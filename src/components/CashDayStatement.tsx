@@ -4,11 +4,12 @@ import { formatCurrency, formatDate, formatDateTime, PAYMENT_METHODS } from '@/l
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock, Calendar, Wallet, Receipt, CreditCard, BookOpen, ShoppingBag } from 'lucide-react';
+import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock, Calendar, Wallet, Receipt, CreditCard, BookOpen, ShoppingBag, Banknote, Info } from 'lucide-react';
 import { useCompany } from '@/hooks/useCompany';
 import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
 import { printReceipt as printReceiptRawBT } from '@/utils/printer';
+import { computePhysicalCash, computeFinancialMovement } from '@/lib/cash-accounting';
 
 interface Transfer {
   id: string;
@@ -216,7 +217,18 @@ export default function CashDayStatement({
   });
 
   const totalSales = Object.values(salesByMethod).reduce((s, v) => s + v, 0);
-  const expectedBalance = openingBalance + totalSales + totalIncome - totalExpense;
+
+  // Cálculo contábil correto: saldo esperado considera APENAS dinheiro físico.
+  const physical = computePhysicalCash({
+    openingBalance,
+    sales: sales as any,
+    entries: entries as any,
+  });
+  const expectedBalance = physical.expectedCash;
+  const financialMov = computeFinancialMovement({
+    sales: sales as any,
+    entries: entries as any,
+  });
   const companyData = getCompanyDocumentData(company);
   const companyLegalLine = getCompanyLegalLine(companyData);
   const companyHeaderLines = getCompanyHeaderLines(companyData);

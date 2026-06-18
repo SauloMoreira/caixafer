@@ -24,10 +24,12 @@ import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
 import CashDayStatement from '@/components/CashDayStatement';
+import CashClosingAIReview from '@/components/CashClosingAIReview';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/hooks/useCompany';
 import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
+import { computePhysicalCash, computeFinancialMovement, type SaleRow as AcctSaleRow, type CashEntryRow as AcctEntryRow } from '@/lib/cash-accounting';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -56,6 +58,8 @@ export default function FechamentoPage() {
   const [notes, setNotes] = useState('');
   const [stats, setStats] = useState({ sales: 0, income: 0, expense: 0 });
   const [salesByMethod, setSalesByMethod] = useState<Record<string, number>>({});
+  const [rawSales, setRawSales] = useState<AcctSaleRow[]>([]);
+  const [rawEntries, setRawEntries] = useState<AcctEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [existingOpenByOther, setExistingOpenByOther] = useState<{ responsibleName: string } | null>(null);
@@ -168,12 +172,13 @@ export default function FechamentoPage() {
       .limit(1);
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
-    // Get stats
+    // Get stats — incluindo payment_method para separar dinheiro físico de movimento financeiro
     let salesQuery = supabase.from('sales').select('total_amount, payment_method, is_deleted').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
-    const activeSales = salesData?.filter((s: any) => !s.is_deleted) || [];
+    const activeSales = (salesData || []).filter((s: any) => !s.is_deleted);
     const sales = activeSales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
+    setRawSales((salesData || []) as AcctSaleRow[]);
 
     const methodTotals: Record<string, number> = {};
     activeSales.forEach((s: any) => {
@@ -182,12 +187,15 @@ export default function FechamentoPage() {
     });
     setSalesByMethod(methodTotals);
 
-    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount, is_deleted').eq('business_date', date);
+    let entriesQuery = supabase.from('cash_entries')
+      .select('entry_type, amount, payment_method, is_deleted, source_type, category')
+      .eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
     const { data: entriesData } = await entriesQuery;
-    const activeEntries = entriesData?.filter((e: any) => !e.is_deleted) || [];
+    const activeEntries = (entriesData || []).filter((e: any) => !e.is_deleted);
     const income = activeEntries.filter((e: any) => e.entry_type === 'income').reduce((s: number, e: any) => s + Number(e.amount), 0);
     const expense = activeEntries.filter((e: any) => e.entry_type === 'expense').reduce((s: number, e: any) => s + Number(e.amount), 0);
+    setRawEntries((entriesData || []) as AcctEntryRow[]);
 
     setStats({ sales, income, expense });
     setLoading(false);
@@ -208,7 +216,18 @@ export default function FechamentoPage() {
     if (showHistory) fetchHistory();
   }, [showHistory, fetchHistory]);
 
-  const expectedBalance = Number(openingBalance) + stats.sales + stats.income - stats.expense;
+  // ===== Cálculo contábil correto (camada central) =====
+  // Saldo esperado = APENAS dinheiro físico. PIX/cartão NUNCA entram aqui.
+  const physicalCash = computePhysicalCash({
+    openingBalance,
+    sales: rawSales,
+    entries: rawEntries,
+  });
+  const financialMovement = computeFinancialMovement({
+    sales: rawSales,
+    entries: rawEntries,
+  });
+  const expectedBalance = physicalCash.expectedCash;
   const difference = countedBalance ? Number(countedBalance) - expectedBalance : null;
 
   const canReopen = closing?.status === 'closed' && (
@@ -353,25 +372,45 @@ export default function FechamentoPage() {
       </div>
     `;
 
+    const diffStatus = difference == null ? null
+      : Math.abs(difference) < 0.005 ? 'OK · Caixa conferido'
+      : difference > 0 ? 'SOBRA de caixa'
+      : 'FALTA de caixa';
+
     await printHtmlDocument({
       title: `Fechamento ${formatDate(date)}`,
       bodyHtml: `
         ${companyHeaderHtml}
         <div class="sep"></div>
         <div class="row"><span>Data:</span><span class="bold">${escapeHtml(formatDate(date))}</span></div>
-        <div class="row"><span>Operador:</span><span>${escapeHtml(profile?.full_name || '—')}</span></div>
+        <div class="row"><span>Operador:</span><span class="bold">${escapeHtml(profile?.full_name || '—')}</span></div>
         <div class="sep"></div>
-        <div class="row"><span>Saldo Inicial:</span><span>${escapeHtml(formatCurrency(Number(openingBalance)))}</span></div>
-        <div class="row"><span>Vendas:</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
-        <div class="row"><span>Entradas:</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
-        <div class="row"><span>Saídas:</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
-        <div class="sep"></div>
-        <div class="row bold"><span>Saldo Esperado:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
+        <p class="section-title">A) Caixa Físico (Dinheiro)</p>
+        <div class="row"><span>Saldo inicial:</span><span>${escapeHtml(formatCurrency(physicalCash.openingBalance))}</span></div>
+        <div class="row"><span>Entradas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashIn))}</span></div>
+        <div class="row"><span>Saídas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashOut))}</span></div>
+        <div class="row bold-row"><span>SALDO ESPERADO:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
         ${countedBalance ? `
-          <div class="row"><span>Saldo Contado:</span><span>${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
-          <div class="row bold"><span>Diferença:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
+          <div class="row"><span>Saldo contado:</span><span class="bold">${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
+          <div class="row diff-row"><span>DIFERENÇA:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
+          <p class="status-line">${escapeHtml(diffStatus || '')}</p>
         ` : ''}
-        ${notes ? `<div class="sep"></div><p>Obs: ${escapeHtml(notes)}</p>` : ''}
+        <div class="sep"></div>
+        <p class="section-title">B) Movimento Financeiro</p>
+        <div class="row"><span>Vendas (todas):</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
+        <div class="row"><span>Entradas (todas):</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
+        <div class="row"><span>Saídas (todas):</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
+        ${financialMovement.cancelledTotal > 0 ? `<div class="row"><span>Cancelados:</span><span>${escapeHtml(formatCurrency(financialMovement.cancelledTotal))}</span></div>` : ''}
+        ${Object.keys(salesByMethod).length > 0 ? `
+          <p class="subsection">Vendas por forma de pagamento</p>
+          ${PAYMENT_METHODS.map(pm => {
+            const val = salesByMethod[pm.value] || 0;
+            if (val === 0) return '';
+            return `<div class="row small"><span>${escapeHtml(pm.label)}:</span><span>${escapeHtml(formatCurrency(val))}</span></div>`;
+          }).join('')}
+        ` : ''}
+        <p class="note">PIX, cartões e transferências NÃO compõem o dinheiro físico.</p>
+        ${notes ? `<div class="sep"></div><p class="obs"><strong>Obs:</strong> ${escapeHtml(notes)}</p>` : ''}
         <div class="sep"></div>
         <div style="text-align:center;font-size:13px;color:#000;font-weight:600;display:flex;flex-direction:column;gap:4px;">
           ${companyFooterLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
@@ -380,10 +419,18 @@ export default function FechamentoPage() {
       styles: `
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
         body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.7; color: #000; }
-        h2 { text-align: center; font-size: 19px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
-        .sep { border-bottom: 2px dashed #333; margin: 8px 0; }
+        h2 { text-align: center; font-size: 20px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 1px 0; }
+        .row.small { font-size: 14px; padding-left: 8px; }
+        .sep { border-bottom: 2px dashed #000; margin: 8px 0; }
         .bold { font-weight: 800; }
+        .bold-row { font-weight: 900; font-size: 17px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; margin: 4px 0; }
+        .diff-row { font-weight: 900; font-size: 18px; border: 2px solid #000; padding: 6px 8px; margin: 6px 0; }
+        .status-line { text-align: center; font-weight: 900; font-size: 16px; margin: 4px 0 8px; text-transform: uppercase; }
+        .section-title { font-weight: 900; font-size: 16px; text-transform: uppercase; margin: 4px 0 6px; border-bottom: 1px solid #000; }
+        .subsection { font-weight: 800; font-size: 14px; margin: 6px 0 2px; }
+        .note { font-size: 12px; font-style: italic; margin-top: 4px; }
+        .obs { font-size: 14px; }
         img { display: block; margin: 0 auto 8px; max-width: 140px; max-height: 70px; object-fit: contain; }
         @media print { @page { size: 80mm auto; margin: 0; } body { padding: 5mm; } }
       `,
@@ -701,11 +748,59 @@ export default function FechamentoPage() {
                 <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Vendas</p><p className="financial-value text-primary">{formatCurrency(stats.sales)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Entradas</p><p className="financial-value financial-positive">{formatCurrency(stats.income)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Saídas</p><p className="financial-value financial-negative">{formatCurrency(stats.expense)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
+              {/* === BLOCO A — CAIXA FÍSICO (DINHEIRO) === */}
+              <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-3 space-y-2">
+                <p className="text-xs font-bold text-primary uppercase tracking-wider">A) Caixa físico — dinheiro</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Saldo inicial</p>
+                    <p className="font-bold">{formatCurrency(physicalCash.openingBalance)}</p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Entradas em dinheiro</p>
+                    <p className="font-bold text-emerald-600">{formatCurrency(physicalCash.cashIn)}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Vendas $ {formatCurrency(physicalCash.details.salesCash)} · Entradas $ {formatCurrency(physicalCash.details.incomeCash)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Saídas em dinheiro</p>
+                    <p className="font-bold text-destructive">{formatCurrency(physicalCash.cashOut)}</p>
+                    <p className="text-[10px] text-muted-foreground">Sangrias, despesas e estornos em dinheiro</p>
+                  </div>
+                  <div className="rounded-lg border-2 border-primary bg-primary/10 p-2.5">
+                    <p className="text-muted-foreground text-[11px]">Saldo esperado em dinheiro</p>
+                    <p className="text-lg font-extrabold text-primary">{formatCurrency(expectedBalance)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* === BLOCO B — MOVIMENTO FINANCEIRO === */}
+              <div className="rounded-xl border bg-card p-3 space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">B) Movimento financeiro do dia</p>
+                <p className="text-[10px] text-muted-foreground italic">
+                  PIX, cartões e transferências NÃO compõem o dinheiro físico do caixa.
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Vendas totais</p>
+                    <p className="font-bold text-primary">{formatCurrency(stats.sales)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Entradas (todas)</p>
+                    <p className="font-bold text-emerald-600">{formatCurrency(stats.income)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Saídas (todas)</p>
+                    <p className="font-bold text-destructive">{formatCurrency(stats.expense)}</p>
+                  </div>
+                  {financialMovement.cancelledTotal > 0 && (
+                    <div className="rounded-lg bg-muted/50 p-2.5">
+                      <p className="text-muted-foreground">Cancelados/excluídos</p>
+                      <p className="font-bold text-muted-foreground">{formatCurrency(financialMovement.cancelledTotal)}</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1 text-xs">
@@ -722,9 +817,12 @@ export default function FechamentoPage() {
                     {PAYMENT_METHODS.map(pm => {
                       const val = salesByMethod[pm.value] || 0;
                       if (val === 0) return null;
+                      const isCashRow = pm.value === 'dinheiro';
                       return (
-                        <div key={pm.value} className="stat-card">
-                          <p className="text-xs text-muted-foreground">{pm.label}</p>
+                        <div key={pm.value} className={`stat-card ${isCashRow ? 'border-primary/40' : ''}`}>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            {pm.label}{!isCashRow && <span className="text-[9px] opacity-60">(não-dinheiro)</span>}
+                          </p>
                           <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
                         </div>
                       );
@@ -734,18 +832,59 @@ export default function FechamentoPage() {
               )}
 
               <div>
-                <Label>Saldo Contado (R$)</Label>
+                <Label>Saldo Contado em Dinheiro (R$)</Label>
+                <p className="text-[10px] text-muted-foreground mb-1">Conte apenas o dinheiro físico em caixa. PIX/cartão não entram aqui.</p>
                 <Input type="number" value={countedBalance} onChange={e => setCountedBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
               </div>
               {difference !== null && (
-                <div className="stat-card">
-                  <p className="text-xs text-muted-foreground">Diferença</p>
-                  <p className={`financial-value text-xl ${difference >= 0 ? 'financial-positive' : 'financial-negative'}`}>{formatCurrency(difference)}</p>
+                <div className={`rounded-xl border-2 p-3 ${
+                  Math.abs(difference) < 0.005 ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/10'
+                  : difference > 0 ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-900/10'
+                  : 'border-destructive/50 bg-destructive/10'
+                }`}>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conferência final</p>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs">
+                    <div><p className="text-muted-foreground">Esperado</p><p className="font-bold">{formatCurrency(expectedBalance)}</p></div>
+                    <div><p className="text-muted-foreground">Contado</p><p className="font-bold">{formatCurrency(Number(countedBalance))}</p></div>
+                  </div>
+                  <div className="mt-2 border-t pt-2">
+                    <p className="text-xs text-muted-foreground">Diferença</p>
+                    <p className={`text-2xl font-extrabold ${
+                      Math.abs(difference) < 0.005 ? 'text-emerald-700 dark:text-emerald-400'
+                      : difference > 0 ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-destructive'
+                    }`}>
+                      {formatCurrency(difference)}
+                    </p>
+                    <p className="mt-1 text-[11px] font-semibold">
+                      {Math.abs(difference) < 0.005 ? '✓ Caixa conferido sem diferença'
+                      : difference > 0 ? '⚠ Sobra de caixa'
+                      : '⚠ Falta de caixa'}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-[10px] text-muted-foreground italic">
+                    Esta diferença considera apenas o dinheiro físico. PIX, cartão e valores em aberto não entram no cálculo do dinheiro contado.
+                  </p>
                 </div>
               )}
               <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
             </CardContent>
           </Card>
+
+          {/* Análise da IA para conferência */}
+          <CashClosingAIReview
+            businessDate={date}
+            operatorName={profile?.full_name}
+            physical={physicalCash}
+            financial={financialMovement}
+            difference={difference != null ? {
+              expectedCash: expectedBalance,
+              countedCash: Number(countedBalance) || 0,
+              difference,
+              status: Math.abs(difference) < 0.005 ? 'ok' : difference > 0 ? 'sobra' : 'falta',
+              isWithinTolerance: Math.abs(difference) < 0.005,
+            } : null}
+          />
 
           {/* Daily Operation Insights */}
           <DailyOperationInsights

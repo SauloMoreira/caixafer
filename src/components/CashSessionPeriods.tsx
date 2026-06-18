@@ -223,15 +223,16 @@ export default function CashSessionPeriods({
                   <p className="text-muted-foreground">Saídas</p>
                   <p className="font-semibold text-destructive">{formatCurrency(period.expense)}</p>
                 </div>
-                <div className="rounded-lg bg-muted/50 p-2.5">
-                  <p className="text-muted-foreground">Saldo esperado</p>
+                <div className="rounded-lg bg-muted/50 p-2.5" title="Soma de todos os métodos de pagamento (não é dinheiro físico)">
+                  <p className="text-muted-foreground">Movimento total</p>
                   <p className="font-semibold text-primary">{formatCurrency(
-                    idx === 0
-                      ? openingBalance + period.sales + period.income - period.expense
-                      : period.expectedBalance
+                    period.sales + period.income - period.expense
                   )}</p>
                 </div>
               </div>
+              <p className="text-[10px] text-muted-foreground italic">
+                Períodos refletem o movimento financeiro consolidado. O dinheiro físico esperado é apurado no fechamento.
+              </p>
 
               {Object.keys(period.paymentBreakdown).length > 0 && (
                 <div className="grid grid-cols-3 gap-1.5 text-[11px]">
@@ -285,8 +286,11 @@ export default function CashSessionPeriods({
               <p className="font-semibold text-destructive">{formatCurrency(currentStats.expense)}</p>
             </div>
             <div className="col-span-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
-              <p className="text-muted-foreground text-xs">Saldo esperado total</p>
-              <p className="text-base font-bold text-primary">{formatCurrency(consolidatedExpected)}</p>
+              <p className="text-muted-foreground text-xs">Movimento financeiro total do dia</p>
+              <p className="text-base font-bold text-primary">{formatCurrency(currentStats.sales + currentStats.income - currentStats.expense)}</p>
+              <p className="mt-1 text-[10px] text-muted-foreground italic">
+                Inclui PIX, cartões e transferências. O saldo esperado em dinheiro físico é apurado no card de Fechamento.
+              </p>
             </div>
           </div>
 
