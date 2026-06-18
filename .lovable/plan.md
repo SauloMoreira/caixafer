@@ -1,77 +1,165 @@
-# Detalhe de Fiado por Pessoa — SPR Ramatis
 
-Adicionar um modal de detalhe completo ao clicar no nome da pessoa na aba **Fiados** da tela `SPR Ramatis`, com histórico, consolidação por operação de pagamento, linha do tempo do saldo e análise por IA (admin).
+# Revisão Contábil do Fechamento de Caixa
 
-## Escopo
+Frente focada em **confiabilidade dos cálculos, clareza do extrato e legibilidade da impressão**. Executada em blocos incrementais, sem apagar histórico nem alterar dados já gravados.
 
-### 1. Clique no nome (lista de Fiados — `src/pages/SPRPage.tsx`)
-- Hoje o card de fiado mostra `volunteer_name`. Tornar o nome clicável → abre `VolunteerFiadoDetailDialog` com `volunteerId`.
-- Não alterar lógica de pagamento existente nem listagem.
+## Princípio contábil central
 
-### 2. Novo componente `VolunteerFiadoDetailDialog`
-Modal full-screen em mobile / `max-w-4xl` em desktop, com botão **X** e **Voltar**.
+```
+Saldo esperado em DINHEIRO =
+  Saldo inicial em dinheiro
++ Entradas em dinheiro (PDV dinheiro + SPR dinheiro + Fiado pago em dinheiro + Suprimentos + Entradas manuais)
+- Saídas em dinheiro (Sangrias + Despesas dinheiro + Devoluções dinheiro + Estornos dinheiro + Retiradas)
+```
 
-**Cabeçalho:**
-- Nome, status geral (Em aberto / Parcial / Quitado)
-- Cards: Saldo devedor atual, Total adquirido (período), Total pago (período), Último pagamento, Qtd lançamentos em aberto, Qtd pagamentos
-- Filtro de período: Hoje · 7 dias · 30 dias · Mês atual · Personalizado (date range)
+PIX, débito, crédito, fiado adquirido em aberto, vendas canceladas e valores previstos **NUNCA** entram no dinheiro físico — aparecem apenas no Movimento Financeiro.
 
-**Abas (`Tabs`):**
-1. **Resumo** — totais + lista compacta dos últimos movimentos
-2. **Fiados adquiridos** — todos lançamentos com data/hora, descrição, qtde, valor, usuário, status, observações
-3. **Pagamentos** — consolidados por `payment_group_id`; uma linha por operação com expand (Collapsible) mostrando os itens baixados, IDs, forma de pagamento, valor, usuário receptor
-4. **Linha do tempo** — cronologia com Débito / Crédito / Saldo após (calculado incrementalmente)
-5. **Auditoria** (somente admin) — usuários que lançaram/receberam, cancelamentos, ajustes, pagamentos sem `payment_group_id`
+---
 
-**Análise IA (admin)** — bloco acima/dentro de Resumo, reutilizando a edge function `daily-audit-analysis` com um payload focado na pessoa (ou novo prompt local). Vamos estender a função existente para aceitar `scope: 'volunteer'` com dados pré-agregados; sem alteração de regras de negócio.
+## Bloco 1 — Diagnóstico (somente leitura, sem alterar dados)
 
-### 3. Hook `useVolunteerFiadoHistory(volunteerId, range)`
-Centraliza consultas:
-- `spr_fiado_charges` da pessoa no período (com `spr_fiado_charge_items` para descrição/qtd)
-- `spr_fiado_payments` da pessoa no período, ordenado por `payment_group_id`
-- Saldo anterior ao início do período (charges - payments anteriores) → seed da linha do tempo
-- Perfis dos usuários (`created_by`) via `get_user_names`
+Mapear hoje a fórmula real em uso e identificar onde dinheiro/não-dinheiro estão misturados.
 
-Retorna: `summary`, `charges[]`, `paymentGroups[]`, `timeline[]`, `previousBalance`, `loading`.
+Arquivos a inspecionar:
+- `FechamentoPage.tsx`, `CashDayStatement.tsx`, `CashSessionPeriods.tsx`, `MovimentosPage.tsx`, `CashCorrectionReview.tsx`
+- DB: `set_cash_transfer_snapshot_fields`, `handle_fiado_payment`, `audit_cash_*`, `validate_*`
+- Utilitários de impressão (térmica/A4)
 
-### 4. Visão do colaborador
-- Rota atual `/meu-spr` (`MeuSPRPage`) já existe. Reaproveitar o mesmo dialog passando `volunteerId = profile.volunteer_id` e `mode="self"`:
-  - Esconde aba Auditoria
-  - Esconde análise IA detalhada; mostra frase simples: "Seu saldo atual é R$ X. No período você adquiriu R$ Y e pagou R$ Z."
-  - Sem botões de edição
-- Adicionar botão "Ver meu histórico completo" em `MeuSPRPage`.
+Entrega: `.lovable/diagnostico-fechamento.md` listando:
+- Fórmula atual de `expected_balance` (esperada vs implementada)
+- Pontos onde PIX/cartão entram indevidamente no dinheiro físico
+- Como pagamento SPR/Fiado é replicado em `cash_entries` (risco de duplicidade no trigger `handle_fiado_payment`)
+- Tratamento atual de estornos e cancelamentos
+- Identificadores únicos existentes em pagamentos consolidados
 
-### 5. Permissões
-- Admin: pode abrir qualquer pessoa.
-- Cashier/Coordinator: abrir qualquer pessoa (somente leitura no dialog — já é só leitura).
-- Volunteer: apenas próprio `volunteer_id`. Bloquear no componente (já é restringido por RLS).
-- Nada muta dados no dialog — 100% consultivo.
+**Sem código alterado neste bloco.**
 
-### 6. Consolidação
-- Usa `payment_group_id` já existente em `spr_fiado_payments` (migração feita anteriormente).
-- Pagamentos sem `payment_group_id` aparecem em **Auditoria** com flag "sem agrupamento".
+---
 
-### 7. Export (admin)
-- Botões CSV e PDF dentro do dialog (admin only).
-- CSV: reaproveitar utilitário de `src/lib/audit-export.ts` com pequena extensão para `volunteerExportCsv`.
-- PDF: usar `print-window` existente (impressão do conteúdo do dialog).
+## Bloco 2 — Camada de cálculo unificada (frontend)
 
-## Arquivos
+Criar um único módulo `src/lib/cash-accounting.ts` que toda a tela e a impressão usam, eliminando divergências entre views.
 
-**Novos:**
-- `src/components/spr/VolunteerFiadoDetailDialog.tsx` (modal + abas)
-- `src/components/spr/VolunteerTimelineTable.tsx`
-- `src/components/spr/VolunteerPaymentsList.tsx` (linha consolidada + Collapsible)
-- `src/hooks/useVolunteerFiadoHistory.ts`
-- `src/lib/volunteer-history-export.ts`
+Funções puras:
+- `computePhysicalCash(session, sales, entries)` → `{ openingBalance, cashIn, cashOut, expectedCash, breakdown }`
+- `computeFinancialMovement(sales, entries, fiadoPayments)` → totais por forma de pagamento + em aberto + cancelado + estornado
+- `computeClosingDifference(expectedCash, countedCash)` → `{ diff, status: 'ok'|'sobra'|'falta' }`
 
-**Editados:**
-- `src/pages/SPRPage.tsx` — nome clicável + state do dialog
-- `src/pages/MeuSPRPage.tsx` — botão "Ver meu histórico"
-- `supabase/functions/daily-audit-analysis/index.ts` — aceitar `scope: 'volunteer'` com payload pré-agregado (opcional, fallback para resumo local se vier vazio)
+Regras explícitas (com testes):
+- `payment_method='dinheiro'` → caixa físico
+- `pix|debito|credito|transferencia` → só financeiro
+- `spr_fiado_charges` (aquisição) → nunca soma em dinheiro
+- `spr_fiado_payments` em dinheiro → soma; em PIX/cartão → só financeiro
+- `is_deleted=true` ou status cancelado → fora dos totais positivos, somados em "Cancelado"
+- Estorno em dinheiro → saída; estorno não-dinheiro → só financeiro
 
-## Fora de escopo
-- Não alterar lógica de criação/baixa de fiado.
-- Não alterar RLS (já cobre).
-- Não criar nova tabela/coluna — `payment_group_id` já existe.
-- Cancelamentos/estornos: exibir se existirem em `audit_logs`, sem nova feature de execução.
+Sem mexer em triggers de DB neste bloco — apenas leitura agregada no cliente, mesma fonte para tela e impressão.
+
+---
+
+## Bloco 3 — Testes contábeis (Vitest)
+
+`src/lib/__tests__/cash-accounting.test.ts` cobrindo os 6 cenários do pedido:
+
+1. Caixa sem diferença (100 + 50 PDV$ + 20 Fiado$ − 30 sangria = 140)
+2. PIX não entra no dinheiro (esperado = 100)
+3. Cartão não entra no dinheiro (esperado = 100)
+4. Fiado adquirido não entra (esperado = 100)
+5. Fiado pago em dinheiro entra (esperado = 160)
+6. Sangria reduz o esperado (100 + 100 − 50 = 150)
+
+Bloco só é considerado concluído quando todos passarem.
+
+---
+
+## Bloco 4 — Novo Extrato / Tela de Fechamento
+
+Reorganizar `FechamentoPage` / `CashDayStatement` em duas seções claramente separadas:
+
+**A) Caixa Físico (Dinheiro)**
+- Saldo inicial · Entradas em dinheiro · Saídas em dinheiro · Saldo esperado · Valor contado · Diferença · Status (OK/Sobra/Falta)
+
+**B) Movimento Financeiro do Dia**
+- Vendas por forma de pagamento · Pagamentos SPR por forma · Pagamentos Fiado por forma · Total vendido · Total recebido · Em aberto · Cancelado · Estornado
+
+**Listagens detalhadas:**
+- Entradas em dinheiro: hora, origem (PDV/SPR/Fiado/Suprimento), descrição, valor, usuário, ID
+- Saídas em dinheiro: hora, tipo (Sangria/Despesa/Estorno/Devolução/Ajuste), descrição, valor, usuário, ID
+- Movimentos não-dinheiro: agrupados por forma, com aviso "não compõem o dinheiro físico"
+
+**Bloco de conferência destacado** ao final com saldo esperado × contado × diferença e a mensagem explicativa pedida.
+
+Sem alterar regras de negócio — só reorganizar a visualização sobre os dados já existentes.
+
+---
+
+## Bloco 5 — Análise da IA (Conferência)
+
+Edge Function `analyze-cash-closing` (Lovable AI, `google/gemini-3-flash-preview`) recebe o snapshot do fechamento e devolve:
+- Possíveis causas da diferença
+- Lançamentos em dinheiro a conferir
+- Sangrias/despesas do dia
+- SPR/Fiado recebidos em dinheiro
+- Pagamentos PIX/cartão que NÃO deveriam estar no dinheiro físico
+- Cancelamentos/estornos · movimentos manuais · operações sem ID
+- Sugestões objetivas
+
+Componente `CashClosingAIReview` exibido na tela de fechamento. **Read-only**, não altera dados.
+
+---
+
+## Bloco 6 — Impressão legível (alta legibilidade)
+
+Layout dedicado de impressão do fechamento (`CashClosingPrintout`):
+- Texto preto (#000), nada de cinza claro
+- Fonte base 14px; títulos 16–18px; valores totais em negrito; diferença em destaque grande
+- Tabelas com bordas visíveis, espaçamento generoso
+- Boa renderização em P&B
+- Cabeçalho (casa, data, operador, hora impressão) · Resumo financeiro · Detalhamento (Entradas, Saídas, PDV, SPR, Fiado, Sangrias, Despesas, Estornos, Cancelamentos) · Campos de assinatura (operador + administrador) · Observações
+- Mesma fonte de dados do módulo `cash-accounting.ts` (tela = impressão)
+
+Mantém a impressão térmica existente intacta; este layout é específico A4 para conferência contábil.
+
+---
+
+## Bloco 7 — Validação de pagamentos SPR/Fiado e identificadores
+
+Conferir (e corrigir se necessário) que:
+- `handle_fiado_payment` não duplica valor no caixa físico
+- Pagamentos consolidados aparecem **uma única vez** mesmo quitando vários itens
+- Cada pagamento tem identificador único rastreável (`payment_id`/`source_id`)
+
+Se faltar identificador estável, criar migration mínima adicionando coluna `payment_group_id` em `spr_fiado_payments` (sem apagar dados existentes).
+
+---
+
+## Bloco 8 — Relatório final
+
+Documento curto com: causas encontradas, correções aplicadas, validações, testes executados e pendências residuais. Confirmação de que o caixa ficou consistente e auditável.
+
+---
+
+## Regras de execução
+
+- Incremental: rodar um bloco por vez, validar, seguir.
+- Não apagar histórico nem reescrever dados já gravados.
+- Toda alteração de cálculo preserva rastreabilidade (audit logs continuam).
+- Não misturar com outras frentes.
+- Parar ao fim de cada bloco para validação do usuário.
+
+## Detalhes técnicos
+
+- Fonte única de cálculo no frontend: `src/lib/cash-accounting.ts` (puro, testável).
+- Testes: Vitest, sem dependência de DB.
+- IA: Edge Function Supabase via Lovable AI Gateway (Gemini 3 Flash).
+- Impressão A4: componente React isolado + CSS `@media print` com `color-adjust: exact`.
+- Migrations só se Bloco 7 confirmar necessidade.
+
+## Recomendação de partida
+
+Começar por **Bloco 1 (diagnóstico)** isoladamente — leitura pura, zero risco — para ancorar correções dos blocos seguintes em fatos do código atual, não em suposições.
+
+**Perguntas antes de aprovar:**
+1. OK iniciar somente pelo Bloco 1 (diagnóstico, sem código)?
+2. Impressão A4 dedicada de fechamento substitui a térmica de 80mm para esse relatório, ou ambas devem coexistir?
+3. Há um dia/sessão específico com diferença para usar como caso real no diagnóstico?
