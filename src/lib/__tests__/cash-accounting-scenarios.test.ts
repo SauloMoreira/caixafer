@@ -133,7 +133,7 @@ describe('Nova análise contábil — cenários reais de operação', () => {
     ];
     // Trigger handle_fiado_payment cria entries correspondentes
     const entries = fp.map((p) =>
-      e('income', p.amount_paid, p.payment_method, { source_type: 'spr_fiado_payment' })
+      e('income', Number(p.amount_paid), p.payment_method, { source_type: 'spr_fiado_payment' })
     );
     const r = computeClosing({
       openingBalance: 0,
