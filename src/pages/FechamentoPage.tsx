@@ -24,10 +24,12 @@ import PendingTransferBanner from '@/components/PendingTransferBanner';
 import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
 import CashDayStatement from '@/components/CashDayStatement';
+import CashClosingAIReview from '@/components/CashClosingAIReview';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/hooks/useCompany';
 import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
+import { computePhysicalCash, computeFinancialMovement, type SaleRow as AcctSaleRow, type CashEntryRow as AcctEntryRow } from '@/lib/cash-accounting';
 
 const REOPEN_REASONS = [
   { value: 'ajuste_operacional', label: 'Ajuste operacional' },
@@ -56,6 +58,8 @@ export default function FechamentoPage() {
   const [notes, setNotes] = useState('');
   const [stats, setStats] = useState({ sales: 0, income: 0, expense: 0 });
   const [salesByMethod, setSalesByMethod] = useState<Record<string, number>>({});
+  const [rawSales, setRawSales] = useState<AcctSaleRow[]>([]);
+  const [rawEntries, setRawEntries] = useState<AcctEntryRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingDate, setPendingDate] = useState<string | null>(null);
   const [existingOpenByOther, setExistingOpenByOther] = useState<{ responsibleName: string } | null>(null);
@@ -168,12 +172,13 @@ export default function FechamentoPage() {
       .limit(1);
     setPendingDate(pendingClosings?.[0]?.business_date || null);
 
-    // Get stats
+    // Get stats — incluindo payment_method para separar dinheiro físico de movimento financeiro
     let salesQuery = supabase.from('sales').select('total_amount, payment_method, is_deleted').eq('business_date', date);
     if (!isAdmin) salesQuery = salesQuery.eq('created_by', profile.id);
     const { data: salesData } = await salesQuery;
-    const activeSales = salesData?.filter((s: any) => !s.is_deleted) || [];
+    const activeSales = (salesData || []).filter((s: any) => !s.is_deleted);
     const sales = activeSales.reduce((s: number, r: any) => s + Number(r.total_amount), 0);
+    setRawSales((salesData || []) as AcctSaleRow[]);
 
     const methodTotals: Record<string, number> = {};
     activeSales.forEach((s: any) => {
@@ -182,12 +187,15 @@ export default function FechamentoPage() {
     });
     setSalesByMethod(methodTotals);
 
-    let entriesQuery = supabase.from('cash_entries').select('entry_type, amount, is_deleted').eq('business_date', date);
+    let entriesQuery = supabase.from('cash_entries')
+      .select('entry_type, amount, payment_method, is_deleted, source_type, category')
+      .eq('business_date', date);
     if (!isAdmin) entriesQuery = entriesQuery.eq('created_by', profile.id);
     const { data: entriesData } = await entriesQuery;
-    const activeEntries = entriesData?.filter((e: any) => !e.is_deleted) || [];
+    const activeEntries = (entriesData || []).filter((e: any) => !e.is_deleted);
     const income = activeEntries.filter((e: any) => e.entry_type === 'income').reduce((s: number, e: any) => s + Number(e.amount), 0);
     const expense = activeEntries.filter((e: any) => e.entry_type === 'expense').reduce((s: number, e: any) => s + Number(e.amount), 0);
+    setRawEntries((entriesData || []) as AcctEntryRow[]);
 
     setStats({ sales, income, expense });
     setLoading(false);
@@ -208,7 +216,18 @@ export default function FechamentoPage() {
     if (showHistory) fetchHistory();
   }, [showHistory, fetchHistory]);
 
-  const expectedBalance = Number(openingBalance) + stats.sales + stats.income - stats.expense;
+  // ===== Cálculo contábil correto (camada central) =====
+  // Saldo esperado = APENAS dinheiro físico. PIX/cartão NUNCA entram aqui.
+  const physicalCash = computePhysicalCash({
+    openingBalance,
+    sales: rawSales,
+    entries: rawEntries,
+  });
+  const financialMovement = computeFinancialMovement({
+    sales: rawSales,
+    entries: rawEntries,
+  });
+  const expectedBalance = physicalCash.expectedCash;
   const difference = countedBalance ? Number(countedBalance) - expectedBalance : null;
 
   const canReopen = closing?.status === 'closed' && (
