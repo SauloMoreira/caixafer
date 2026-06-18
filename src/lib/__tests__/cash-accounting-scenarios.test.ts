@@ -177,7 +177,7 @@ describe('Nova análise contábil — cenários reais de operação', () => {
       sales: [s(10, 'dinheiro'), s(20, 'pix'), s(30, 'debito'), s(40, 'credito')],
       entries: [],
     });
-    const sum = Object.values(fm.salesByMethod).reduce((a, b) => a + b, 0);
+    const sum = Object.values(fm.salesByMethod).reduce<number>((a, b) => a + b, 0);
     expect(sum).toBe(fm.salesTotal);
     expect(fm.salesTotal).toBe(100);
   });
