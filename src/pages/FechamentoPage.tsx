@@ -720,11 +720,59 @@ export default function FechamentoPage() {
                 <Input type="number" value={openingBalance} onChange={e => setOpeningBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Vendas</p><p className="financial-value text-primary">{formatCurrency(stats.sales)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Entradas</p><p className="financial-value financial-positive">{formatCurrency(stats.income)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Saídas</p><p className="financial-value financial-negative">{formatCurrency(stats.expense)}</p></div>
-                <div className="stat-card"><p className="text-xs text-muted-foreground">Saldo Esperado</p><p className="financial-value text-primary">{formatCurrency(expectedBalance)}</p></div>
+              {/* === BLOCO A — CAIXA FÍSICO (DINHEIRO) === */}
+              <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-3 space-y-2">
+                <p className="text-xs font-bold text-primary uppercase tracking-wider">A) Caixa físico — dinheiro</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Saldo inicial</p>
+                    <p className="font-bold">{formatCurrency(physicalCash.openingBalance)}</p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Entradas em dinheiro</p>
+                    <p className="font-bold text-emerald-600">{formatCurrency(physicalCash.cashIn)}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Vendas $ {formatCurrency(physicalCash.details.salesCash)} · Entradas $ {formatCurrency(physicalCash.details.incomeCash)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-background p-2.5">
+                    <p className="text-muted-foreground">Saídas em dinheiro</p>
+                    <p className="font-bold text-destructive">{formatCurrency(physicalCash.cashOut)}</p>
+                    <p className="text-[10px] text-muted-foreground">Sangrias, despesas e estornos em dinheiro</p>
+                  </div>
+                  <div className="rounded-lg border-2 border-primary bg-primary/10 p-2.5">
+                    <p className="text-muted-foreground text-[11px]">Saldo esperado em dinheiro</p>
+                    <p className="text-lg font-extrabold text-primary">{formatCurrency(expectedBalance)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* === BLOCO B — MOVIMENTO FINANCEIRO === */}
+              <div className="rounded-xl border bg-card p-3 space-y-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">B) Movimento financeiro do dia</p>
+                <p className="text-[10px] text-muted-foreground italic">
+                  PIX, cartões e transferências NÃO compõem o dinheiro físico do caixa.
+                </p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Vendas totais</p>
+                    <p className="font-bold text-primary">{formatCurrency(stats.sales)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Entradas (todas)</p>
+                    <p className="font-bold text-emerald-600">{formatCurrency(stats.income)}</p>
+                  </div>
+                  <div className="rounded-lg bg-muted/50 p-2.5">
+                    <p className="text-muted-foreground">Saídas (todas)</p>
+                    <p className="font-bold text-destructive">{formatCurrency(stats.expense)}</p>
+                  </div>
+                  {financialMovement.cancelledTotal > 0 && (
+                    <div className="rounded-lg bg-muted/50 p-2.5">
+                      <p className="text-muted-foreground">Cancelados/excluídos</p>
+                      <p className="font-bold text-muted-foreground">{formatCurrency(financialMovement.cancelledTotal)}</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1 text-xs">
@@ -741,9 +789,12 @@ export default function FechamentoPage() {
                     {PAYMENT_METHODS.map(pm => {
                       const val = salesByMethod[pm.value] || 0;
                       if (val === 0) return null;
+                      const isCashRow = pm.value === 'dinheiro';
                       return (
-                        <div key={pm.value} className="stat-card">
-                          <p className="text-xs text-muted-foreground">{pm.label}</p>
+                        <div key={pm.value} className={`stat-card ${isCashRow ? 'border-primary/40' : ''}`}>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            {pm.label}{!isCashRow && <span className="text-[9px] opacity-60">(não-dinheiro)</span>}
+                          </p>
                           <p className="financial-value text-sm text-primary">{formatCurrency(val)}</p>
                         </div>
                       );
@@ -753,18 +804,59 @@ export default function FechamentoPage() {
               )}
 
               <div>
-                <Label>Saldo Contado (R$)</Label>
+                <Label>Saldo Contado em Dinheiro (R$)</Label>
+                <p className="text-[10px] text-muted-foreground mb-1">Conte apenas o dinheiro físico em caixa. PIX/cartão não entram aqui.</p>
                 <Input type="number" value={countedBalance} onChange={e => setCountedBalance(e.target.value)} className="h-12" disabled={closing.status === 'closed' && !isAdmin} />
               </div>
               {difference !== null && (
-                <div className="stat-card">
-                  <p className="text-xs text-muted-foreground">Diferença</p>
-                  <p className={`financial-value text-xl ${difference >= 0 ? 'financial-positive' : 'financial-negative'}`}>{formatCurrency(difference)}</p>
+                <div className={`rounded-xl border-2 p-3 ${
+                  Math.abs(difference) < 0.005 ? 'border-emerald-500/50 bg-emerald-50 dark:bg-emerald-900/10'
+                  : difference > 0 ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-900/10'
+                  : 'border-destructive/50 bg-destructive/10'
+                }`}>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Conferência final</p>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2 text-xs">
+                    <div><p className="text-muted-foreground">Esperado</p><p className="font-bold">{formatCurrency(expectedBalance)}</p></div>
+                    <div><p className="text-muted-foreground">Contado</p><p className="font-bold">{formatCurrency(Number(countedBalance))}</p></div>
+                  </div>
+                  <div className="mt-2 border-t pt-2">
+                    <p className="text-xs text-muted-foreground">Diferença</p>
+                    <p className={`text-2xl font-extrabold ${
+                      Math.abs(difference) < 0.005 ? 'text-emerald-700 dark:text-emerald-400'
+                      : difference > 0 ? 'text-amber-700 dark:text-amber-400'
+                      : 'text-destructive'
+                    }`}>
+                      {formatCurrency(difference)}
+                    </p>
+                    <p className="mt-1 text-[11px] font-semibold">
+                      {Math.abs(difference) < 0.005 ? '✓ Caixa conferido sem diferença'
+                      : difference > 0 ? '⚠ Sobra de caixa'
+                      : '⚠ Falta de caixa'}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-[10px] text-muted-foreground italic">
+                    Esta diferença considera apenas o dinheiro físico. PIX, cartão e valores em aberto não entram no cálculo do dinheiro contado.
+                  </p>
                 </div>
               )}
               <div><Label>Observações</Label><Input value={notes} onChange={e => setNotes(e.target.value)} disabled={closing.status === 'closed' && !isAdmin} /></div>
             </CardContent>
           </Card>
+
+          {/* Análise da IA para conferência */}
+          <CashClosingAIReview
+            businessDate={date}
+            operatorName={profile?.full_name}
+            physical={physicalCash}
+            financial={financialMovement}
+            difference={difference != null ? {
+              expectedCash: expectedBalance,
+              countedCash: Number(countedBalance) || 0,
+              difference,
+              status: Math.abs(difference) < 0.005 ? 'ok' : difference > 0 ? 'sobra' : 'falta',
+              isWithinTolerance: Math.abs(difference) < 0.005,
+            } : null}
+          />
 
           {/* Daily Operation Insights */}
           <DailyOperationInsights
