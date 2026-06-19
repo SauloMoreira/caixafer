@@ -493,9 +493,11 @@ export default function LivroCaixaPage() {
                 <Button variant="outline" size="sm" onClick={goNext} title="Próxima página">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => loadPage(date)} title="Reprocessar">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+                {!isCashierOnly && (
+                  <Button variant="outline" size="sm" onClick={() => loadPage(date)} title="Reprocessar">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                )}
                 {isAdmin && (
                   <Button size="sm" onClick={handlePrint} title="Imprimir (apenas administradores)">
                     <Printer className="h-4 w-4 mr-1" /> Imprimir
