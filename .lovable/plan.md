@@ -1,165 +1,106 @@
+# Livro de Movimento de Caixa Virtual
 
-# Revisão Contábil do Fechamento de Caixa
+Nova tela `/livro-caixa` que organiza os movimentos diários em formato de livro-caixa digital, consumindo os dados já existentes (sales, cash_entries, cash_closings) sem alterar a lógica contábil validada.
 
-Frente focada em **confiabilidade dos cálculos, clareza do extrato e legibilidade da impressão**. Executada em blocos incrementais, sem apagar histórico nem alterar dados já gravados.
+## Escopo
 
-## Princípio contábil central
+- Tela nova: **Livro de Movimento de Caixa**
+- Sem novas tabelas no banco — tudo derivado das tabelas atuais
+- Sem mudanças nos cálculos do fechamento, extrato ou camada `cash-accounting.ts`
+- Apenas Admin e Coordenador veem (mesmo padrão das telas financeiras)
 
-```
-Saldo esperado em DINHEIRO =
-  Saldo inicial em dinheiro
-+ Entradas em dinheiro (PDV dinheiro + SPR dinheiro + Fiado pago em dinheiro + Suprimentos + Entradas manuais)
-- Saídas em dinheiro (Sangrias + Despesas dinheiro + Devoluções dinheiro + Estornos dinheiro + Retiradas)
-```
+## Estrutura de cada "página"
 
-PIX, débito, crédito, fiado adquirido em aberto, vendas canceladas e valores previstos **NUNCA** entram no dinheiro físico — aparecem apenas no Movimento Financeiro.
+Cada página = uma `business_date`.
 
----
+**Cabeçalho:**
+- Título "LIVRO DE MOVIMENTO DE CAIXA"
+- Data
+- Nº da página (00001, 00002…) sequencial por empresa, atribuído pela ordem cronológica das datas que tiveram `cash_closings`
+- Empresa (nome do `companies`)
 
-## Bloco 1 — Diagnóstico (somente leitura, sem alterar dados)
+**Tabela:**
+| DOC Nº | Origem | Histórico | Entrada | Saída | Tipo de Documento | Referência do Documento |
 
-Mapear hoje a fórmula real em uso e identificar onde dinheiro/não-dinheiro estão misturados.
+DOC Nº reinicia em 01 a cada página.
 
-Arquivos a inspecionar:
-- `FechamentoPage.tsx`, `CashDayStatement.tsx`, `CashSessionPeriods.tsx`, `MovimentosPage.tsx`, `CashCorrectionReview.tsx`
-- DB: `set_cash_transfer_snapshot_fields`, `handle_fiado_payment`, `audit_cash_*`, `validate_*`
-- Utilitários de impressão (térmica/A4)
+## Regras de geração de linhas
 
-Entrega: `.lovable/diagnostico-fechamento.md` listando:
-- Fórmula atual de `expected_balance` (esperada vs implementada)
-- Pontos onde PIX/cartão entram indevidamente no dinheiro físico
-- Como pagamento SPR/Fiado é replicado em `cash_entries` (risco de duplicidade no trigger `handle_fiado_payment`)
-- Tratamento atual de estornos e cancelamentos
-- Identificadores únicos existentes em pagamentos consolidados
+**Consolidadas** (uma linha por categoria × forma de pagamento):
+- PDV → "PDV Dinheiro", "PDV PIX", "PDV Débito", "PDV Crédito", "PDV Transferência" (Origem: PDV)
+- Biblioteca → "Biblioteca PIX" etc. (Origem: Biblioteca) — derivado de vendas com `notes` contendo "biblioteca"
+- Bazar → idem (Origem: Bazar)
+- Doações consolidadas por forma quando sem documento (Origem: Doação)
 
-**Sem código alterado neste bloco.**
+**Analíticas** (uma linha por lançamento):
+- Mensalidades (sempre, mesmo sem doc)
+- Qualquer `cash_entry` com `document_type` ou `document_reference` preenchido
+- Despesas, sangrias, estornos, retiradas, suprimentos, ajustes manuais → uma linha cada
+- Pagamentos SPR/Fiado → uma linha cada (Origem: SPR/Fiado)
 
----
+**Origem** segue o `source_type`/categoria do lançamento original: PDV, Biblioteca, Bazar, SPR, Fiado, Mensalidade, Doação, Despesa, Sangria, Estorno, Ajuste Manual, Suprimento, Outro.
 
-## Bloco 2 — Camada de cálculo unificada (frontend)
+**Histórico** = padrão "Origem + Forma de pagamento" para consolidados, ou "Tipo + descrição" para analíticos.
 
-Criar um único módulo `src/lib/cash-accounting.ts` que toda a tela e a impressão usam, eliminando divergências entre views.
+## Rodapé da página
 
-Funções puras:
-- `computePhysicalCash(session, sales, entries)` → `{ openingBalance, cashIn, cashOut, expectedCash, breakdown }`
-- `computeFinancialMovement(sales, entries, fiadoPayments)` → totais por forma de pagamento + em aberto + cancelado + estornado
-- `computeClosingDifference(expectedCash, countedCash)` → `{ diff, status: 'ok'|'sobra'|'falta' }`
+- Total Entradas (soma de toda coluna Entrada)
+- Total Saídas (soma de toda coluna Saída)
+- Saldo Anterior (saldo esperado em dinheiro físico da última página com movimento anterior à data, usando `computePhysicalCash`)
+- Saldo Atual (saldo esperado em dinheiro físico do dia)
+- Detalhamento por forma de pagamento (dinheiro, PIX, débito, crédito, transferência)
 
-Regras explícitas (com testes):
-- `payment_method='dinheiro'` → caixa físico
-- `pix|debito|credito|transferencia` → só financeiro
-- `spr_fiado_charges` (aquisição) → nunca soma em dinheiro
-- `spr_fiado_payments` em dinheiro → soma; em PIX/cartão → só financeiro
-- `is_deleted=true` ou status cancelado → fora dos totais positivos, somados em "Cancelado"
-- Estorno em dinheiro → saída; estorno não-dinheiro → só financeiro
+Todos os totais consomem `src/lib/cash-accounting.ts` (sem recriar fórmulas).
 
-Sem mexer em triggers de DB neste bloco — apenas leitura agregada no cliente, mesma fonte para tela e impressão.
+## Quando não houver movimento
 
----
+- Cabeçalho preenchido, tabela vazia
+- Mensagem central: "NÃO HOUVE MOVIMENTO NESTA DATA"
+- Totais zerados; Saldo Anterior = Saldo Atual = último saldo conhecido
+- Sem número de página (mostra "—")
 
-## Bloco 3 — Testes contábeis (Vitest)
+## Tela de consulta
 
-`src/lib/__tests__/cash-accounting.test.ts` cobrindo os 6 cenários do pedido:
+**Filtros:** data específica, intervalo de datas, busca por nº da página, empresa (no momento sempre a empresa atual).
 
-1. Caixa sem diferença (100 + 50 PDV$ + 20 Fiado$ − 30 sangria = 140)
-2. PIX não entra no dinheiro (esperado = 100)
-3. Cartão não entra no dinheiro (esperado = 100)
-4. Fiado adquirido não entra (esperado = 100)
-5. Fiado pago em dinheiro entra (esperado = 160)
-6. Sangria reduz o esperado (100 + 100 − 50 = 150)
+**Navegação:** botões Página Anterior / Próxima / Ir para Hoje.
 
-Bloco só é considerado concluído quando todos passarem.
+**Ações:** Visualizar, Imprimir (térmica 80mm + A4 paisagem para auditoria), Reprocessar (recarrega dados — não altera nada).
 
----
+## Layout visual
 
-## Bloco 4 — Novo Extrato / Tela de Fechamento
+- Estética de livro-caixa: cabeçalho destacado, tabela com linhas separadas, fontes legíveis, rodapé contábil
+- Impressão **B&W**, A4 paisagem para o livro completo (mais legível para auditoria), com cabeçalho e rodapé fixos
+- Botão extra para impressão térmica 80mm resumida
 
-Reorganizar `FechamentoPage` / `CashDayStatement` em duas seções claramente separadas:
+## Implementação técnica
 
-**A) Caixa Físico (Dinheiro)**
-- Saldo inicial · Entradas em dinheiro · Saídas em dinheiro · Saldo esperado · Valor contado · Diferença · Status (OK/Sobra/Falta)
+**Arquivos novos:**
+- `src/lib/cash-book.ts` — funções puras: `buildBookPage(date, sales, entries, prevBalance)` → lista de linhas + totais; `assignPageNumbers(closings)` → mapa date→número
+- `src/pages/LivroCaixaPage.tsx` — tela completa
+- Rota `/livro-caixa` em `App.tsx`
+- Item de menu no `sidebar-config.tsx` para Admin/Coordenador
 
-**B) Movimento Financeiro do Dia**
-- Vendas por forma de pagamento · Pagamentos SPR por forma · Pagamentos Fiado por forma · Total vendido · Total recebido · Em aberto · Cancelado · Estornado
+**Dados consumidos** (sem migrations):
+- `cash_closings` (datas + saldo inicial para sequência de páginas e cálculo de saldo anterior)
+- `sales` + `sale_items.notes` para Bazar/Biblioteca
+- `cash_entries` para mensalidades, doações, despesas, etc.
+- `spr_fiado_payments` (já espelhados em `cash_entries` via trigger — usar `cash_entries` para não duplicar)
 
-**Listagens detalhadas:**
-- Entradas em dinheiro: hora, origem (PDV/SPR/Fiado/Suprimento), descrição, valor, usuário, ID
-- Saídas em dinheiro: hora, tipo (Sangria/Despesa/Estorno/Devolução/Ajuste), descrição, valor, usuário, ID
-- Movimentos não-dinheiro: agrupados por forma, com aviso "não compõem o dinheiro físico"
+**Garantias contábeis:**
+- Testes adicionais em `src/lib/__tests__/cash-book.test.ts` validando:
+  - Total Entradas − Total Saídas + Saldo Anterior = Saldo Atual
+  - Saldo Atual = `computePhysicalCash(...).expectedCash` para o mesmo dia
+  - Bazar/Biblioteca + outras formas PDV = total de vendas (sem duplicidade)
+- Nenhuma alteração em `cash-accounting.ts`, `FechamentoPage.tsx`, `CashDayStatement.tsx`, `CashAnalyticalStatement.tsx`
 
-**Bloco de conferência destacado** ao final com saldo esperado × contado × diferença e a mensagem explicativa pedida.
+## Critérios de aceite
 
-Sem alterar regras de negócio — só reorganizar a visualização sobre os dados já existentes.
-
----
-
-## Bloco 5 — Análise da IA (Conferência)
-
-Edge Function `analyze-cash-closing` (Lovable AI, `google/gemini-3-flash-preview`) recebe o snapshot do fechamento e devolve:
-- Possíveis causas da diferença
-- Lançamentos em dinheiro a conferir
-- Sangrias/despesas do dia
-- SPR/Fiado recebidos em dinheiro
-- Pagamentos PIX/cartão que NÃO deveriam estar no dinheiro físico
-- Cancelamentos/estornos · movimentos manuais · operações sem ID
-- Sugestões objetivas
-
-Componente `CashClosingAIReview` exibido na tela de fechamento. **Read-only**, não altera dados.
-
----
-
-## Bloco 6 — Impressão legível (alta legibilidade)
-
-Layout dedicado de impressão do fechamento (`CashClosingPrintout`):
-- Texto preto (#000), nada de cinza claro
-- Fonte base 14px; títulos 16–18px; valores totais em negrito; diferença em destaque grande
-- Tabelas com bordas visíveis, espaçamento generoso
-- Boa renderização em P&B
-- Cabeçalho (casa, data, operador, hora impressão) · Resumo financeiro · Detalhamento (Entradas, Saídas, PDV, SPR, Fiado, Sangrias, Despesas, Estornos, Cancelamentos) · Campos de assinatura (operador + administrador) · Observações
-- Mesma fonte de dados do módulo `cash-accounting.ts` (tela = impressão)
-
-Mantém a impressão térmica existente intacta; este layout é específico A4 para conferência contábil.
-
----
-
-## Bloco 7 — Validação de pagamentos SPR/Fiado e identificadores
-
-Conferir (e corrigir se necessário) que:
-- `handle_fiado_payment` não duplica valor no caixa físico
-- Pagamentos consolidados aparecem **uma única vez** mesmo quitando vários itens
-- Cada pagamento tem identificador único rastreável (`payment_id`/`source_id`)
-
-Se faltar identificador estável, criar migration mínima adicionando coluna `payment_group_id` em `spr_fiado_payments` (sem apagar dados existentes).
-
----
-
-## Bloco 8 — Relatório final
-
-Documento curto com: causas encontradas, correções aplicadas, validações, testes executados e pendências residuais. Confirmação de que o caixa ficou consistente e auditável.
-
----
-
-## Regras de execução
-
-- Incremental: rodar um bloco por vez, validar, seguir.
-- Não apagar histórico nem reescrever dados já gravados.
-- Toda alteração de cálculo preserva rastreabilidade (audit logs continuam).
-- Não misturar com outras frentes.
-- Parar ao fim de cada bloco para validação do usuário.
-
-## Detalhes técnicos
-
-- Fonte única de cálculo no frontend: `src/lib/cash-accounting.ts` (puro, testável).
-- Testes: Vitest, sem dependência de DB.
-- IA: Edge Function Supabase via Lovable AI Gateway (Gemini 3 Flash).
-- Impressão A4: componente React isolado + CSS `@media print` com `color-adjust: exact`.
-- Migrations só se Bloco 7 confirmar necessidade.
-
-## Recomendação de partida
-
-Começar por **Bloco 1 (diagnóstico)** isoladamente — leitura pura, zero risco — para ancorar correções dos blocos seguintes em fatos do código atual, não em suposições.
-
-**Perguntas antes de aprovar:**
-1. OK iniciar somente pelo Bloco 1 (diagnóstico, sem código)?
-2. Impressão A4 dedicada de fechamento substitui a térmica de 80mm para esse relatório, ou ambas devem coexistir?
-3. Há um dia/sessão específico com diferença para usar como caso real no diagnóstico?
+- Tela acessível em `/livro-caixa` para Admin/Coordenador
+- Páginas numeradas sequencialmente
+- DOC Nº reinicia a cada página
+- Consolidação + analítico conforme regras
+- Coluna Origem presente
+- Mensagem "NÃO HOUVE MOVIMENTO NESTA DATA" quando aplicável
+- Filtros, navegação e impressão funcionais
+- Testes passando, sem regressão no fechamento
