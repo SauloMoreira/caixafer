@@ -266,6 +266,8 @@ export default function LivroCaixaPage() {
         table.totals tr.strong td { font-weight: 900; font-size: 13px; border-top: 2px solid #000; }
         table.totals td.r, table.totals th.r { text-align: right; }
         .sign { margin-top: 16px; display: flex; justify-content: space-between; font-size: 12px; gap: 16px; }
+        .admin-block { margin-top: 8px; border: 2px solid #000; padding: 6px 8px; }
+        .admin-title { font-weight: 900; text-transform: uppercase; font-size: 11px; margin-bottom: 4px; letter-spacing: 0.5px; }
         .company-footer { margin-top: 12px; text-align: center; font-size: 10px; border-top: 1px dashed #000; padding-top: 4px; }
         .company-footer p { margin: 1px 0; }
         @media print { @page { size: A4 landscape; margin: 8mm; } }
