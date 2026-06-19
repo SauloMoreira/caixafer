@@ -296,6 +296,18 @@ export default function CashAnalyticalStatement({
     return map;
   }, [operations]);
 
+  const saidasPorForma = useMemo(() => {
+    const map: Record<string, number> = {};
+    operations.forEach((o) => {
+      if (o.cancelled) return;
+      if (o.signed_amount >= 0) return;
+      map[o.payment_method] = (map[o.payment_method] || 0) + Math.abs(o.signed_amount);
+    });
+    return map;
+  }, [operations]);
+
+  const totalSaidasForma = Object.values(saidasPorForma).reduce((s, v) => s + v, 0);
+
   const resumoPorCategoria = useMemo(() => {
     const map: Record<string, number> = {};
     operations.forEach((o) => {
@@ -350,11 +362,26 @@ export default function CashAnalyticalStatement({
       return `<div class="${cls}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`;
     };
 
-    const formaBloco = PAYMENT_METHODS
+    const entradasLines = PAYMENT_METHODS
       .map((pm) => ({ label: pm.label, value: resumoPorForma[pm.value] || 0 }))
       .filter((r) => r.value > 0)
       .map((r) => row(r.label + ':', formatCurrency(r.value)))
-      .join('') + row('Total recebido:', formatCurrency(totalRecebido), { strong: true });
+      .join('');
+    const saidasLines = PAYMENT_METHODS
+      .map((pm) => ({ label: pm.label, value: saidasPorForma[pm.value] || 0 }))
+      .filter((r) => r.value > 0)
+      .map((r) => row(r.label + ':', '- ' + formatCurrency(r.value)))
+      .join('');
+    const formaBloco =
+      '<p class="sub-title">Entradas</p>' +
+      entradasLines +
+      row('Total recebido:', formatCurrency(totalRecebido), { strong: true }) +
+      (totalSaidasForma > 0
+        ? '<p class="sub-title">Saídas</p>' +
+          saidasLines +
+          row('Total de saídas:', '- ' + formatCurrency(totalSaidasForma), { strong: true }) +
+          row('Líquido por forma:', formatCurrency(totalRecebido - totalSaidasForma), { strong: true })
+        : '');
 
     const catBloco = resumoPorCategoria.length === 0
       ? '<p class="empty">Sem movimentações.</p>'
@@ -538,14 +565,29 @@ export default function CashAnalyticalStatement({
                 </div>
 
                 <Section title="Resumo por forma de pagamento">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mt-1 mb-1">Entradas</p>
                   {PAYMENT_METHODS.map((pm) => {
                     const v = resumoPorForma[pm.value] || 0;
                     if (v === 0) return null;
-                    return <Row key={pm.value} l={pm.label} v={formatCurrency(v)} />;
+                    return <Row key={`in-${pm.value}`} l={pm.label} v={formatCurrency(v)} />;
                   })}
                   <Row l="Total recebido" v={formatCurrency(totalRecebido)} strong />
+
+                  {totalSaidasForma > 0 && (
+                    <>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mt-3 mb-1">Saídas</p>
+                      {PAYMENT_METHODS.map((pm) => {
+                        const v = saidasPorForma[pm.value] || 0;
+                        if (v === 0) return null;
+                        return <Row key={`out-${pm.value}`} l={pm.label} v={`- ${formatCurrency(v)}`} negative />;
+                      })}
+                      <Row l="Total de saídas" v={`- ${formatCurrency(totalSaidasForma)}`} strong negative />
+                      <Row l="Líquido por forma" v={formatCurrency(totalRecebido - totalSaidasForma)} strong />
+                    </>
+                  )}
+
                   <p className="text-[11px] italic text-muted-foreground mt-2">
-                    Somente dinheiro compõe o caixa físico. PIX/cartão/transferência compõem apenas o movimento financeiro.
+                    Somente dinheiro compõe o caixa físico. PIX/cartão/transferência compõem apenas o movimento financeiro. Saídas (sangrias, despesas, estornos) reduzem o caixa.
                   </p>
                 </Section>
 
