@@ -355,86 +355,168 @@ export default function FechamentoPage() {
   };
 
   const handlePrint = async () => {
-    const content = reportRef.current;
-    if (!content) { window.print(); return; }
-
     const companyData = getCompanyDocumentData(company);
-    const companyLegalLine = getCompanyLegalLine(companyData);
-    const companyHeaderLines = getCompanyHeaderLines(companyData);
     const companyFooterLines = getCompanyFooterLines(companyData);
-    const companyHeaderHtml = `
-      <div style="text-align:center;margin-bottom:10px;">
-        ${companyData.logoUrl ? `<img src="${escapeHtml(companyData.logoUrl)}" alt="Logo da empresa ${escapeHtml(companyData.name)}" style="display:block;margin:0 auto 8px;max-width:140px;max-height:70px;object-fit:contain;" />` : ''}
-        <h2>${escapeHtml(companyData.name)}</h2>
-        ${companyLegalLine ? `<p style="text-align:center;font-size:13px;color:#000;font-weight:600;margin:2px 0;">${escapeHtml(companyLegalLine)}</p>` : ''}
-        ${companyHeaderLines.map((line) => `<p style="text-align:center;font-size:13px;color:#000;font-weight:600;margin:2px 0;">${escapeHtml(line)}</p>`).join('')}
-        <p style="text-align:center;font-size:14px;color:#000;font-weight:700;margin-top:6px;">Fechamento de Caixa</p>
-      </div>
-    `;
 
-    const diffStatus = difference == null ? null
-      : Math.abs(difference) < 0.005 ? 'OK · Caixa conferido'
-      : difference > 0 ? 'SOBRA de caixa'
-      : 'FALTA de caixa';
+    // ===== Status do caixa =====
+    const statusLine = difference == null
+      ? 'STATUS: CAIXA EM ABERTO'
+      : Math.abs(difference) < 0.005 ? 'STATUS: CAIXA SEM DIFERENCA'
+      : difference > 0 ? 'STATUS: SOBRA DE CAIXA'
+      : 'STATUS: FALTA DE CAIXA';
+
+    // ===== PDV — formas de pagamento =====
+    const pdvRows = PAYMENT_METHODS
+      .map(pm => ({ label: pm.label, value: salesByMethod[pm.value] || 0 }))
+      .filter(r => r.value > 0);
+    const pdvTotal = pdvRows.reduce((s, r) => s + r.value, 0);
+
+    // ===== Mensalidades (entradas categorizadas) =====
+    const isMensalidade = (c?: string | null) =>
+      !!c && /mensalidad/i.test(c);
+    const mensalidadesEntries = rawEntries.filter(
+      (e: any) => !e.is_deleted && e.entry_type === 'income' && isMensalidade(e.category),
+    );
+    const mensalidadesTotal = mensalidadesEntries.reduce((s: number, e: any) => s + Number(e.amount), 0);
+    const mensalidadesQtd = mensalidadesEntries.length;
+
+    // ===== Movimentações por categoria (entradas líquidas) =====
+    const byCategory: Record<string, number> = {};
+    rawEntries.forEach((e: any) => {
+      if (e.is_deleted) return;
+      const cat = (e.category || 'Outras').toString();
+      const signed = e.entry_type === 'income' ? Number(e.amount) : -Number(e.amount);
+      byCategory[cat] = (byCategory[cat] || 0) + signed;
+    });
+    const categoryRows = Object.entries(byCategory)
+      .filter(([, v]) => Math.abs(v) > 0.005)
+      .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+
+    // ===== Resumo geral por forma de pagamento (vendas + entradas) =====
+    const totalByMethod: Record<string, number> = {};
+    rawSales.forEach((s: any) => {
+      if (s.is_deleted) return;
+      const k = s.payment_method as string;
+      totalByMethod[k] = (totalByMethod[k] || 0) + Number(s.total_amount);
+    });
+    rawEntries.forEach((e: any) => {
+      if (e.is_deleted || e.entry_type !== 'income') return;
+      const k = (e.payment_method || 'dinheiro') as string;
+      totalByMethod[k] = (totalByMethod[k] || 0) + Number(e.amount);
+    });
+    const totalRecebido = Object.values(totalByMethod).reduce((s, v) => s + v, 0);
+
+    const HR = '================================';
+    const row = (label: string, value: string, opts: { bold?: boolean; strong?: boolean } = {}) => {
+      const cls = opts.strong ? 'row strong' : opts.bold ? 'row bold' : 'row';
+      return `<div class="${cls}"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`;
+    };
+    const hr = () => `<div class="hr">${HR}</div>`;
+    const title = (t: string) => `<p class="block-title">${escapeHtml(t)}</p>`;
 
     await printHtmlDocument({
       title: `Fechamento ${formatDate(date)}`,
       bodyHtml: `
-        ${companyHeaderHtml}
-        <div class="sep"></div>
-        <div class="row"><span>Data:</span><span class="bold">${escapeHtml(formatDate(date))}</span></div>
-        <div class="row"><span>Operador:</span><span class="bold">${escapeHtml(profile?.full_name || '—')}</span></div>
-        <div class="sep"></div>
-        <p class="section-title">A) Caixa Físico (Dinheiro)</p>
-        <div class="row"><span>Saldo inicial:</span><span>${escapeHtml(formatCurrency(physicalCash.openingBalance))}</span></div>
-        <div class="row"><span>Entradas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashIn))}</span></div>
-        <div class="row"><span>Saídas em dinheiro:</span><span>${escapeHtml(formatCurrency(physicalCash.cashOut))}</span></div>
-        <div class="row bold-row"><span>SALDO ESPERADO:</span><span>${escapeHtml(formatCurrency(expectedBalance))}</span></div>
-        ${countedBalance ? `
-          <div class="row"><span>Saldo contado:</span><span class="bold">${escapeHtml(formatCurrency(Number(countedBalance)))}</span></div>
-          <div class="row diff-row"><span>DIFERENÇA:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>
-          <p class="status-line">${escapeHtml(diffStatus || '')}</p>
-        ` : ''}
-        <div class="sep"></div>
-        <p class="section-title">B) Movimento Financeiro</p>
-        <div class="row"><span>Vendas (todas):</span><span>${escapeHtml(formatCurrency(stats.sales))}</span></div>
-        <div class="row"><span>Entradas (todas):</span><span>${escapeHtml(formatCurrency(stats.income))}</span></div>
-        <div class="row"><span>Saídas (todas):</span><span>${escapeHtml(formatCurrency(stats.expense))}</span></div>
-        ${financialMovement.cancelledTotal > 0 ? `<div class="row"><span>Cancelados:</span><span>${escapeHtml(formatCurrency(financialMovement.cancelledTotal))}</span></div>` : ''}
-        ${Object.keys(salesByMethod).length > 0 ? `
-          <p class="subsection">Vendas por forma de pagamento</p>
-          ${PAYMENT_METHODS.map(pm => {
-            const val = salesByMethod[pm.value] || 0;
-            if (val === 0) return '';
-            return `<div class="row small"><span>${escapeHtml(pm.label)}:</span><span>${escapeHtml(formatCurrency(val))}</span></div>`;
-          }).join('')}
-        ` : ''}
-        <p class="note">PIX, cartões e transferências NÃO compõem o dinheiro físico.</p>
-        ${notes ? `<div class="sep"></div><p class="obs"><strong>Obs:</strong> ${escapeHtml(notes)}</p>` : ''}
-        <div class="sep"></div>
-        <div style="text-align:center;font-size:13px;color:#000;font-weight:600;display:flex;flex-direction:column;gap:4px;">
-          ${companyFooterLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
+        <div class="header">
+          <p class="company">${escapeHtml(companyData.name.toUpperCase())}</p>
+          <p class="doc">FECHAMENTO DE CAIXA</p>
+          <p class="meta">Data: ${escapeHtml(formatDate(date))}</p>
+          <p class="meta">Operador: ${escapeHtml(profile?.full_name || '—')}</p>
         </div>
+        ${hr()}
+        <p class="status">${escapeHtml(statusLine)}</p>
+        ${hr()}
+
+        ${title('PDV — FORMAS DE PAGAMENTO')}
+        ${pdvRows.length === 0
+          ? `<p class="empty">Sem vendas no PDV.</p>`
+          : pdvRows.map(r => row(r.label + ':', formatCurrency(r.value))).join('')}
+        ${row('Total PDV:', formatCurrency(pdvTotal), { strong: true })}
+        ${hr()}
+
+        ${title('MENSALIDADES')}
+        ${row('Total recebido:', formatCurrency(mensalidadesTotal), { bold: true })}
+        ${row('Quantidade:', String(mensalidadesQtd))}
+        ${hr()}
+
+        ${title('MOVIMENTAÇÕES POR CATEGORIA')}
+        ${categoryRows.length === 0
+          ? `<p class="empty">Sem movimentações no período.</p>`
+          : categoryRows.map(([cat, val]) => row(`${cat}:`, formatCurrency(val))).join('')}
+        ${hr()}
+
+        ${title('RESUMO GERAL')}
+        ${PAYMENT_METHODS.map(pm => {
+          const val = totalByMethod[pm.value] || 0;
+          if (val === 0) return '';
+          return row(pm.label + ':', formatCurrency(val));
+        }).join('')}
+        ${row('Total recebido:', formatCurrency(totalRecebido), { strong: true })}
+        <div class="spacer"></div>
+        ${row('Saldo inicial:', formatCurrency(physicalCash.openingBalance))}
+        ${row('Entradas dinheiro:', formatCurrency(physicalCash.cashIn))}
+        ${row('Saídas dinheiro:', formatCurrency(physicalCash.cashOut))}
+        ${row('Saldo esperado:', formatCurrency(expectedBalance), { strong: true })}
+        ${countedBalance ? row('Valor contado:', formatCurrency(Number(countedBalance)), { bold: true }) : ''}
+        ${countedBalance ? `<div class="diff"><span>DIFERENÇA:</span><span>${escapeHtml(formatCurrency(difference || 0))}</span></div>` : ''}
+        ${hr()}
+
+        ${notes ? `<p class="obs"><strong>Obs:</strong> ${escapeHtml(notes)}</p>${hr()}` : ''}
+
+        <div class="sign">
+          <p>Assinatura Operador:</p>
+          <p class="line">_________________________</p>
+          <p>Assinatura Conferente:</p>
+          <p class="line">_________________________</p>
+        </div>
+
+        ${companyFooterLines.length > 0 ? `
+          <div class="footer">
+            ${companyFooterLines.map((l) => `<p>${escapeHtml(l)}</p>`).join('')}
+          </div>
+        ` : ''}
       `,
       styles: `
-        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000; }
-        body { margin: 0; padding: 10mm; font-family: 'Courier New', monospace; font-size: 15px; line-height: 1.7; color: #000; }
-        h2 { text-align: center; font-size: 20px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
-        .row { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; padding: 1px 0; }
-        .row.small { font-size: 14px; padding-left: 8px; }
-        .sep { border-bottom: 2px dashed #000; margin: 8px 0; }
-        .bold { font-weight: 800; }
-        .bold-row { font-weight: 900; font-size: 17px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; margin: 4px 0; }
-        .diff-row { font-weight: 900; font-size: 18px; border: 2px solid #000; padding: 6px 8px; margin: 6px 0; }
-        .status-line { text-align: center; font-weight: 900; font-size: 16px; margin: 4px 0 8px; text-transform: uppercase; }
-        .section-title { font-weight: 900; font-size: 16px; text-transform: uppercase; margin: 4px 0 6px; border-bottom: 1px solid #000; }
-        .subsection { font-weight: 800; font-size: 14px; margin: 6px 0 2px; }
-        .note { font-size: 12px; font-style: italic; margin-top: 4px; }
-        .obs { font-size: 14px; }
-        img { display: block; margin: 0 auto 8px; max-width: 140px; max-height: 70px; object-fit: contain; }
-        @media print { @page { size: 80mm auto; margin: 0; } body { padding: 5mm; } }
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; }
+        html, body { background: #fff; }
+        body {
+          margin: 0;
+          padding: 4mm;
+          font-family: 'Courier New', 'Consolas', monospace;
+          font-size: 14px;
+          font-weight: 700;
+          line-height: 1.45;
+          color: #000;
+        }
+        .header { text-align: center; margin-bottom: 6px; }
+        .company { font-size: 18px; font-weight: 900; margin: 0 0 4px; letter-spacing: 0.5px; }
+        .doc { font-size: 16px; font-weight: 900; margin: 2px 0; }
+        .meta { font-size: 14px; font-weight: 700; margin: 1px 0; }
+        .hr { font-weight: 900; letter-spacing: 0; text-align: center; margin: 6px 0; font-size: 14px; overflow: hidden; white-space: nowrap; }
+        .status { text-align: center; font-weight: 900; font-size: 16px; margin: 6px 0; text-transform: uppercase; }
+        .block-title { font-weight: 900; font-size: 15px; text-transform: uppercase; margin: 4px 0 6px; text-align: left; }
+        .row { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 700; padding: 2px 0; }
+        .row.bold { font-weight: 900; }
+        .row.strong { font-weight: 900; font-size: 15px; border-top: 2px solid #000; padding-top: 4px; margin-top: 2px; }
+        .empty { font-size: 13px; font-style: italic; margin: 2px 0; }
+        .spacer { height: 6px; }
+        .diff {
+          display: flex; justify-content: space-between; gap: 8px;
+          font-weight: 900; font-size: 18px;
+          border: 3px solid #000; padding: 6px 8px; margin: 8px 0 4px;
+        }
+        .obs { font-size: 13px; font-weight: 700; margin: 4px 0; }
+        .sign { margin-top: 10px; font-size: 13px; font-weight: 700; }
+        .sign p { margin: 2px 0; }
+        .sign .line { letter-spacing: 1px; }
+        .footer { text-align: center; font-size: 12px; font-weight: 700; margin-top: 8px; }
+        .footer p { margin: 1px 0; }
+        @media print {
+          @page { size: 80mm auto; margin: 0; }
+          body { padding: 3mm; }
+        }
       `,
-      windowFeatures: 'width=500,height=700',
+      windowFeatures: 'width=420,height=700',
     });
   };
 
