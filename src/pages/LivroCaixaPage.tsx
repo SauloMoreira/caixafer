@@ -300,7 +300,22 @@ export default function LivroCaixaPage() {
 
   // ------------- UI -------------
   return (
-    <div className="max-w-7xl mx-auto space-y-4 p-2">
+    <div
+      className="max-w-7xl mx-auto space-y-4 p-2 select-none relative"
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+    >
+      {obscured && (
+        <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-xl flex items-center justify-center pointer-events-none">
+          <div className="text-center space-y-2 p-6">
+            <Lock className="h-10 w-10 mx-auto text-muted-foreground" />
+            <p className="text-sm font-semibold uppercase tracking-wider">Conteúdo Protegido</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Os dados foram ocultados porque a janela perdeu o foco. Retorne ao aplicativo para visualizá-los novamente.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Filtros e navegação */}
       <Card>
         <CardHeader className="pb-3">
