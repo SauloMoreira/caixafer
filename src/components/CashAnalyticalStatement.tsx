@@ -550,14 +550,29 @@ export default function CashAnalyticalStatement({
                 </div>
 
                 <Section title="Resumo por forma de pagamento">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mt-1 mb-1">Entradas</p>
                   {PAYMENT_METHODS.map((pm) => {
                     const v = resumoPorForma[pm.value] || 0;
                     if (v === 0) return null;
-                    return <Row key={pm.value} l={pm.label} v={formatCurrency(v)} />;
+                    return <Row key={`in-${pm.value}`} l={pm.label} v={formatCurrency(v)} />;
                   })}
                   <Row l="Total recebido" v={formatCurrency(totalRecebido)} strong />
+
+                  {totalSaidasForma > 0 && (
+                    <>
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mt-3 mb-1">Saídas</p>
+                      {PAYMENT_METHODS.map((pm) => {
+                        const v = saidasPorForma[pm.value] || 0;
+                        if (v === 0) return null;
+                        return <Row key={`out-${pm.value}`} l={pm.label} v={`- ${formatCurrency(v)}`} negative />;
+                      })}
+                      <Row l="Total de saídas" v={`- ${formatCurrency(totalSaidasForma)}`} strong negative />
+                      <Row l="Líquido por forma" v={formatCurrency(totalRecebido - totalSaidasForma)} strong />
+                    </>
+                  )}
+
                   <p className="text-[11px] italic text-muted-foreground mt-2">
-                    Somente dinheiro compõe o caixa físico. PIX/cartão/transferência compõem apenas o movimento financeiro.
+                    Somente dinheiro compõe o caixa físico. PIX/cartão/transferência compõem apenas o movimento financeiro. Saídas (sangrias, despesas, estornos) reduzem o caixa.
                   </p>
                 </Section>
 
