@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock, Calendar, Wallet, Receipt, CreditCard, BookOpen, ShoppingBag, Banknote, Info } from 'lucide-react';
 import { useCompany } from '@/hooks/useCompany';
-import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
+import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
 import { printReceipt as printReceiptRawBT } from '@/utils/printer';
 import { computePhysicalCash, computeFinancialMovement } from '@/lib/cash-accounting';
