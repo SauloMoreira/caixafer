@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Printer, FileText, ChevronDown, ChevronUp, ArrowRightLeft, User, Clock, Calendar, Wallet, Receipt, CreditCard, BookOpen, ShoppingBag, Banknote, Info } from 'lucide-react';
 import { useCompany } from '@/hooks/useCompany';
-import { getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
+import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
 import { printHtmlDocument } from '@/lib/print-window';
 import { printReceipt as printReceiptRawBT } from '@/utils/printer';
 import { computePhysicalCash, computeFinancialMovement } from '@/lib/cash-accounting';
@@ -235,32 +235,197 @@ export default function CashDayStatement({
   const companyFooterLines = getCompanyFooterLines(companyData);
 
   const handlePrint = async () => {
-    const content = printRef.current;
-    if (!content) return;
+    const companyHeader = getCompanyHeaderLines(companyData);
+    const companyFooter = getCompanyFooterLines(companyData);
+    const HR = '================================';
+    const hr = () => `<div class="hr">${HR}</div>`;
+    const title = (t: string) => `<p class="block-title">${escapeHtml(t)}</p>`;
+    const subtitle = (t: string) => `<p class="sub-title">» ${escapeHtml(t)}</p>`;
+    const row = (l: string, v: string, opts: { bold?: boolean; strong?: boolean } = {}) => {
+      const cls = opts.strong ? 'row strong' : opts.bold ? 'row bold' : 'row';
+      return `<div class="${cls}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`;
+    };
+    const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    const pmLabel = (m: string | null | undefined) => (m ? PAYMENT_METHOD_LABELS[m] || m : '—');
+
+    // --- Cálculos consolidados (espelham a UI) ---
+    const classify = (e: EntryRow): string => {
+      const cat = (e.category || '').toLowerCase();
+      const desc = (e.description || '').toLowerCase();
+      if (cat.includes('biblioteca') || desc.includes('biblioteca')) return 'Biblioteca';
+      if (cat.includes('bazar') || desc.includes('bazar')) return 'Bazar';
+      return 'Outras';
+    };
+    const signed = (e: EntryRow) => (e.entry_type === 'income' ? Number(e.amount) : -Number(e.amount));
+
+    const movGroups: Record<string, EntryRow[]> = {};
+    movementEntries.forEach(e => { (movGroups[classify(e)] = movGroups[classify(e)] || []).push(e); });
+    const movOrder = ['Biblioteca', 'Bazar', 'Outras'].filter(k => movGroups[k]?.length);
+    const movGrand = movementEntries.reduce((s, e) => s + signed(e), 0);
+    const mensalidadesTotal = mensalidadeEntries.reduce((s, e) => s + Number(e.amount), 0);
+    const doacoesTotal = doacaoEntries.reduce((s, e) => s + Number(e.amount), 0);
+
+    // Entradas/Saídas consolidadas do dia
+    const inByMethod: Record<string, number> = {};
+    const outByMethod: Record<string, number> = {};
+    const addIn = (m: string | null | undefined, v: number) => { if (!v) return; const k = m || 'dinheiro'; inByMethod[k] = (inByMethod[k] || 0) + v; };
+    const addOut = (m: string | null | undefined, v: number) => { if (!v) return; const k = m || 'dinheiro'; outByMethod[k] = (outByMethod[k] || 0) + v; };
+    Object.entries(salesByMethod).forEach(([k, v]) => addIn(k, v));
+    Object.entries(sprByMethod).forEach(([k, v]) => addIn(k, v));
+    mensalidadeEntries.forEach(e => addIn(e.payment_method, Number(e.amount)));
+    doacaoEntries.forEach(e => addIn(e.payment_method, Number(e.amount)));
+    movementEntries.forEach(e => {
+      if (e.entry_type === 'income') addIn(e.payment_method, Number(e.amount));
+      else addOut(e.payment_method, Number(e.amount));
+    });
+    const totalIn = Object.values(inByMethod).reduce((s, v) => s + v, 0);
+    const totalOut = Object.values(outByMethod).reduce((s, v) => s + v, 0);
+    const cashIn = inByMethod['dinheiro'] || 0;
+    const cashOut = outByMethod['dinheiro'] || 0;
+
+    // --- Blocos HTML ---
+    const pdvBlock = (Object.keys(salesByMethod).length === 0)
+      ? `<p class="empty">Sem vendas no PDV.</p>`
+      : PAYMENT_METHODS.map(pm => {
+          const v = salesByMethod[pm.value] || 0;
+          return v > 0 ? row(pm.label + ':', formatCurrency(v)) : '';
+        }).join('') + row('Total PDV:', formatCurrency(totalSales), { strong: true });
+
+    const blocoMetodo = (titulo: string, totals: Record<string, number>) => {
+      const items = PAYMENT_METHODS.map(pm => {
+        const v = totals[pm.value] || 0;
+        return v > 0 ? row(pm.label + ':', formatCurrency(v)) : '';
+      }).join('');
+      if (!items) return '';
+      const tot = Object.values(totals).reduce((s, v) => s + v, 0);
+      return title(titulo) + items + row(`Total ${titulo}:`, formatCurrency(tot), { bold: true }) + hr();
+    };
+
+    const mensalidadesBlock = mensalidadeEntries.length === 0 ? '' :
+      title('MENSALIDADES') +
+      mensalidadeEntries.map(e => row(
+        `${fmtTime(e.created_at)} ${e.description || e.category}`.slice(0, 40),
+        formatCurrency(e.amount) + ' · ' + pmLabel(e.payment_method),
+      )).join('') +
+      row('Total Mensalidades:', formatCurrency(mensalidadesTotal), { strong: true }) +
+      row('Quantidade:', String(mensalidadeEntries.length)) + hr();
+
+    const doacoesBlock = doacaoEntries.length === 0 ? '' :
+      title('DOAÇÕES') +
+      doacaoEntries.map(e => row(
+        `${fmtTime(e.created_at)} ${e.description || e.category}`.slice(0, 40),
+        formatCurrency(e.amount) + ' · ' + pmLabel(e.payment_method),
+      )).join('') +
+      row('Total Doações:', formatCurrency(doacoesTotal), { strong: true }) + hr();
+
+    const movBlock = movementEntries.length === 0 ? '' :
+      title('MOVIMENTAÇÕES') +
+      movOrder.map(g => {
+        const rows = movGroups[g];
+        const sub = rows.reduce((s, e) => s + signed(e), 0);
+        return subtitle(g) +
+          rows.map(e => row(
+            `${fmtTime(e.created_at)} ${e.entry_type === 'income' ? '[+]' : '[-]'} ${e.description || e.category}`.slice(0, 40),
+            formatCurrency(e.amount) + ' · ' + pmLabel(e.payment_method),
+          )).join('') +
+          row(`Total ${g}:`, formatCurrency(sub), { bold: true });
+      }).join('') +
+      row('Total Geral Movimentações:', formatCurrency(movGrand), { strong: true }) + hr();
+
+    const sprBlock = sprEntries.length === 0 ? '' :
+      title('PAGAMENTOS SPR') +
+      sprEntries.map(e => row(
+        `${fmtTime(e.created_at)} ${e.description || 'SPR'}`.slice(0, 40),
+        formatCurrency(e.amount) + ' · ' + pmLabel(e.payment_method),
+      )).join('') +
+      row('Total SPR:', formatCurrency(Object.values(sprByMethod).reduce((s, v) => s + v, 0)), { strong: true }) + hr();
+
+    const consolidadoBlock = (totalIn === 0 && totalOut === 0) ? '' :
+      title('CONSOLIDADO DO DIA') +
+      `<p class="sub-title">Entradas por forma de pagamento</p>` +
+      PAYMENT_METHODS.map(pm => {
+        const v = inByMethod[pm.value] || 0;
+        return v > 0 ? row(pm.label + ':', formatCurrency(v)) : '';
+      }).join('') +
+      row('Total de entradas:', formatCurrency(totalIn), { bold: true }) +
+      (totalOut > 0 ? (
+        `<p class="sub-title">Saídas por forma de pagamento</p>` +
+        PAYMENT_METHODS.map(pm => {
+          const v = outByMethod[pm.value] || 0;
+          return v > 0 ? row(pm.label + ':', '-' + formatCurrency(v)) : '';
+        }).join('') +
+        row('Total de saídas:', '-' + formatCurrency(totalOut), { bold: true })
+      ) : '') +
+      row('Movimento líquido do dia:', formatCurrency(totalIn - totalOut), { strong: true }) + hr();
+
+    const reconciliacaoBlock =
+      title('RECONCILIAÇÃO DINHEIRO FÍSICO') +
+      row('Saldo inicial:', formatCurrency(openingBalance)) +
+      row('+ Entradas dinheiro:', formatCurrency(cashIn)) +
+      row('- Saídas dinheiro:', '-' + formatCurrency(cashOut)) +
+      row('SALDO ESPERADO:', formatCurrency(expectedBalance), { strong: true }) +
+      `<p class="note">PIX, debito, credito e transferencia NAO compoem o dinheiro fisico do caixa.</p>` + hr();
 
     await printHtmlDocument({
       title: `Extrato do Caixa - ${formatDate(businessDate)}`,
-      bodyHtml: content.innerHTML,
-      styles: `
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; padding: 12mm; color: #000; }
-        h2 { text-align: center; font-size: 18px; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
-        h3 { font-size: 15px; font-weight: 700; margin: 14px 0 6px; border-bottom: 2px solid #555; padding-bottom: 4px; }
-        img { display: block; margin: 0 auto 8px; max-width: 150px; max-height: 72px; object-fit: contain; }
-        .subtitle { text-align: center; font-size: 13px; color: #000; font-weight: 600; margin-bottom: 8px; }
-        .row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 14px; }
-        .row.bold { font-weight: 800; font-size: 15px; }
-        .sep { border-bottom: 2px dashed #444; margin: 8px 0; }
-        .section { margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; margin: 6px 0; }
-        th, td { padding: 5px 8px; text-align: left; font-size: 13px; border-bottom: 1px solid #bbb; color: #000; }
-        th { background: #e0e0e0; font-weight: 800; border-bottom: 2px solid #555; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
-        td.right, th.right { text-align: right; }
-        .total-row td { background: #c8dff5; font-weight: 800; font-size: 14px; }
-        .footer { text-align: center; font-size: 12px; color: #000; font-weight: 600; margin-top: 16px; }
-        @media print { @page { size: A4; margin: 10mm; } }
+      bodyHtml: `
+        <div class="header">
+          <p class="company">${escapeHtml(companyData.name.toUpperCase())}</p>
+          <p class="doc">EXTRATO DE CONFERÊNCIA DO CAIXA</p>
+          ${companyHeader.map(l => `<p class="meta">${escapeHtml(l)}</p>`).join('')}
+          <p class="meta">Data: ${escapeHtml(formatDate(businessDate))}</p>
+          <p class="meta">Aberto por: ${escapeHtml(openedByName)}</p>
+          <p class="meta">Responsável atual: ${escapeHtml(currentResponsibleName)}</p>
+          <p class="meta">Abertura: ${escapeHtml(formatDateTime(closingCreatedAt))}</p>
+          ${closedAt ? `<p class="meta">Fechamento: ${escapeHtml(formatDateTime(closedAt))}</p>` : ''}
+          <p class="meta">Status: ${closingStatus === 'closed' ? 'FECHADO' : 'ABERTO'}</p>
+          ${transferCount > 0 ? `<p class="meta">Transferências: ${transferCount}</p>` : ''}
+        </div>
+        ${hr()}
+        ${title('PDV — FORMAS DE PAGAMENTO')}
+        ${pdvBlock}
+        ${hr()}
+        ${blocoMetodo('BAZAR', bazarByMethod)}
+        ${blocoMetodo('BIBLIOTECA', bibliotecaByMethod)}
+        ${sprBlock}
+        ${mensalidadesBlock}
+        ${doacoesBlock}
+        ${movBlock}
+        ${consolidadoBlock}
+        ${reconciliacaoBlock}
+        <div class="sign">
+          <p>Operador: ______________________</p>
+          <p>Conferente: ____________________</p>
+          <p>Data/hora: ___/___/______  ___:___</p>
+        </div>
+        ${companyFooter.length > 0 ? `<div class="footer">${companyFooter.map(l => `<p>${escapeHtml(l)}</p>`).join('')}<p>Extrato gerado em ${escapeHtml(formatDateTime(new Date().toISOString()))}</p></div>` : ''}
       `,
-      windowFeatures: 'width=600,height=900',
+      styles: `
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; color: #000 !important; background: transparent !important; box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { background: #fff !important; }
+        body { margin: 0; padding: 4mm; font-family: 'Courier New', 'Consolas', monospace; font-size: 13px; font-weight: 700; line-height: 1.4; color: #000; }
+        .header { text-align: center; margin-bottom: 6px; }
+        .company { font-size: 17px; font-weight: 900; margin: 0 0 3px; letter-spacing: 0.5px; }
+        .doc { font-size: 15px; font-weight: 900; margin: 2px 0; }
+        .meta { font-size: 12px; font-weight: 700; margin: 1px 0; }
+        .hr { font-weight: 900; text-align: center; margin: 6px 0; font-size: 13px; overflow: hidden; white-space: nowrap; }
+        .block-title { font-weight: 900; font-size: 14px; text-transform: uppercase; margin: 6px 0 4px; border-bottom: 2px solid #000; padding-bottom: 2px; }
+        .sub-title { font-weight: 900; font-size: 13px; margin: 4px 0 2px; text-transform: uppercase; }
+        .row { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; padding: 2px 0; }
+        .row.bold { font-weight: 900; }
+        .row.strong { font-weight: 900; font-size: 14px; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 4px 0; margin: 4px 0; }
+        .empty { font-size: 12px; font-style: italic; margin: 2px 0; }
+        .note { font-size: 11px; font-style: italic; margin: 4px 0 0; }
+        .sign { margin-top: 10px; font-size: 12px; font-weight: 700; }
+        .sign p { margin: 4px 0; }
+        .footer { text-align: center; font-size: 11px; font-weight: 700; margin-top: 8px; border-top: 1px dashed #000; padding-top: 4px; }
+        .footer p { margin: 1px 0; }
+        @media print {
+          @page { size: 80mm auto; margin: 0; }
+          body { padding: 3mm; }
+        }
+      `,
+      windowFeatures: 'width=420,height=700',
     });
   };
 
