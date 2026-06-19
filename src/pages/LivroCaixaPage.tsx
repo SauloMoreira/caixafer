@@ -49,6 +49,27 @@ export default function LivroCaixaPage() {
   const [closings, setClosings] = useState<ClosingRow[]>([]);
   const [page, setPage] = useState<CashBookPage | null>(null);
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [obscured, setObscured] = useState(false);
+
+  // Proteção anti-captura: ofusca o conteúdo quando a janela perde foco
+  // (ex.: ferramenta de recorte/print screen ativa) ou fica oculta.
+  useEffect(() => {
+    const onBlur = () => setObscured(true);
+    const onFocus = () => setObscured(false);
+    const onVis = () => setObscured(document.visibilityState !== 'visible');
+    const block = (e: Event) => e.preventDefault();
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    document.addEventListener('copy', block);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+      document.removeEventListener('copy', block);
+    };
+  }, []);
+
 
   const pageNumbers = useMemo(() => assignPageNumbers(closings), [closings]);
   const pageNumber = pageNumbers[date] || null;
@@ -159,6 +180,7 @@ export default function LivroCaixaPage() {
   // ------------- Print (A4 paisagem, B&W) -------------
   const handlePrint = async () => {
     if (!page) return;
+    if (!isAdmin) return;
 
     const rowsHtml = !page.hasMovement
       ? `<tr><td colspan="7" class="empty">NÃO HOUVE MOVIMENTO NESTA DATA</td></tr>`
@@ -278,7 +300,22 @@ export default function LivroCaixaPage() {
 
   // ------------- UI -------------
   return (
-    <div className="max-w-7xl mx-auto space-y-4 p-2">
+    <div
+      className="max-w-7xl mx-auto space-y-4 p-2 select-none relative"
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
+    >
+      {obscured && (
+        <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-xl flex items-center justify-center pointer-events-none">
+          <div className="text-center space-y-2 p-6">
+            <Lock className="h-10 w-10 mx-auto text-muted-foreground" />
+            <p className="text-sm font-semibold uppercase tracking-wider">Conteúdo Protegido</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Os dados foram ocultados porque a janela perdeu o foco. Retorne ao aplicativo para visualizá-los novamente.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Filtros e navegação */}
       <Card>
         <CardHeader className="pb-3">
@@ -334,9 +371,11 @@ export default function LivroCaixaPage() {
                 <Button variant="outline" size="sm" onClick={() => loadPage(date)} title="Reprocessar">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
-                <Button size="sm" onClick={handlePrint} title="Imprimir">
-                  <Printer className="h-4 w-4 mr-1" /> Imprimir
-                </Button>
+                {isAdmin && (
+                  <Button size="sm" onClick={handlePrint} title="Imprimir (apenas administradores)">
+                    <Printer className="h-4 w-4 mr-1" /> Imprimir
+                  </Button>
+                )}
               </div>
             </div>
           </div>
