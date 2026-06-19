@@ -32,6 +32,7 @@ import MfaVerifyPage from "@/pages/MfaVerifyPage";
 import HistoricoTransferenciasPage from "@/pages/HistoricoTransferenciasPage";
 import EmpresaPage from "@/pages/EmpresaPage";
 import AuditoriaDiariaPage from "@/pages/AuditoriaDiariaPage";
+import LivroCaixaPage from "@/pages/LivroCaixaPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
