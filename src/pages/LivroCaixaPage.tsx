@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search } from 'lucide-react';
+import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock } from 'lucide-react';
 import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO } from '@/lib/constants';
 import {
   buildCashBookPage,
