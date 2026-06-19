@@ -39,9 +39,8 @@ function shiftDate(iso: string, days: number): string {
 
 export default function LivroCaixaPage() {
   const { company } = useCompany();
-  const { isAdmin, profile, user } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const isCashierOnly = profile?.role === 'cashier';
-  const canExport = isAdmin || profile?.role === 'cash_coordinator';
   const MAX_DAYS_BACK_CASHIER = 7;
   const companyData = getCompanyDocumentData(company);
   const companyHeader = getCompanyHeaderLines(companyData);
