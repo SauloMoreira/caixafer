@@ -652,38 +652,65 @@ export default function CashDayStatement({
                   </div>
                 )}
 
-                {/* Consolidado geral do dia por forma de pagamento */}
+                {/* Consolidado geral do dia por forma de pagamento (ENTRADAS líquidas) */}
                 {(() => {
-                  const allByMethod: Record<string, number> = {};
-                  const add = (method: string, val: number) => {
-                    if (!method || !val || val === 0) return;
-                    allByMethod[method] = (allByMethod[method] || 0) + val;
-                  };
-                  // Vendas PDV
-                  Object.entries(salesByMethod).forEach(([k, v]) => add(k, v));
-                  // Bazar
-                  Object.entries(bazarByMethod).forEach(([k, v]) => add(k, v));
-                  // Biblioteca
-                  Object.entries(bibliotecaByMethod).forEach(([k, v]) => add(k, v));
-                  // SPR
-                  Object.entries(sprByMethod).forEach(([k, v]) => add(k, v));
-                  // Mensalidades
-                  mensalidadeEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
-                  // Doações
-                  doacaoEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
-                  // Movimentações (valor absoluto)
-                  movementEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
+                  // ENTRADAS por método (sem duplicar: Bazar/Biblioteca JÁ estão em salesByMethod)
+                  const inByMethod: Record<string, number> = {};
+                  // SAÍDAS por método (sangrias, despesas, retiradas)
+                  const outByMethod: Record<string, number> = {};
 
-                  const hasValues = Object.values(allByMethod).some(v => v > 0);
-                  if (!hasValues) return null;
-                  const total = Object.values(allByMethod).reduce((s, v) => s + v, 0);
+                  const addIn = (method: string | null | undefined, val: number) => {
+                    if (!val) return;
+                    const k = method || 'dinheiro';
+                    inByMethod[k] = (inByMethod[k] || 0) + val;
+                  };
+                  const addOut = (method: string | null | undefined, val: number) => {
+                    if (!val) return;
+                    const k = method || 'dinheiro';
+                    outByMethod[k] = (outByMethod[k] || 0) + val;
+                  };
+
+                  // Vendas PDV (já inclui Bazar e Biblioteca — não somar de novo)
+                  Object.entries(salesByMethod).forEach(([k, v]) => addIn(k, v));
+                  // Pagamentos SPR
+                  Object.entries(sprByMethod).forEach(([k, v]) => addIn(k, v));
+                  // Mensalidades (income)
+                  mensalidadeEntries.forEach(e => addIn(e.payment_method, Number(e.amount)));
+                  // Doações (income)
+                  doacaoEntries.forEach(e => addIn(e.payment_method, Number(e.amount)));
+                  // Movimentações: separar income vs expense
+                  movementEntries.forEach(e => {
+                    if (e.entry_type === 'income') addIn(e.payment_method, Number(e.amount));
+                    else addOut(e.payment_method, Number(e.amount));
+                  });
+
+                  const totalIn = Object.values(inByMethod).reduce((s, v) => s + v, 0);
+                  const totalOut = Object.values(outByMethod).reduce((s, v) => s + v, 0);
+                  const netDay = totalIn - totalOut;
+                  const cashIn = inByMethod['dinheiro'] || 0;
+                  const cashOut = outByMethod['dinheiro'] || 0;
+                  const expectedCashCheck = Number(openingBalance) + cashIn - cashOut;
+
+                  if (totalIn === 0 && totalOut === 0) return null;
 
                   return (
-                    <div className="mt-4">
-                      <PaymentMethodGrid totals={allByMethod} title="Consolidado Geral do Dia por Forma de Pagamento" />
-                      <div className="mt-1 rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2 flex justify-between items-center">
-                        <span className="text-xs font-bold uppercase tracking-wider">Total Geral do Dia</span>
-                        <span className="text-sm font-bold text-primary">{formatCurrency(total)}</span>
+                    <div className="mt-4 space-y-2">
+                      <PaymentMethodGrid totals={inByMethod} title="Entradas do Dia por Forma de Pagamento" />
+                      {totalOut > 0 && (
+                        <PaymentMethodGrid totals={outByMethod} title="Saídas do Dia por Forma de Pagamento" />
+                      )}
+                      <div className="rounded-lg border bg-muted/30 px-3 py-2 space-y-1 text-xs">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total de entradas</span><span className="font-semibold text-emerald-600">{formatCurrency(totalIn)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total de saídas</span><span className="font-semibold text-destructive">−{formatCurrency(totalOut)}</span></div>
+                        <div className="flex justify-between border-t pt-1.5 mt-1"><span className="font-bold">Movimento líquido do dia</span><span className="font-bold">{formatCurrency(netDay)}</span></div>
+                      </div>
+                      <div className="rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2 space-y-1 text-xs">
+                        <p className="font-bold uppercase tracking-wider text-primary text-[11px] flex items-center gap-1"><Info className="h-3 w-3" /> Reconciliação do Dinheiro Físico</p>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Saldo inicial</span><span>{formatCurrency(openingBalance)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">+ Entradas em dinheiro</span><span className="text-emerald-700">{formatCurrency(cashIn)}</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">− Saídas em dinheiro</span><span className="text-destructive">−{formatCurrency(cashOut)}</span></div>
+                        <div className="flex justify-between border-t border-primary/30 pt-1.5 mt-1"><span className="font-bold">Saldo esperado em dinheiro</span><span className="font-bold text-primary">{formatCurrency(expectedCashCheck)}</span></div>
+                        <p className="text-[10px] text-muted-foreground pt-1 italic">PIX, débito, crédito e transferência aparecem nas entradas acima mas NÃO compõem o dinheiro físico do caixa.</p>
                       </div>
                     </div>
                   );
