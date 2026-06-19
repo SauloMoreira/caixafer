@@ -474,6 +474,27 @@ export default function LivroCaixaPage() {
             </div>
           </div>
         )}
+
+        {page && isAdmin && (
+          <div className="border-t-2 border-foreground/30 p-4 bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                Reconciliação de Dinheiro Físico · Apenas Administradores
+              </p>
+            </div>
+            <div className="space-y-1 text-sm max-w-md">
+              <div className="flex justify-between border-b border-foreground/10 pb-1">
+                <span className="text-muted-foreground">Saldo Anterior (dinheiro físico)</span>
+                <span className="font-mono">{formatCurrency(page.saldoAnterior)}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t-2 border-foreground/30">
+                <span className="font-bold uppercase text-sm">Saldo Atual (dinheiro físico)</span>
+                <span className="font-mono font-bold text-primary">{formatCurrency(page.saldoAtual)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       <p className="text-[11px] text-muted-foreground text-center italic">
