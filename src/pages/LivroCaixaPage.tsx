@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search } from 'lucide-react';
+import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock } from 'lucide-react';
 import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO } from '@/lib/constants';
 import {
   buildCashBookPage,
@@ -37,6 +38,7 @@ function shiftDate(iso: string, days: number): string {
 
 export default function LivroCaixaPage() {
   const { company } = useCompany();
+  const { isAdmin } = useAuth();
   const companyData = getCompanyDocumentData(company);
   const companyHeader = getCompanyHeaderLines(companyData);
   const companyFooter = getCompanyFooterLines(companyData);
@@ -214,8 +216,7 @@ export default function LivroCaixaPage() {
             <tbody>
               <tr><td>Total de Entradas</td><td class="r">${escapeHtml(formatCurrency(page.totalEntradas))}</td></tr>
               <tr><td>Total de Saídas</td><td class="r">${escapeHtml(formatCurrency(page.totalSaidas))}</td></tr>
-              <tr><td>Saldo Anterior (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAnterior))}</td></tr>
-              <tr class="strong"><td>SALDO ATUAL (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAtual))}</td></tr>
+              <tr class="strong"><td>TOTAL DO DIA (Entradas − Saídas)</td><td class="r">${escapeHtml(formatCurrency(page.totalEntradas - page.totalSaidas))}</td></tr>
             </tbody>
           </table>
 
@@ -224,6 +225,17 @@ export default function LivroCaixaPage() {
             <tbody>${methodRows || '<tr><td colspan="3" class="empty">—</td></tr>'}</tbody>
           </table>
         </div>
+
+        ${isAdmin ? `
+        <div class="admin-block">
+          <div class="admin-title">Reconciliação de Dinheiro Físico (Administrativo)</div>
+          <table class="totals">
+            <tbody>
+              <tr><td>Saldo Anterior (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAnterior))}</td></tr>
+              <tr class="strong"><td>SALDO ATUAL (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAtual))}</td></tr>
+            </tbody>
+          </table>
+        </div>` : ''}
 
         <div class="sign">
           <div>Operador: _______________________</div>
@@ -254,6 +266,8 @@ export default function LivroCaixaPage() {
         table.totals tr.strong td { font-weight: 900; font-size: 13px; border-top: 2px solid #000; }
         table.totals td.r, table.totals th.r { text-align: right; }
         .sign { margin-top: 16px; display: flex; justify-content: space-between; font-size: 12px; gap: 16px; }
+        .admin-block { margin-top: 8px; border: 2px solid #000; padding: 6px 8px; }
+        .admin-title { font-weight: 900; text-transform: uppercase; font-size: 11px; margin-bottom: 4px; letter-spacing: 0.5px; }
         .company-footer { margin-top: 12px; text-align: center; font-size: 10px; border-top: 1px dashed #000; padding-top: 4px; }
         .company-footer p { margin: 1px 0; }
         @media print { @page { size: A4 landscape; margin: 8mm; } }
@@ -420,13 +434,11 @@ export default function LivroCaixaPage() {
                   {formatCurrency(page.totalSaidas)}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-foreground/10 pb-1">
-                <span className="text-muted-foreground">Saldo Anterior (dinheiro físico)</span>
-                <span className="font-mono">{formatCurrency(page.saldoAnterior)}</span>
-              </div>
               <div className="flex justify-between pt-2 border-t-2 border-foreground/30">
-                <span className="font-bold uppercase text-sm">Saldo Atual (dinheiro físico)</span>
-                <span className="font-mono font-bold text-primary">{formatCurrency(page.saldoAtual)}</span>
+                <span className="font-bold uppercase text-sm">Total do Dia (Entradas − Saídas)</span>
+                <span className="font-mono font-bold text-primary">
+                  {formatCurrency(page.totalEntradas - page.totalSaidas)}
+                </span>
               </div>
             </div>
 
@@ -459,6 +471,27 @@ export default function LivroCaixaPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {page && isAdmin && (
+          <div className="border-t-2 border-foreground/30 p-4 bg-amber-50/50 dark:bg-amber-950/20">
+            <div className="flex items-center gap-2 mb-2">
+              <Lock className="h-3.5 w-3.5 text-amber-700 dark:text-amber-400" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
+                Reconciliação de Dinheiro Físico · Apenas Administradores
+              </p>
+            </div>
+            <div className="space-y-1 text-sm max-w-md">
+              <div className="flex justify-between border-b border-foreground/10 pb-1">
+                <span className="text-muted-foreground">Saldo Anterior (dinheiro físico)</span>
+                <span className="font-mono">{formatCurrency(page.saldoAnterior)}</span>
+              </div>
+              <div className="flex justify-between pt-2 border-t-2 border-foreground/30">
+                <span className="font-bold uppercase text-sm">Saldo Atual (dinheiro físico)</span>
+                <span className="font-mono font-bold text-primary">{formatCurrency(page.saldoAtual)}</span>
+              </div>
             </div>
           </div>
         )}
