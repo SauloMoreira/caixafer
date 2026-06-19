@@ -25,6 +25,7 @@ import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
 import CashDayStatement from '@/components/CashDayStatement';
 import CashClosingAIReview from '@/components/CashClosingAIReview';
+import CashAnalyticalStatement from '@/components/CashAnalyticalStatement';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/hooks/useCompany';
 import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
@@ -1029,6 +1030,15 @@ export default function FechamentoPage() {
                   Reabrir Caixa
                 </Button>
               )}
+
+              <CashAnalyticalStatement
+                businessDate={date}
+                openingBalance={Number(openingBalance)}
+                countedBalance={countedBalance ? Number(countedBalance) : null}
+                operatorName={responsibilityNames[closing.current_responsible_id] || profile?.full_name}
+                openedAt={closing.created_at}
+                closedAt={closing.closed_at}
+              />
 
               <div className="grid grid-cols-5 gap-2">
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><Printer className="h-4 w-4" /><span className="text-[10px]">Imprimir</span></Button>
