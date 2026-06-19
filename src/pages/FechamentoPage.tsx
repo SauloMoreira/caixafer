@@ -1031,6 +1031,15 @@ export default function FechamentoPage() {
                 </Button>
               )}
 
+              <CashAnalyticalStatement
+                businessDate={date}
+                openingBalance={Number(openingBalance)}
+                countedBalance={countedBalance ? Number(countedBalance) : null}
+                operatorName={responsibilityNames[closing.current_responsible_id] || profile?.full_name}
+                openedAt={closing.created_at}
+                closedAt={closing.closed_at}
+              />
+
               <div className="grid grid-cols-5 gap-2">
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><Printer className="h-4 w-4" /><span className="text-[10px]">Imprimir</span></Button>
                 <Button variant="outline" className="h-12 flex-col gap-1" onClick={handlePrint}><FileText className="h-4 w-4" /><span className="text-[10px]">PDF</span></Button>
