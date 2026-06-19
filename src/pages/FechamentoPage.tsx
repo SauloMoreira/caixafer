@@ -25,6 +25,7 @@ import CashTransferHistory from '@/components/CashTransferHistory';
 import CashSessionPeriods from '@/components/CashSessionPeriods';
 import CashDayStatement from '@/components/CashDayStatement';
 import CashClosingAIReview from '@/components/CashClosingAIReview';
+import CashAnalyticalStatement from '@/components/CashAnalyticalStatement';
 import { useQuery } from '@tanstack/react-query';
 import { useCompany } from '@/hooks/useCompany';
 import { escapeHtml, getCompanyDocumentData, getCompanyFooterLines, getCompanyHeaderLines, getCompanyLegalLine } from '@/lib/company-documents';
