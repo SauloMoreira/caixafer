@@ -4,6 +4,7 @@ import {
   ArrowRightLeft,
   ArrowUpDown,
   BarChart3,
+  Book,
   Boxes,
   Brain,
   Building2,
