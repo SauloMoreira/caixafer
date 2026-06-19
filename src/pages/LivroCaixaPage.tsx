@@ -49,6 +49,27 @@ export default function LivroCaixaPage() {
   const [closings, setClosings] = useState<ClosingRow[]>([]);
   const [page, setPage] = useState<CashBookPage | null>(null);
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [obscured, setObscured] = useState(false);
+
+  // Proteção anti-captura: ofusca o conteúdo quando a janela perde foco
+  // (ex.: ferramenta de recorte/print screen ativa) ou fica oculta.
+  useEffect(() => {
+    const onBlur = () => setObscured(true);
+    const onFocus = () => setObscured(false);
+    const onVis = () => setObscured(document.visibilityState !== 'visible');
+    const block = (e: Event) => e.preventDefault();
+    window.addEventListener('blur', onBlur);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    document.addEventListener('copy', block);
+    return () => {
+      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+      document.removeEventListener('copy', block);
+    };
+  }, []);
+
 
   const pageNumbers = useMemo(() => assignPageNumbers(closings), [closings]);
   const pageNumber = pageNumbers[date] || null;
