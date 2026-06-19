@@ -141,6 +141,7 @@ export const pageTitles: Record<string, string> = {
   '/pdv': 'PDV',
   '/movimentos': 'Movimentos',
   '/fechamento': 'Fechamento',
+  '/livro-caixa': 'Livro de Caixa',
   '/produtos': 'Produtos',
   '/categorias': 'Categorias',
   '/categorias-movimentacao': 'Categorias de Movimentação',
