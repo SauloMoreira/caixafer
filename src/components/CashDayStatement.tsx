@@ -398,7 +398,9 @@ export default function CashDayStatement({
                 )}
 
                 {/* Mensalidade entries */}
-                {mensalidadeEntries.length > 0 && (
+                {mensalidadeEntries.length > 0 && (() => {
+                  const mensalidadesTotal = mensalidadeEntries.reduce((s, e) => s + Number(e.amount), 0);
+                  return (
                   <div className="mt-4 space-y-1.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mensalidades</p>
                     <div className="rounded-lg border overflow-hidden">
@@ -414,11 +416,17 @@ export default function CashDayStatement({
                               <td className="px-2 py-1">{e.document_type ? DOCUMENT_TYPE_LABELS[e.document_type] || e.document_type : '—'}{e.document_reference ? ` #${e.document_reference}` : ''}</td>
                             </tr>
                           ))}
+                          <tr className="border-t-2 border-border bg-muted/40">
+                            <td colSpan={2} className="px-2 py-1.5 text-right font-bold uppercase">Total Mensalidades</td>
+                            <td className="px-2 py-1.5 text-right font-bold text-primary">{formatCurrency(mensalidadesTotal)}</td>
+                            <td colSpan={2} className="px-2 py-1.5 text-left text-[10px] text-muted-foreground">{mensalidadeEntries.length} lançamento(s)</td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
 
                 {/* Doação entries */}
                 {doacaoEntries.length > 0 && (
@@ -443,33 +451,70 @@ export default function CashDayStatement({
                   </div>
                 )}
 
-                {/* All Movements */}
-                {movementEntries.length > 0 && (
-                  <div className="mt-4 space-y-1.5">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Movimentações</p>
-                    <div className="rounded-lg border overflow-hidden">
-                      <table className="w-full text-[11px]">
-                        <thead><tr className="bg-muted/50"><th className="px-2 py-1.5 text-left">Hora</th><th className="px-2 py-1.5 text-left">Tipo</th><th className="px-2 py-1.5 text-left">Categoria</th><th className="px-2 py-1.5 text-right">Valor</th><th className="px-2 py-1.5 text-left">Pgto</th><th className="px-2 py-1.5 text-left">Doc</th></tr></thead>
-                        <tbody>
-                          {movementEntries.map(e => (
-                            <tr key={e.id} className="border-t border-border/50">
-                              <td className="px-2 py-1">{new Date(e.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
-                              <td className="px-2 py-1">
-                                <Badge variant={e.entry_type === 'income' ? 'default' : 'destructive'} className="text-[9px] px-1 py-0">
-                                  {e.entry_type === 'income' ? 'Entrada' : 'Saída'}
-                                </Badge>
-                              </td>
-                              <td className="px-2 py-1">{e.description || e.category}</td>
-                              <td className="px-2 py-1 text-right font-medium">{formatCurrency(e.amount)}</td>
-                              <td className="px-2 py-1">{e.payment_method ? PAYMENT_METHOD_LABELS[e.payment_method] || e.payment_method : '—'}</td>
-                              <td className="px-2 py-1">{e.document_type ? DOCUMENT_TYPE_LABELS[e.document_type] || e.document_type : '—'}{e.document_reference ? ` #${e.document_reference}` : ''}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                {/* All Movements — agrupado por categoria (Biblioteca, Bazar, Outras) */}
+                {movementEntries.length > 0 && (() => {
+                  const classify = (e: EntryRow): string => {
+                    const cat = (e.category || '').toLowerCase();
+                    const desc = (e.description || '').toLowerCase();
+                    if (cat.includes('biblioteca') || desc.includes('biblioteca')) return 'Biblioteca';
+                    if (cat.includes('bazar') || desc.includes('bazar')) return 'Bazar';
+                    return 'Outras';
+                  };
+                  const groups: Record<string, EntryRow[]> = {};
+                  movementEntries.forEach(e => {
+                    const g = classify(e);
+                    (groups[g] = groups[g] || []).push(e);
+                  });
+                  const order = ['Biblioteca', 'Bazar', 'Outras'].filter(k => groups[k]?.length);
+                  const signed = (e: EntryRow) => (e.entry_type === 'income' ? Number(e.amount) : -Number(e.amount));
+                  const grandTotal = movementEntries.reduce((s, e) => s + signed(e), 0);
+
+                  return (
+                    <div className="mt-4 space-y-3">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Movimentações</p>
+                      {order.map(groupName => {
+                        const rows = groups[groupName];
+                        const subTotal = rows.reduce((s, e) => s + signed(e), 0);
+                        return (
+                          <div key={groupName} className="space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">» {groupName}</p>
+                            <div className="rounded-lg border overflow-hidden">
+                              <table className="w-full text-[11px]">
+                                <thead><tr className="bg-muted/50"><th className="px-2 py-1.5 text-left">Hora</th><th className="px-2 py-1.5 text-left">Tipo</th><th className="px-2 py-1.5 text-left">Categoria</th><th className="px-2 py-1.5 text-right">Valor</th><th className="px-2 py-1.5 text-left">Pgto</th><th className="px-2 py-1.5 text-left">Doc</th></tr></thead>
+                                <tbody>
+                                  {rows.map(e => (
+                                    <tr key={e.id} className="border-t border-border/50">
+                                      <td className="px-2 py-1">{new Date(e.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                                      <td className="px-2 py-1">
+                                        <Badge variant={e.entry_type === 'income' ? 'default' : 'destructive'} className="text-[9px] px-1 py-0">
+                                          {e.entry_type === 'income' ? 'Entrada' : 'Saída'}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-2 py-1">{e.description || e.category}</td>
+                                      <td className="px-2 py-1 text-right font-medium">{formatCurrency(e.amount)}</td>
+                                      <td className="px-2 py-1">{e.payment_method ? PAYMENT_METHOD_LABELS[e.payment_method] || e.payment_method : '—'}</td>
+                                      <td className="px-2 py-1">{e.document_type ? DOCUMENT_TYPE_LABELS[e.document_type] || e.document_type : '—'}{e.document_reference ? ` #${e.document_reference}` : ''}</td>
+                                    </tr>
+                                  ))}
+                                  <tr className="border-t-2 border-border bg-muted/40">
+                                    <td colSpan={3} className="px-2 py-1.5 text-right font-bold uppercase">Total {groupName}</td>
+                                    <td className="px-2 py-1.5 text-right font-bold text-primary">{formatCurrency(subTotal)}</td>
+                                    <td colSpan={2} className="px-2 py-1.5 text-left text-[10px] text-muted-foreground">{rows.length} lançamento(s)</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div className="rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs font-bold uppercase tracking-wider">Total Geral Movimentações</span>
+                        <span className="text-sm font-bold text-primary">{formatCurrency(grandTotal)}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
+
 
                 {/* SPR detail entries */}
                 {sprEntries.length > 0 && (
