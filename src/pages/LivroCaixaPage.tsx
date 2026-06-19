@@ -74,6 +74,73 @@ export default function LivroCaixaPage() {
     };
   }, []);
 
+  // Bloqueio de impressão para Caixa: intercepta Ctrl/Cmd+P, evento beforeprint
+  // e sobrescreve window.print enquanto a página estiver montada.
+  useEffect(() => {
+    if (!isCashierOnly) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        e.stopPropagation();
+        logSecurityIncident({
+          incident_type: 'livro_caixa_print_blocked',
+          context: { role: profile?.role, date },
+          severity: 'medium',
+        });
+      }
+    };
+    const onBeforePrint = () => {
+      logSecurityIncident({
+        incident_type: 'livro_caixa_print_blocked',
+        context: { role: profile?.role, date, trigger: 'beforeprint' },
+        severity: 'medium',
+      });
+    };
+    const originalPrint = window.print;
+    window.print = () => {
+      logSecurityIncident({
+        incident_type: 'livro_caixa_print_blocked',
+        context: { role: profile?.role, date, trigger: 'window.print' },
+        severity: 'medium',
+      });
+    };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('beforeprint', onBeforePrint);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('beforeprint', onBeforePrint);
+      window.print = originalPrint;
+    };
+  }, [isCashierOnly, profile?.role, date]);
+
+  // Auditoria de acesso à página
+  const accessLoggedRef = useRef(false);
+  useEffect(() => {
+    if (accessLoggedRef.current || !profile) return;
+    accessLoggedRef.current = true;
+    logSecurityEvent({
+      event_type: 'livro_caixa_accessed',
+      entity_type: 'cash_book',
+      action: 'VIEW',
+      severity: 'info',
+      notes: `Acesso ao Livro de Movimento de Caixa (${profile.role})`,
+    });
+  }, [profile]);
+
+  // Log de consulta por data
+  useEffect(() => {
+    if (!profile) return;
+    logSecurityEvent({
+      event_type: 'livro_caixa_queried',
+      entity_type: 'cash_book',
+      action: 'QUERY',
+      severity: 'info',
+      business_date: date,
+      notes: `Consulta data ${date} (${profile.role})`,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
+
 
   const pageNumbers = useMemo(() => assignPageNumbers(closings), [closings]);
   const pageNumber = pageNumbers[date] || null;
