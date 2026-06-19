@@ -362,11 +362,26 @@ export default function CashAnalyticalStatement({
       return `<div class="${cls}"><span>${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`;
     };
 
-    const formaBloco = PAYMENT_METHODS
+    const entradasLines = PAYMENT_METHODS
       .map((pm) => ({ label: pm.label, value: resumoPorForma[pm.value] || 0 }))
       .filter((r) => r.value > 0)
       .map((r) => row(r.label + ':', formatCurrency(r.value)))
-      .join('') + row('Total recebido:', formatCurrency(totalRecebido), { strong: true });
+      .join('');
+    const saidasLines = PAYMENT_METHODS
+      .map((pm) => ({ label: pm.label, value: saidasPorForma[pm.value] || 0 }))
+      .filter((r) => r.value > 0)
+      .map((r) => row(r.label + ':', '- ' + formatCurrency(r.value)))
+      .join('');
+    const formaBloco =
+      '<p class="sub-title">Entradas</p>' +
+      entradasLines +
+      row('Total recebido:', formatCurrency(totalRecebido), { strong: true }) +
+      (totalSaidasForma > 0
+        ? '<p class="sub-title">Saídas</p>' +
+          saidasLines +
+          row('Total de saídas:', '- ' + formatCurrency(totalSaidasForma), { strong: true }) +
+          row('Líquido por forma:', formatCurrency(totalRecebido - totalSaidasForma), { strong: true })
+        : '');
 
     const catBloco = resumoPorCategoria.length === 0
       ? '<p class="empty">Sem movimentações.</p>'
