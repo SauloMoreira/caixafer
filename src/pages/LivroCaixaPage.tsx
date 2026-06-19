@@ -216,8 +216,7 @@ export default function LivroCaixaPage() {
             <tbody>
               <tr><td>Total de Entradas</td><td class="r">${escapeHtml(formatCurrency(page.totalEntradas))}</td></tr>
               <tr><td>Total de Saídas</td><td class="r">${escapeHtml(formatCurrency(page.totalSaidas))}</td></tr>
-              <tr><td>Saldo Anterior (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAnterior))}</td></tr>
-              <tr class="strong"><td>SALDO ATUAL (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAtual))}</td></tr>
+              <tr class="strong"><td>TOTAL DO DIA (Entradas − Saídas)</td><td class="r">${escapeHtml(formatCurrency(page.totalEntradas - page.totalSaidas))}</td></tr>
             </tbody>
           </table>
 
@@ -226,6 +225,17 @@ export default function LivroCaixaPage() {
             <tbody>${methodRows || '<tr><td colspan="3" class="empty">—</td></tr>'}</tbody>
           </table>
         </div>
+
+        ${isAdmin ? `
+        <div class="admin-block">
+          <div class="admin-title">Reconciliação de Dinheiro Físico (Administrativo)</div>
+          <table class="totals">
+            <tbody>
+              <tr><td>Saldo Anterior (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAnterior))}</td></tr>
+              <tr class="strong"><td>SALDO ATUAL (dinheiro físico)</td><td class="r">${escapeHtml(formatCurrency(page.saldoAtual))}</td></tr>
+            </tbody>
+          </table>
+        </div>` : ''}
 
         <div class="sign">
           <div>Operador: _______________________</div>
