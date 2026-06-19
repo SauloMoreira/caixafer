@@ -296,6 +296,18 @@ export default function CashAnalyticalStatement({
     return map;
   }, [operations]);
 
+  const saidasPorForma = useMemo(() => {
+    const map: Record<string, number> = {};
+    operations.forEach((o) => {
+      if (o.cancelled) return;
+      if (o.signed_amount >= 0) return;
+      map[o.payment_method] = (map[o.payment_method] || 0) + Math.abs(o.signed_amount);
+    });
+    return map;
+  }, [operations]);
+
+  const totalSaidasForma = Object.values(saidasPorForma).reduce((s, v) => s + v, 0);
+
   const resumoPorCategoria = useMemo(() => {
     const map: Record<string, number> = {};
     operations.forEach((o) => {
