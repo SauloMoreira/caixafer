@@ -38,6 +38,7 @@ function shiftDate(iso: string, days: number): string {
 
 export default function LivroCaixaPage() {
   const { company } = useCompany();
+  const { isAdmin } = useAuth();
   const companyData = getCompanyDocumentData(company);
   const companyHeader = getCompanyHeaderLines(companyData);
   const companyFooter = getCompanyFooterLines(companyData);
