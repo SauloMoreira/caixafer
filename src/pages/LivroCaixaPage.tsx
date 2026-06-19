@@ -369,13 +369,54 @@ export default function LivroCaixaPage() {
     });
   };
 
+  // Limites de data para Caixa
+  const minDateCashier = useMemo(() => shiftDate(todayISO(), -MAX_DAYS_BACK_CASHIER), []);
+  const maxDateCashier = todayISO();
+
+  const handleDateChange = (newDate: string) => {
+    if (isCashierOnly) {
+      if (newDate < minDateCashier || newDate > maxDateCashier) {
+        logSecurityIncident({
+          incident_type: 'livro_caixa_date_out_of_range',
+          context: { role: profile?.role, attempted: newDate, min: minDateCashier, max: maxDateCashier },
+          severity: 'low',
+        });
+        return;
+      }
+    }
+    setDate(newDate);
+  };
+
+  const watermarkText = profile
+    ? `${profile.full_name || 'Usuário'} · ${profile.role} · ${profile.id?.slice(0, 8)} · USO INTERNO — NÃO REPRODUZIR`
+    : 'USO INTERNO — NÃO REPRODUZIR';
+
   // ------------- UI -------------
   return (
     <div
-      className="max-w-7xl mx-auto space-y-4 p-2 select-none relative"
+      className={`max-w-7xl mx-auto space-y-4 p-2 select-none relative ${isCashierOnly ? 'livro-caixa-protected' : ''}`}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
     >
+      {isCashierOnly && (
+        <style>{`
+          @media print {
+            .livro-caixa-protected { display: none !important; }
+            body::after {
+              content: "Impressão não autorizada para este perfil.";
+              display: block; font: bold 18px serif; text-align: center; padding: 40px;
+            }
+          }
+          .livro-caixa-protected::before {
+            content: "${watermarkText.replace(/"/g, '\\"')}";
+            position: fixed; inset: 0; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; letter-spacing: 4px;
+            color: rgba(120,120,120,0.10); transform: rotate(-25deg);
+            white-space: pre; z-index: 50; text-align: center;
+          }
+        `}</style>
+      )}
       {obscured && (
         <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-xl flex items-center justify-center pointer-events-none">
           <div className="text-center space-y-2 p-6">
@@ -387,6 +428,17 @@ export default function LivroCaixaPage() {
           </div>
         </div>
       )}
+
+      {isCashierOnly && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-3 py-2 flex items-start gap-2 text-amber-900 dark:text-amber-200">
+          <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold uppercase tracking-wider">Acesso Restrito — Somente Consulta</p>
+            <p>Impressão, exportação, cópia ou reprodução não autorizada. Consulta limitada aos últimos {MAX_DAYS_BACK_CASHIER} dias.</p>
+          </div>
+        </div>
+      )}
+
       {/* Filtros e navegação */}
       <Card>
         <CardHeader className="pb-3">
