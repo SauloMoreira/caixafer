@@ -456,7 +456,9 @@ export default function LivroCaixaPage() {
                   id="date"
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  min={isCashierOnly ? minDateCashier : undefined}
+                  max={isCashierOnly ? maxDateCashier : undefined}
+                  onChange={(e) => handleDateChange(e.target.value)}
                 />
               </div>
             </div>
