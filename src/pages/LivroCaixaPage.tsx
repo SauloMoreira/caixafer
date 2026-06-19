@@ -667,6 +667,11 @@ export default function LivroCaixaPage() {
         Os totais respeitam a lógica contábil validada (saldo esperado em dinheiro físico).
         Esta tela é apenas de consulta e não altera nenhum cálculo do fechamento.
       </p>
+      {isCashierOnly && (
+        <p className="text-[11px] text-center font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+          Consulta restrita. Reprodução, impressão ou compartilhamento não autorizado.
+        </p>
+      )}
     </div>
   );
 }
