@@ -159,6 +159,7 @@ export default function LivroCaixaPage() {
   // ------------- Print (A4 paisagem, B&W) -------------
   const handlePrint = async () => {
     if (!page) return;
+    if (!isAdmin) return;
 
     const rowsHtml = !page.hasMovement
       ? `<tr><td colspan="7" class="empty">NÃO HOUVE MOVIMENTO NESTA DATA</td></tr>`
