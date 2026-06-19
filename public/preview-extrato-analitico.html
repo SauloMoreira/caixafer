@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Prévia — Extrato Analítico (Térmica 80mm)</title>
+<style>
+  body { background:#3a3a3a; margin:0; padding:24px; font-family: sans-serif; display:flex; justify-content:center; }
+  .paper {
+    width: 80mm;
+    background: #fff;
+    padding: 3mm;
+    font-family: 'Courier New','Consolas',monospace;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.45;
+    color: #000;
+    box-shadow: 0 8px 30px rgba(0,0,0,.4);
+  }
+  .header { text-align:center; margin-bottom:6px; }
+  .company { font-size:17px; font-weight:900; margin:0 0 4px; letter-spacing:.5px; }
+  .doc { font-size:15px; font-weight:900; margin:2px 0; }
+  .meta { font-size:13px; margin:1px 0; }
+  .hr { font-weight:900; text-align:center; margin:6px 0; font-size:13px; overflow:hidden; white-space:nowrap; }
+  .block-title { font-weight:900; font-size:14px; text-transform:uppercase; margin:8px 0 4px; text-align:left; border-bottom:1px solid #000; padding-bottom:2px; }
+  .sub-title { font-weight:900; font-size:13px; margin:4px 0 2px; text-transform:uppercase; }
+  .row { display:flex; justify-content:space-between; gap:8px; font-size:13px; padding:1px 0; }
+  .row.bold { font-weight:900; }
+  .row.strong { font-weight:900; font-size:14px; border-top:1px dashed #000; padding-top:3px; margin-top:2px; }
+  .op { font-size:12px; padding:1px 0; display:flex; justify-content:space-between; gap:6px; }
+  .op .desc { flex:1; }
+  .indent { padding-left:6px; }
+  .attn { font-size:12px; border:2px solid #000; padding:4px 6px; margin:4px 0; }
+  .attn p { margin:2px 0; }
+  .diff { display:flex; justify-content:space-between; gap:8px; font-weight:900; font-size:17px; border:3px solid #000; padding:6px 8px; margin:8px 0 4px; }
+  .footer { text-align:center; font-size:11px; margin-top:8px; }
+  .label { position:fixed; top:8px; left:8px; color:#fff; font-family:sans-serif; font-size:12px; opacity:.7;}
+  .small { font-size:11px; font-weight:700; }
+</style>
+</head>
+<body>
+<div class="label">Prévia visual — Extrato Analítico (térmica 80mm — dados ilustrativos)</div>
+<div class="paper">
+
+  <div class="header">
+    <p class="company">CASA DE APOIO SÃO JOSÉ</p>
+    <p class="doc">EXTRATO ANALÍTICO DE CAIXA</p>
+    <p class="meta">Data: 18/06/2026</p>
+    <p class="meta">Operador: Maria Fernanda</p>
+    <p class="meta">Abertura: 18/06 08:02 | Fechamento: 18/06 18:14</p>
+  </div>
+  <div class="hr">================================</div>
+
+  <!-- 1. DETALHAMENTO POR CATEGORIA → FORMA -->
+  <p class="block-title">1. OPERAÇÕES POR CATEGORIA</p>
+
+  <p class="sub-title">» Vendas PDV</p>
+  <p class="small indent">Dinheiro</p>
+  <div class="op indent"><span class="desc">08:42 #1012 V.Avulsa</span><span>R$ 45,00</span></div>
+  <div class="op indent"><span class="desc">10:15 #1018 Sabonete x3</span><span>R$ 27,00</span></div>
+  <div class="op indent"><span class="desc">14:03 #1031 Cesta básica</span><span>R$ 248,00</span></div>
+  <div class="row indent bold"><span>Subtotal Dinheiro:</span><span>R$ 320,00</span></div>
+  <p class="small indent">PIX</p>
+  <div class="op indent"><span class="desc">09:21 #1014</span><span>R$ 180,50</span></div>
+  <div class="op indent"><span class="desc">15:47 #1034</span><span>R$ 300,00</span></div>
+  <div class="row indent bold"><span>Subtotal PIX:</span><span>R$ 480,50</span></div>
+  <p class="small indent">Débito</p>
+  <div class="op indent"><span class="desc">11:30 #1022</span><span>R$ 215,00</span></div>
+  <div class="row indent bold"><span>Subtotal Débito:</span><span>R$ 215,00</span></div>
+  <p class="small indent">Crédito</p>
+  <div class="op indent"><span class="desc">16:12 #1036</span><span>R$ 140,00</span></div>
+  <div class="row indent bold"><span>Subtotal Crédito:</span><span>R$ 140,00</span></div>
+  <div class="row strong"><span>Total Vendas PDV:</span><span>R$ 1.155,50</span></div>
+
+  <p class="sub-title">» Mensalidades</p>
+  <div class="op indent"><span class="desc">08:30 João Silva</span><span>R$ 50,00</span></div>
+  <div class="op indent"><span class="desc">09:05 Ana Souza</span><span>R$ 50,00</span></div>
+  <div class="op indent"><span class="desc">... (10 lançamentos)</span><span>R$ 500,00</span></div>
+  <div class="row strong"><span>Total Mensalidades:</span><span>R$ 600,00</span></div>
+
+  <p class="sub-title">» Pagamentos de Fiado (SPR)</p>
+  <p class="small indent">Dinheiro</p>
+  <div class="op indent"><span class="desc">13:10 Pedro L. (4 itens)</span><span>R$ 120,00</span></div>
+  <p class="small indent">PIX</p>
+  <div class="op indent"><span class="desc">17:02 Carla M. (2 itens)</span><span>R$ 80,00</span></div>
+  <div class="row strong"><span>Total Pagto Fiado:</span><span>R$ 200,00</span></div>
+  <p class="small indent">* Já consolidado nas vendas/entradas — não soma duas vezes.</p>
+
+  <p class="sub-title">» Suprimento</p>
+  <div class="op indent"><span class="desc">08:05 Troco inicial</span><span>R$ 100,00</span></div>
+  <div class="row strong"><span>Total Suprimento:</span><span>R$ 100,00</span></div>
+
+  <p class="sub-title">» Sangria</p>
+  <div class="op indent"><span class="desc">16:00 Cofre — Maria</span><span>-R$ 200,00</span></div>
+  <div class="row strong"><span>Total Sangria:</span><span>-R$ 200,00</span></div>
+
+  <p class="sub-title">» Despesa Farmácia</p>
+  <div class="op indent"><span class="desc">11:45 Dipirona/álcool</span><span>-R$ 75,40</span></div>
+  <div class="row strong"><span>Total Desp. Farmácia:</span><span>-R$ 75,40</span></div>
+
+  <div class="hr">================================</div>
+
+  <!-- 2. RESUMO POR FORMA -->
+  <p class="block-title">2. RESUMO POR FORMA DE PAGAMENTO</p>
+  <div class="row"><span>Dinheiro (entradas):</span><span>R$ 1.170,00</span></div>
+  <div class="row"><span>Dinheiro (saídas):</span><span>-R$ 275,40</span></div>
+  <div class="row"><span>PIX:</span><span>R$ 560,50</span></div>
+  <div class="row"><span>Débito:</span><span>R$ 215,00</span></div>
+  <div class="row"><span>Crédito:</span><span>R$ 140,00</span></div>
+  <div class="row strong"><span>Total movimentado:</span><span>R$ 1.810,10</span></div>
+
+  <div class="hr">================================</div>
+
+  <!-- 3. RESUMO POR CATEGORIA -->
+  <p class="block-title">3. RESUMO POR CATEGORIA</p>
+  <div class="row"><span>Vendas PDV:</span><span>R$ 1.155,50</span></div>
+  <div class="row"><span>Mensalidades:</span><span>R$ 600,00</span></div>
+  <div class="row"><span>Suprimento:</span><span>R$ 100,00</span></div>
+  <div class="row"><span>Sangria:</span><span>-R$ 200,00</span></div>
+  <div class="row"><span>Desp. Farmácia:</span><span>-R$ 75,40</span></div>
+  <div class="row strong"><span>Líquido por categoria:</span><span>R$ 1.580,10</span></div>
+
+  <div class="hr">================================</div>
+
+  <!-- 4. CONFERÊNCIA CRUZADA -->
+  <p class="block-title">4. CONFERÊNCIA CRUZADA</p>
+  <div class="row"><span>Total por forma:</span><span>R$ 1.810,10</span></div>
+  <div class="row"><span>Total por categoria:</span><span>R$ 1.810,10</span></div>
+  <div class="row strong"><span>Divergência:</span><span>R$ 0,00</span></div>
+
+  <div class="hr">================================</div>
+
+  <!-- 5. CAIXA FÍSICO -->
+  <p class="block-title">5. CAIXA FÍSICO (DINHEIRO)</p>
+  <div class="row"><span>Saldo inicial:</span><span>R$ 200,00</span></div>
+  <div class="row"><span>(+) Vendas dinheiro:</span><span>R$ 320,00</span></div>
+  <div class="row"><span>(+) Mensalidades dinh.:</span><span>R$ 600,00</span></div>
+  <div class="row"><span>(+) Fiado pago dinh.:</span><span>R$ 120,00</span></div>
+  <div class="row"><span>(+) Suprimento:</span><span>R$ 100,00</span></div>
+  <div class="row"><span>(-) Sangria:</span><span>-R$ 200,00</span></div>
+  <div class="row"><span>(-) Despesas dinh.:</span><span>-R$ 75,40</span></div>
+  <div class="row strong"><span>Saldo esperado:</span><span>R$ 1.064,60</span></div>
+  <div class="row bold"><span>Valor contado:</span><span>R$ 1.064,60</span></div>
+  <div class="diff"><span>DIFERENÇA:</span><span>R$ 0,00</span></div>
+
+  <div class="hr">================================</div>
+
+  <!-- 6. PONTOS DE ATENÇÃO -->
+  <p class="block-title">6. PONTOS DE ATENÇÃO</p>
+  <div class="attn">
+    <p>• 1 venda cancelada (#1027 — R$ 32,00) NÃO entra no caixa físico.</p>
+    <p>• Pagto fiado via PIX (R$ 80,00) NÃO afeta dinheiro.</p>
+    <p>• Sangria sem 2ª assinatura — conferir com coordenação.</p>
+  </div>
+
+  <div class="hr">================================</div>
+
+  <div class="footer">
+    <p>Casa de Apoio São José — CNPJ 00.000.000/0001-00</p>
+    <p>Emitido em 19/06/2026 09:12 por Maria Fernanda</p>
+  </div>
+</div>
+</body>
+</html>
