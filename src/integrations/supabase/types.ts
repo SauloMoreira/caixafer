@@ -1714,6 +1714,41 @@ export type Database = {
     }
     Functions: {
       can_access_spr_operation: { Args: never; Returns: boolean }
+      get_cash_book_closings: {
+        Args: never
+        Returns: {
+          business_date: string
+          opening_balance: number
+        }[]
+      }
+      get_cash_book_entries: {
+        Args: { _date: string }
+        Returns: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          document_reference: string
+          document_type: string
+          entry_type: string
+          id: string
+          is_deleted: boolean
+          payment_method: string
+          source_type: string
+        }[]
+      }
+      get_cash_book_sales: {
+        Args: { _date: string }
+        Returns: {
+          created_at: string
+          id: string
+          is_deleted: boolean
+          notes: string
+          payment_method: string
+          status: string
+          total_amount: number
+        }[]
+      }
       get_eligible_transfer_cashiers: {
         Args: { _exclude_user_id: string }
         Returns: {

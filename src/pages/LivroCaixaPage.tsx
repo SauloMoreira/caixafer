@@ -144,13 +144,10 @@ export default function LivroCaixaPage() {
   const pageNumbers = useMemo(() => assignPageNumbers(closings), [closings]);
   const pageNumber = pageNumbers[date] || null;
 
-  // Load all closings once for page numbering and navigation
+  // Load all closings once for page numbering and navigation (via RPC institucional)
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from('cash_closings')
-        .select('business_date, opening_balance')
-        .order('business_date', { ascending: true });
+      const { data } = await supabase.rpc('get_cash_book_closings');
       setClosings((data || []) as ClosingRow[]);
     })();
   }, []);
@@ -171,14 +168,8 @@ export default function LivroCaixaPage() {
         const prevClosing = closings.find((c) => c.business_date === prevDate);
         const opening = Number(prevClosing?.opening_balance || 0);
         const [prevSales, prevEntries] = await Promise.all([
-          supabase
-            .from('sales')
-            .select('total_amount, payment_method, is_deleted, status')
-            .eq('business_date', prevDate),
-          supabase
-            .from('cash_entries')
-            .select('entry_type, amount, payment_method, is_deleted, category, source_type')
-            .eq('business_date', prevDate),
+          supabase.rpc('get_cash_book_sales', { _date: prevDate }),
+          supabase.rpc('get_cash_book_entries', { _date: prevDate }),
         ]);
         const physical = computePhysicalCash({
           openingBalance: opening,
@@ -189,20 +180,10 @@ export default function LivroCaixaPage() {
       }
       setSaldoAnterior(prevBalance);
 
-      // Movimentos do dia consultado
+      // Movimentos do dia consultado (via RPC institucional, ignora RLS por created_by)
       const [salesRes, entriesRes] = await Promise.all([
-        supabase
-          .from('sales')
-          .select('id, total_amount, payment_method, notes, is_deleted, status, created_at')
-          .eq('business_date', d)
-          .order('created_at', { ascending: true }),
-        supabase
-          .from('cash_entries')
-          .select(
-            'id, entry_type, category, description, amount, payment_method, document_type, document_reference, source_type, is_deleted, created_at',
-          )
-          .eq('business_date', d)
-          .order('created_at', { ascending: true }),
+        supabase.rpc('get_cash_book_sales', { _date: d }),
+        supabase.rpc('get_cash_book_entries', { _date: d }),
       ]);
 
       const built = buildCashBookPage({
