@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock, ShieldAlert } from 'lucide-react';
+import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { logSecurityEvent, logSecurityIncident } from '@/lib/security';
 import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO } from '@/lib/constants';
 import {
@@ -408,6 +408,19 @@ export default function LivroCaixaPage() {
           </div>
         </div>
       )}
+
+      <div className="rounded-md border border-destructive bg-destructive/10 px-4 py-3 flex items-start gap-3 text-destructive">
+        <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
+        <div className="text-xs space-y-1">
+          <p className="font-bold uppercase tracking-wider">Aviso Legal — Monitoramento Ativo</p>
+          <p>
+            Esta visualização é registrada em log de auditoria com identificação do usuário, data e hora.
+            Capturas de tela, fotografias, reproduções ou qualquer forma de extração de dados são de
+            <span className="font-semibold"> inteira responsabilidade do usuário</span> e podem ensejar
+            <span className="font-semibold"> responsabilização civil e criminal</span> conforme políticas internas e legislação vigente.
+          </p>
+        </div>
+      </div>
 
       {isCashierOnly && (
         <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-3 py-2 flex items-start gap-2 text-amber-900 dark:text-amber-200">
