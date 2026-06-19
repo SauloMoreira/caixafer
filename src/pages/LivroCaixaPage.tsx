@@ -434,13 +434,11 @@ export default function LivroCaixaPage() {
                   {formatCurrency(page.totalSaidas)}
                 </span>
               </div>
-              <div className="flex justify-between border-b border-foreground/10 pb-1">
-                <span className="text-muted-foreground">Saldo Anterior (dinheiro físico)</span>
-                <span className="font-mono">{formatCurrency(page.saldoAnterior)}</span>
-              </div>
               <div className="flex justify-between pt-2 border-t-2 border-foreground/30">
-                <span className="font-bold uppercase text-sm">Saldo Atual (dinheiro físico)</span>
-                <span className="font-mono font-bold text-primary">{formatCurrency(page.saldoAtual)}</span>
+                <span className="font-bold uppercase text-sm">Total do Dia (Entradas − Saídas)</span>
+                <span className="font-mono font-bold text-primary">
+                  {formatCurrency(page.totalEntradas - page.totalSaidas)}
+                </span>
               </div>
             </div>
 
