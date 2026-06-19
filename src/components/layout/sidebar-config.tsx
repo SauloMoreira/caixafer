@@ -91,6 +91,7 @@ const cashierSections: NavSection[] = [
       { to: '/pdv', icon: ShoppingCart, label: 'PDV' },
       { to: '/movimentos', icon: ArrowUpDown, label: 'Movimentos' },
       { to: '/fechamento', icon: Lock, label: 'Fechamento' },
+      { to: '/livro-caixa', icon: Book, label: 'Livro de Caixa' },
     ],
   },
   {

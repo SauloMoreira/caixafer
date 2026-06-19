@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useCompany } from '@/hooks/useCompany';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock } from 'lucide-react';
+import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock, ShieldAlert } from 'lucide-react';
+import { logSecurityEvent, logSecurityIncident } from '@/lib/security';
 import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO } from '@/lib/constants';
 import {
   buildCashBookPage,
@@ -38,7 +39,9 @@ function shiftDate(iso: string, days: number): string {
 
 export default function LivroCaixaPage() {
   const { company } = useCompany();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
+  const isCashierOnly = profile?.role === 'cashier';
+  const MAX_DAYS_BACK_CASHIER = 7;
   const companyData = getCompanyDocumentData(company);
   const companyHeader = getCompanyHeaderLines(companyData);
   const companyFooter = getCompanyFooterLines(companyData);
@@ -69,6 +72,73 @@ export default function LivroCaixaPage() {
       document.removeEventListener('copy', block);
     };
   }, []);
+
+  // Bloqueio de impressão para Caixa: intercepta Ctrl/Cmd+P, evento beforeprint
+  // e sobrescreve window.print enquanto a página estiver montada.
+  useEffect(() => {
+    if (!isCashierOnly) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        e.stopPropagation();
+        logSecurityIncident({
+          incident_type: 'livro_caixa_print_blocked',
+          context: { role: profile?.role, date },
+          severity: 'medium',
+        });
+      }
+    };
+    const onBeforePrint = () => {
+      logSecurityIncident({
+        incident_type: 'livro_caixa_print_blocked',
+        context: { role: profile?.role, date, trigger: 'beforeprint' },
+        severity: 'medium',
+      });
+    };
+    const originalPrint = window.print;
+    window.print = () => {
+      logSecurityIncident({
+        incident_type: 'livro_caixa_print_blocked',
+        context: { role: profile?.role, date, trigger: 'window.print' },
+        severity: 'medium',
+      });
+    };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('beforeprint', onBeforePrint);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      window.removeEventListener('beforeprint', onBeforePrint);
+      window.print = originalPrint;
+    };
+  }, [isCashierOnly, profile?.role, date]);
+
+  // Auditoria de acesso à página
+  const accessLoggedRef = useRef(false);
+  useEffect(() => {
+    if (accessLoggedRef.current || !profile) return;
+    accessLoggedRef.current = true;
+    logSecurityEvent({
+      event_type: 'livro_caixa_accessed',
+      entity_type: 'cash_book',
+      action: 'VIEW',
+      severity: 'info',
+      notes: `Acesso ao Livro de Movimento de Caixa (${profile.role})`,
+    });
+  }, [profile]);
+
+  // Log de consulta por data
+  useEffect(() => {
+    if (!profile) return;
+    logSecurityEvent({
+      event_type: 'livro_caixa_queried',
+      entity_type: 'cash_book',
+      action: 'QUERY',
+      severity: 'info',
+      business_date: date,
+      notes: `Consulta data ${date} (${profile.role})`,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
 
 
   const pageNumbers = useMemo(() => assignPageNumbers(closings), [closings]);
@@ -298,13 +368,54 @@ export default function LivroCaixaPage() {
     });
   };
 
+  // Limites de data para Caixa
+  const minDateCashier = useMemo(() => shiftDate(todayISO(), -MAX_DAYS_BACK_CASHIER), []);
+  const maxDateCashier = todayISO();
+
+  const handleDateChange = (newDate: string) => {
+    if (isCashierOnly) {
+      if (newDate < minDateCashier || newDate > maxDateCashier) {
+        logSecurityIncident({
+          incident_type: 'livro_caixa_date_out_of_range',
+          context: { role: profile?.role, attempted: newDate, min: minDateCashier, max: maxDateCashier },
+          severity: 'low',
+        });
+        return;
+      }
+    }
+    setDate(newDate);
+  };
+
+  const watermarkText = profile
+    ? `${profile.full_name || 'Usuário'} · ${profile.role} · ${profile.id?.slice(0, 8)} · USO INTERNO — NÃO REPRODUZIR`
+    : 'USO INTERNO — NÃO REPRODUZIR';
+
   // ------------- UI -------------
   return (
     <div
-      className="max-w-7xl mx-auto space-y-4 p-2 select-none relative"
+      className={`max-w-7xl mx-auto space-y-4 p-2 select-none relative ${isCashierOnly ? 'livro-caixa-protected' : ''}`}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitUserSelect: 'none', userSelect: 'none' }}
     >
+      {isCashierOnly && (
+        <style>{`
+          @media print {
+            .livro-caixa-protected { display: none !important; }
+            body::after {
+              content: "Impressão não autorizada para este perfil.";
+              display: block; font: bold 18px serif; text-align: center; padding: 40px;
+            }
+          }
+          .livro-caixa-protected::before {
+            content: "${watermarkText.replace(/"/g, '\\"')}";
+            position: fixed; inset: 0; pointer-events: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700; letter-spacing: 4px;
+            color: rgba(120,120,120,0.10); transform: rotate(-25deg);
+            white-space: pre; z-index: 50; text-align: center;
+          }
+        `}</style>
+      )}
       {obscured && (
         <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-xl flex items-center justify-center pointer-events-none">
           <div className="text-center space-y-2 p-6">
@@ -316,6 +427,17 @@ export default function LivroCaixaPage() {
           </div>
         </div>
       )}
+
+      {isCashierOnly && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-3 py-2 flex items-start gap-2 text-amber-900 dark:text-amber-200">
+          <ShieldAlert className="h-4 w-4 mt-0.5 shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold uppercase tracking-wider">Acesso Restrito — Somente Consulta</p>
+            <p>Impressão, exportação, cópia ou reprodução não autorizada. Consulta limitada aos últimos {MAX_DAYS_BACK_CASHIER} dias.</p>
+          </div>
+        </div>
+      )}
+
       {/* Filtros e navegação */}
       <Card>
         <CardHeader className="pb-3">
@@ -333,7 +455,9 @@ export default function LivroCaixaPage() {
                   id="date"
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  min={isCashierOnly ? minDateCashier : undefined}
+                  max={isCashierOnly ? maxDateCashier : undefined}
+                  onChange={(e) => handleDateChange(e.target.value)}
                 />
               </div>
             </div>
@@ -368,9 +492,11 @@ export default function LivroCaixaPage() {
                 <Button variant="outline" size="sm" onClick={goNext} title="Próxima página">
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => loadPage(date)} title="Reprocessar">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+                {!isCashierOnly && (
+                  <Button variant="outline" size="sm" onClick={() => loadPage(date)} title="Reprocessar">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                )}
                 {isAdmin && (
                   <Button size="sm" onClick={handlePrint} title="Imprimir (apenas administradores)">
                     <Printer className="h-4 w-4 mr-1" /> Imprimir
@@ -540,6 +666,11 @@ export default function LivroCaixaPage() {
         Os totais respeitam a lógica contábil validada (saldo esperado em dinheiro físico).
         Esta tela é apenas de consulta e não altera nenhum cálculo do fechamento.
       </p>
+      {isCashierOnly && (
+        <p className="text-[11px] text-center font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400">
+          Consulta restrita. Reprodução, impressão ou compartilhamento não autorizado.
+        </p>
+      )}
     </div>
   );
 }
