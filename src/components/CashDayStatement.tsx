@@ -652,6 +652,43 @@ export default function CashDayStatement({
                   </div>
                 )}
 
+                {/* Consolidado geral do dia por forma de pagamento */}
+                {(() => {
+                  const allByMethod: Record<string, number> = {};
+                  const add = (method: string, val: number) => {
+                    if (!method || !val || val === 0) return;
+                    allByMethod[method] = (allByMethod[method] || 0) + val;
+                  };
+                  // Vendas PDV
+                  Object.entries(salesByMethod).forEach(([k, v]) => add(k, v));
+                  // Bazar
+                  Object.entries(bazarByMethod).forEach(([k, v]) => add(k, v));
+                  // Biblioteca
+                  Object.entries(bibliotecaByMethod).forEach(([k, v]) => add(k, v));
+                  // SPR
+                  Object.entries(sprByMethod).forEach(([k, v]) => add(k, v));
+                  // Mensalidades
+                  mensalidadeEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
+                  // Doações
+                  doacaoEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
+                  // Movimentações (valor absoluto)
+                  movementEntries.forEach(e => add(e.payment_method || 'dinheiro', Number(e.amount)));
+
+                  const hasValues = Object.values(allByMethod).some(v => v > 0);
+                  if (!hasValues) return null;
+                  const total = Object.values(allByMethod).reduce((s, v) => s + v, 0);
+
+                  return (
+                    <div className="mt-4">
+                      <PaymentMethodGrid totals={allByMethod} title="Consolidado Geral do Dia por Forma de Pagamento" />
+                      <div className="mt-1 rounded-lg border-2 border-primary/40 bg-primary/10 px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs font-bold uppercase tracking-wider">Total Geral do Dia</span>
+                        <span className="text-sm font-bold text-primary">{formatCurrency(total)}</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Print footer */}
                 <div className="mt-4 text-center text-[10px] text-muted-foreground border-t pt-2">
                   {companyFooterLines.map((line) => (
