@@ -17,7 +17,14 @@ export function formatDateTime(date: string): string {
 }
 
 export function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  // Usa componentes de data LOCAIS (getFullYear/getMonth/getDate), não toISOString()
+  // (que sempre converte para UTC). Isso evita o caixa "virar o dia" 3 horas antes
+  // da meia-noite real no horário de Brasília (UTC-3).
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 export const PAYMENT_METHODS = [
