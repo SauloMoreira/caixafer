@@ -679,6 +679,14 @@ export default function PDVPage() {
         />
       )}
 
+      {/* Correct payment method dialog */}
+      <SalePaymentMethodDialog
+        open={correctPaymentOpen}
+        onOpenChange={setCorrectPaymentOpen}
+        closingId={closingId}
+        canOperate={cashStatus === 'open' && (!isOverrideMode || hasOperationalOverride)}
+      />
+
       {/* Override Confirm Dialog */}
       <OverrideConfirmDialog
         open={overrideDialogOpen}
