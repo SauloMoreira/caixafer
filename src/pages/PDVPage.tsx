@@ -494,6 +494,28 @@ export default function PDVPage() {
                 </button>
               );
             })}
+            <button
+              onClick={() => setCorrectPaymentOpen(true)}
+              className="stat-card text-left transition-transform active:scale-95"
+              style={{
+                background: 'var(--color-accent-bg)',
+                color: 'var(--color-accent)',
+                border: '1.5px solid var(--color-accent)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-accent-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-accent)';
+              }}
+              title="Corrigir a forma de pagamento de uma venda finalizada no caixa aberto"
+            >
+              <div className="flex items-center gap-1.5">
+                <Edit3 size={14} color="currentColor" className="shrink-0" />
+                <p className="text-xs leading-tight" style={{ color: 'currentColor', fontWeight: 500 }}>Corrigir Forma Pgto</p>
+              </div>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
