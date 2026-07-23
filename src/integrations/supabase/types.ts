@@ -1713,6 +1713,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_can_view_profile_in_company: {
+        Args: { _target_user_id: string }
+        Returns: boolean
+      }
       business_today: { Args: never; Returns: string }
       can_access_spr_operation: { Args: never; Returns: boolean }
       get_cash_book_closings: {
