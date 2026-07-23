@@ -52,7 +52,7 @@ export default function PurchaseIntelligenceSection() {
     // Get recent consumption from stock_movements
     const since = new Date();
     since.setDate(since.getDate() - historyDays);
-    const sinceStr = since.toISOString().split('T')[0];
+    const sinceStr = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, '0')}-${String(since.getDate()).padStart(2, '0')}`;
 
     const { data: movements } = await supabase
       .from('stock_movements' as any)
