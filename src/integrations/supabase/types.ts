@@ -1718,7 +1718,9 @@ export type Database = {
         Returns: boolean
       }
       business_today: { Args: never; Returns: string }
-      can_access_spr_operation: { Args: never; Returns: boolean }
+      can_access_spr_operation:
+        | { Args: never; Returns: boolean }
+        | { Args: { _company_id: string }; Returns: boolean }
       get_cash_book_closings: {
         Args: never
         Returns: {
