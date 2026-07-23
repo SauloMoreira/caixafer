@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine, ArrowRightLeft, ShoppingBag, Banknote } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, X, Lock, Unlock, Heart, PenLine, ArrowRightLeft, ShoppingBag, Banknote, Edit3 } from 'lucide-react';
+import SalePaymentMethodDialog from '@/components/SalePaymentMethodDialog';
 import CashOpeningDialog from '@/components/CashOpeningDialog';
 import SaleReceiptDialog from '@/components/SaleReceiptDialog';
 import SPRPaymentDialog from '@/components/SPRPaymentDialog';
@@ -74,6 +75,9 @@ export default function PDVPage() {
   // Quick income state
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
   const [quickIncomeCategory, setQuickIncomeCategory] = useState<typeof QUICK_INCOME_CATEGORIES[number]['value'] | null>(null);
+
+  // Correct payment method dialog
+  const [correctPaymentOpen, setCorrectPaymentOpen] = useState(false);
 
   // Transfer state
   const [transferOpen, setTransferOpen] = useState(false);
@@ -490,6 +494,28 @@ export default function PDVPage() {
                 </button>
               );
             })}
+            <button
+              onClick={() => setCorrectPaymentOpen(true)}
+              className="stat-card text-left transition-transform active:scale-95"
+              style={{
+                background: 'var(--color-accent-bg)',
+                color: 'var(--color-accent)',
+                border: '1.5px solid var(--color-accent)',
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-accent-hover)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-accent)';
+              }}
+              title="Corrigir a forma de pagamento de uma venda finalizada no caixa aberto"
+            >
+              <div className="flex items-center gap-1.5">
+                <Edit3 size={14} color="currentColor" className="shrink-0" />
+                <p className="text-xs leading-tight" style={{ color: 'currentColor', fontWeight: 500 }}>Corrigir Forma Pgto</p>
+              </div>
+            </button>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
@@ -652,6 +678,14 @@ export default function PDVPage() {
           onTransferred={refreshSession}
         />
       )}
+
+      {/* Correct payment method dialog */}
+      <SalePaymentMethodDialog
+        open={correctPaymentOpen}
+        onOpenChange={setCorrectPaymentOpen}
+        closingId={closingId}
+        canOperate={cashStatus === 'open' && (!isOverrideMode || hasOperationalOverride)}
+      />
 
       {/* Override Confirm Dialog */}
       <OverrideConfirmDialog
