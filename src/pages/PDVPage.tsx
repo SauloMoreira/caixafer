@@ -494,6 +494,7 @@ export default function PDVPage() {
                 </button>
               );
             })}
+            {isAdmin && (
             <button
               onClick={() => setCorrectPaymentOpen(true)}
               className="stat-card text-left transition-transform active:scale-95"
@@ -509,13 +510,14 @@ export default function PDVPage() {
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'var(--color-accent)';
               }}
-              title="Corrigir a forma de pagamento de uma venda finalizada no caixa aberto"
+              title="[Admin] Corrigir a forma de pagamento de uma venda finalizada no caixa aberto — em validação, restrito a administradores"
             >
               <div className="flex items-center gap-1.5">
                 <Edit3 size={14} color="currentColor" className="shrink-0" />
                 <p className="text-xs leading-tight" style={{ color: 'currentColor', fontWeight: 500 }}>Corrigir Forma Pgto</p>
               </div>
             </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
