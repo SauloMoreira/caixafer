@@ -63,7 +63,7 @@ export default function InsightsPage() {
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
+    return toLocalISODate(d);
   });
   const [endDate, setEndDate] = useState(todayISO());
   const [data, setData] = useState<InsightRow[]>([]);
