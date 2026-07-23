@@ -153,7 +153,7 @@ export default function MeuSPRPage() {
     const unpaid = chargesWithItems.filter(c => c.status !== 'paid');
     setTotalOwed(unpaid.reduce((s, c) => s + c.amount, 0));
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayISO();
     const todayCharges = chargesWithItems.filter(c => c.business_date === today);
     setTodayTotal(todayCharges.reduce((s, c) => s + c.amount, 0));
 
