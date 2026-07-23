@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { formatCurrency, formatDate } from '@/lib/constants';
+import { formatCurrency, formatDate, todayISO } from '@/lib/constants';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, DollarSign, Calendar, ChevronRight, ShoppingBag, Package } from 'lucide-react';
@@ -153,7 +153,7 @@ export default function MeuSPRPage() {
     const unpaid = chargesWithItems.filter(c => c.status !== 'paid');
     setTotalOwed(unpaid.reduce((s, c) => s + c.amount, 0));
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayISO();
     const todayCharges = chargesWithItems.filter(c => c.business_date === today);
     setTodayTotal(todayCharges.reduce((s, c) => s + c.amount, 0));
 

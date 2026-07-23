@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { formatCurrency, todayISO } from '@/lib/constants';
+import { formatCurrency, todayISO, toLocalISODate } from '@/lib/constants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,7 +43,7 @@ export default function EstoquePage() {
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
+    return toLocalISODate(d);
   });
   const [endDate, setEndDate] = useState(todayISO());
   const [consumption, setConsumption] = useState<Record<string, { sold: number; fiado: number }>>({});

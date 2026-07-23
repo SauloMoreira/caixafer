@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Printer, ChevronLeft, ChevronRight, RefreshCw, BookOpen, Calendar, Search, Lock, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { logSecurityEvent, logSecurityIncident } from '@/lib/security';
-import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO } from '@/lib/constants';
+import { formatCurrency, formatDate, PAYMENT_METHODS, todayISO, toLocalISODate } from '@/lib/constants';
 import {
   buildCashBookPage,
   assignPageNumbers,
@@ -32,9 +32,11 @@ interface ClosingRow {
 const PM_LABEL = Object.fromEntries(PAYMENT_METHODS.map((p) => [p.value, p.label]));
 
 function shiftDate(iso: string, days: number): string {
+  // Interpreta a data operacional no fuso local (T12:00 evita drift em UTC-3)
+  // e extrai novamente a componente local — nunca toISOString(), que iria para UTC.
   const d = new Date(iso + 'T12:00:00');
   d.setDate(d.getDate() + days);
-  return d.toISOString().split('T')[0];
+  return toLocalISODate(d);
 }
 
 export default function LivroCaixaPage() {

@@ -16,15 +16,18 @@ export function formatDateTime(date: string): string {
   return new Date(date).toLocaleString('pt-BR');
 }
 
-export function todayISO(): string {
-  // Usa componentes de data LOCAIS (getFullYear/getMonth/getDate), não toISOString()
-  // (que sempre converte para UTC). Isso evita o caixa "virar o dia" 3 horas antes
-  // da meia-noite real no horário de Brasília (UTC-3).
-  const d = new Date();
+export function toLocalISODate(d: Date): string {
+  // Extrai YYYY-MM-DD usando o fuso LOCAL do navegador (equivalente a
+  // America/Sao_Paulo para nossos operadores). Nunca usar toISOString(),
+  // que sempre converte para UTC e faz o dia virar 3h antes.
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function todayISO(): string {
+  return toLocalISODate(new Date());
 }
 
 export const PAYMENT_METHODS = [
