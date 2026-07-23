@@ -76,6 +76,9 @@ export default function PDVPage() {
   const [quickIncomeOpen, setQuickIncomeOpen] = useState(false);
   const [quickIncomeCategory, setQuickIncomeCategory] = useState<typeof QUICK_INCOME_CATEGORIES[number]['value'] | null>(null);
 
+  // Correct payment method dialog
+  const [correctPaymentOpen, setCorrectPaymentOpen] = useState(false);
+
   // Transfer state
   const [transferOpen, setTransferOpen] = useState(false);
   const [transferSummary, setTransferSummary] = useState({
