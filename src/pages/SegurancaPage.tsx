@@ -101,7 +101,12 @@ const OVERRIDE_EVENTS = ['primary_admin_override_used', 'primary_admin_cash_oper
 function fmt(dateStr: string) { return format(new Date(dateStr), "dd/MM/yy HH:mm", { locale: ptBR }); }
 function fmtDate(dateStr: string) { try { return format(new Date(dateStr + 'T00:00:00'), "dd/MM/yyyy"); } catch { return dateStr; } }
 function currency(v: number) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v); }
-const todayStr = () => new Date().toISOString().split('T')[0];
+const todayStr = () => {
+  // Data operacional no fuso local (America/Sao_Paulo). Nunca toISOString(),
+  // que retorna UTC e faria o dia virar 3h antes.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 export default function SegurancaPage() {
   const { profile } = useAuth();
